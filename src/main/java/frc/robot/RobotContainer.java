@@ -32,24 +32,16 @@ import edu.wpi.first.wpilibj2.command.button.CommandGenericHID;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.robot.commands.AutoAlignPOI;
-import frc.robot.commands.Intake_Start;
-import frc.robot.commands.Intake_Stop;
-import frc.robot.commands.ShootCmd;
-import frc.robot.commands.Target;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
-import frc.robot.subsystems.PoseHelpers;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.Intake.Roller;
 import frc.robot.subsystems.intake.Intake.PivotState;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.Shooter.indexing;
 import frc.robot.subsystems.shooter.Shooter.Agitate;
-import frc.robot.commands.AutoAlignPOI;
-import frc.robot.commands.Shooting_Sequence;
+import frc.robot.subsystems.superstructure.Superstructure;
 import frc.robot.subsystems.vision.Vision;
-import frc.robot.utility.RoboMath;
 
 @SuppressWarnings("unused")
 
@@ -73,17 +65,9 @@ public class RobotContainer {
         public static CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
         public static Intake intake = Intake.getInstance();
         public static Shooter shooter = Shooter.getInstance();
-        private final AutoAlignPOI aPOI = new AutoAlignPOI(drivetrain, POI.Hub);
-        private final PoseHelpers poseHelpers = new PoseHelpers(drivetrain);
         private final Vision vision = Vision.getInstance(drivetrain);
+        private final Superstructure superstructure = Superstructure.getInstance(drivetrain);
         private boolean ctrlBtn;
-        private final Intake_Start cmd_Intake_Start = new Intake_Start(intake);
-        private final Intake_Stop cmd_Intake_Stop = new Intake_Stop(intake);
-        private final Shooting_Sequence cmd_Normal_Shooting = new Shooting_Sequence(shooter, vision, intake, drivetrain,
-                        5.0);
-        private final Shooting_Sequence cmd_Quick_Shooting = new Shooting_Sequence(shooter, vision, intake, drivetrain,
-                        3.0);
-        private final ShootCmd cmd_ShootCmd = new ShootCmd(shooter, vision, drivetrain, intake);
         private SendableChooser<Command> autoChooser;
 
         public RobotContainer() {
@@ -92,17 +76,17 @@ public class RobotContainer {
                 NamedCommands.registerCommand(
                                 "Home Intake", intake.homing());
                 NamedCommands.registerCommand("Orbit",
-                                new Target(drivetrain, poseHelpers::getHubPosition, 0, () -> 0, () -> 0, true));
+                                drivetrain.trackHub(vision, 0, () -> 0, () -> 0, true));
                 NamedCommands.registerCommand(
-                                "Shooting Sequence", cmd_Normal_Shooting);
+                                "Shooting Sequence", superstructure.shootingSequence(5.0));
                 NamedCommands.registerCommand(
-                                "Quick Shooting", cmd_Quick_Shooting);
+                                "Quick Shooting", superstructure.shootingSequence(3.0));
                 NamedCommands.registerCommand(
                                 "Intake Start Sequence", Commands.parallel(
                                                 intake.intakeJamReverse(),
                                                 Commands.runOnce(() -> shooter.setAgitator(Agitate.IN))));
                 NamedCommands.registerCommand(
-                                "Intake Stop", cmd_Intake_Stop);
+                                "Intake Stop", intake.stopRoller());
                 autoChooser = AutoBuilder.buildAutoChooser();
                 configureBindings();
                 dashboard();
@@ -150,11 +134,10 @@ public class RobotContainer {
                                                                                                             // X (left)
                                 ));
                 joystick.rightBumper().whileTrue(
-                                new Target(drivetrain, poseHelpers::getHubPosition, MaxSpeed, joystick::getLeftX,
-                                                joystick::getLeftY, false));
+                                drivetrain.trackHub(vision, MaxSpeed, joystick::getLeftX, joystick::getLeftY, false));
                 joystick.rightTrigger().whileTrue(
-                                new Target(drivetrain, poseHelpers::getPassTargetPosition, MaxSpeed,
-                                                joystick::getLeftX, joystick::getLeftY, false));
+                                drivetrain.trackPassTarget(vision, MaxSpeed, joystick::getLeftX, joystick::getLeftY,
+                                                false));
                 // Idle while the robot is disabled. This ensures the configured
                 // neutral mode is applied to the drive motors while disabled.
                 final var idle = new SwerveRequest.Idle();
@@ -185,14 +168,14 @@ public class RobotContainer {
                         vision.getPoseResetEstimate().ifPresent(drivetrain::resetPose);
                 }));
                 drivetrain.registerTelemetry(logger::telemeterize);
-                // joystick.povUp().whileTrue(new AutoAlignPOI(drivetrain, POI.Hub));
-                // joystick.povLeft().whileTrue(new AutoAlignPOI(drivetrain, POI.poi1));
-                joystick.povRight().whileTrue(new AutoAlignPOI(drivetrain, POI.Right));
-                joystick.povLeft().whileTrue(new AutoAlignPOI(drivetrain, POI.Left));
-                joystick.x().whileTrue(new AutoAlignPOI(drivetrain, POI.LeftStage));
-                joystick.y().whileTrue(new AutoAlignPOI(drivetrain, POI.CenterStage));
-                joystick.b().whileTrue(new AutoAlignPOI(drivetrain, POI.RightStage));
-                controlBox.button(2).whileTrue(new ShootCmd(shooter, vision, drivetrain, intake));
+                // joystick.povUp().whileTrue(drivetrain.driveToPOI(POI.Hub));
+                // joystick.povLeft().whileTrue(drivetrain.driveToPOI(POI.poi1));
+                joystick.povRight().whileTrue(drivetrain.driveToPOI(POI.Right));
+                joystick.povLeft().whileTrue(drivetrain.driveToPOI(POI.Left));
+                joystick.x().whileTrue(drivetrain.driveToPOI(POI.LeftStage));
+                joystick.y().whileTrue(drivetrain.driveToPOI(POI.CenterStage));
+                joystick.b().whileTrue(drivetrain.driveToPOI(POI.RightStage));
+                controlBox.button(2).whileTrue(superstructure.shootCmd());
                 controlBox.button(1).onTrue(Commands.runOnce(() -> shooter.targetRPMShooter(1600)));
                 controlBox.button(1)
                                 .whileTrue(Commands.sequence(
