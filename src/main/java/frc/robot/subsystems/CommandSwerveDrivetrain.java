@@ -61,6 +61,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private Notifier m_simNotifier = null;
     private SwerveModuleConstants<?, ?, ?>[] moduleConstantsForSim;
     private MapleSimSwerveDrivetrain mapleSim;
+    private Alliance m_lastAppliedAlliance;
 
     /* Blue alliance sees forward as 0 degrees (toward red alliance wall) */
     private static final Rotation2d kBlueAlliancePerspectiveRotation = Rotation2d.kZero;
@@ -460,12 +461,21 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
          * This ensures driving behavior doesn't change until an explicit disable event
          * occurs during testing.
          */
+        // Guarded so setOperatorPerspectiveForward only fires on an actual alliance change, not every
+        // periodic() tick while disabled -- DriverStation.getAlliance() can flip/settle over several
+        // ticks after a DS reconnect, and re-applying on every tick caused a spurious mid-match pi
+        // reference flip. This entire block runs on the main robot thread only (Subsystem.periodic());
+        // do not move any of this logic into m_simNotifier or any other background thread.
         if (!m_hasAppliedOperatorPerspective || DriverStation.isDisabled()) {
             DriverStation.getAlliance().ifPresent(allianceColor -> {
-                setOperatorPerspectiveForward(
-                        allianceColor == Alliance.Red
-                                ? kRedAlliancePerspectiveRotation
-                                : kBlueAlliancePerspectiveRotation);
+                if (allianceColor != m_lastAppliedAlliance) {
+                    setOperatorPerspectiveForward(
+                            allianceColor == Alliance.Red
+                                    ? kRedAlliancePerspectiveRotation
+                                    : kBlueAlliancePerspectiveRotation);
+                    m_lastAppliedAlliance = allianceColor;
+                    Logger.recordOutput("Vision/PerspectiveFlip", allianceColor.toString());
+                }
                 m_hasAppliedOperatorPerspective = true;
             });
         }
@@ -506,6 +516,15 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     /** Returns the maple-sim drivetrain simulation, or null on real hardware / before the sim thread starts. */
     public AbstractDriveTrainSimulation getMapleSimDrive() {
         return mapleSim == null ? null : mapleSim.mapleSimDrive;
+    }
+
+    /**
+     * Raw Pigeon 2 yaw in degrees, independent of the vision-fused pose estimate. Safe to feed into
+     * MegaTag2's SetRobotOrientation -- unlike getState().Pose.getRotation(), this value is never
+     * itself corrected by a vision measurement, so it can't create a self-referential feedback loop.
+     */
+    public double getRawGyroYawDegrees() {
+        return getPigeon2().getYaw().getValueAsDouble();
     }
 
     /**
