@@ -37,6 +37,11 @@ public final class Constants {
   public static final int indexMotor = 4;
   public static final int agitator = 6;
 
+  // Vision
+  public static final String[] visionCameraNames = { "limelight-bow", "limelight-intake" };
+  public static final double kVisionMaxTagDistMeters = 5.0; // MegaTag2 trust filter cutoff
+  public static final double kVisionStdDevCoefficient = 0.1; // dev = coefficient * (avgTagDist / tagCount)
+
   // Intake pivot/roller sim & physical constants (placeholder estimates -- TODO: measure/tune against real robot)
   public static final double kIntakePivotReduction = 17.50;
   public static final double kIntakePivotMassKg = 0.9; // TODO: measure real arm mass
