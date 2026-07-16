@@ -204,7 +204,13 @@ public class Vision extends SubsystemBase {
   public void periodic() {
     Pose2d currentPose = drivetrain.getState().Pose;
 
-    io.setRobotOrientation(currentPose.getRotation().getDegrees());
+    // Deliberately NOT drivetrain.getState().Pose.getRotation() -- that's the pose estimator's own
+    // fused output, which this same call's MegaTag2 result gets fed back into via
+    // fuseMeasurements()/addVisionMeasurement(). Feeding the estimator's output back into its own
+    // input creates a self-reinforcing loop: a bad heading here poisons the next MegaTag2 translation,
+    // which corrupts the estimator, which poisons the heading fed in next cycle. The raw gyro yaw is
+    // never itself corrected by vision, so it can't be part of that loop.
+    io.setRobotOrientation(drivetrain.getRawGyroYawDegrees());
     io.updateInputs(inputs);
     Logger.processInputs("Vision", inputs);
 
