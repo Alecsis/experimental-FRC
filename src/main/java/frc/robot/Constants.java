@@ -46,4 +46,12 @@ public final class Constants {
   public static final double kIntakeRollerReduction = 1.0;
   public static final double kIntakeRollerMOI = 0.001; // kg*m^2, TODO: tune, typical roller estimate
 
+  // Shooter/Index/Agitator sim & physical constants (placeholder estimates -- TODO: measure/tune against real robot)
+  public static final double kShooterReduction = 1.0;
+  public static final double kShooterFlywheelMOI = 0.004; // kg*m^2, TODO: tune, typical shooter flywheel estimate
+  public static final double kIndexReduction = 1.0;
+  public static final double kIndexMOI = 0.001; // kg*m^2, TODO: tune
+  public static final double kAgitatorReduction = 1.0;
+  public static final double kAgitatorMOI = 0.0005; // kg*m^2, TODO: tune
+
 }
