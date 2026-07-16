@@ -3,12 +3,14 @@ package frc.robot.subsystems;
 import static edu.wpi.first.units.Units.*;
 import frc.robot.RobotContainer;
 import java.util.Optional;
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
+import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
@@ -17,9 +19,12 @@ import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.util.PathPlannerLogging;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
@@ -28,11 +33,15 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import org.littletonrobotics.junction.Logger;
 
+import frc.robot.POI;
+import frc.robot.generated.TunerConstants;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
+import frc.robot.subsystems.vision.Vision;
 
 @SuppressWarnings("unused")
 
@@ -299,6 +308,133 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
      */
     public Command sysIdDynamic(SysIdRoutine.Direction direction) {
         return m_sysIdRoutineToApply.dynamic(direction);
+    }
+
+    private static final double kAlignTolerance = 0.20;
+    private static final double kAlignRotationTolerance = Math.toRadians(1);
+    private static final double kAlignMaxSpeed = 0.5 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
+    private static final double kAlignMaxRotationalSpeed = RotationsPerSecond.of(0.75).in(RadiansPerSecond);
+
+    /** Drives to and holds a field point-of-interest, ported from the old AutoAlignPOI command. */
+    public Command driveToPOI(POI targetPOI) {
+        SwerveRequest.FieldCentric request = new SwerveRequest.FieldCentric()
+                .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
+        PIDController x = new PIDController(1, 0, 0);
+        PIDController y = new PIDController(1, 0, 0);
+        PIDController rot = new PIDController(3, 0, 0);
+        x.setTolerance(kAlignTolerance);
+        y.setTolerance(kAlignTolerance);
+        rot.setTolerance(kAlignRotationTolerance);
+        rot.enableContinuousInput(-Math.PI, Math.PI);
+
+        return new FunctionalCommand(
+                () -> {},
+                () -> {
+                    Translation2d target = targetPOI.get();
+                    Translation2d current = getState().Pose.getTranslation();
+                    Translation2d vectorToHub = target.minus(current);
+                    Translation2d opVector = new Translation2d(
+                            vectorToHub.getX() * getOperatorForwardDirection().getCos()
+                                    + vectorToHub.getY() * getOperatorForwardDirection().getSin(),
+                            -vectorToHub.getX() * getOperatorForwardDirection().getSin()
+                                    + vectorToHub.getY() * getOperatorForwardDirection().getCos());
+
+                    double vx = MathUtil.clamp(x.calculate(0, opVector.getX()), -kAlignMaxSpeed, kAlignMaxSpeed);
+                    double vy = MathUtil.clamp(y.calculate(0, opVector.getY()), -kAlignMaxSpeed, kAlignMaxSpeed);
+
+                    double currentRotation = getState().Pose.getRotation().getRadians();
+                    double targetRotation = targetPOI.getTargetRotation().getRadians();
+                    double rotError = MathUtil.angleModulus(targetRotation - currentRotation);
+                    double dxRotRadiansPerSecond = rot.calculate(currentRotation, currentRotation + rotError);
+                    double dxRot = MathUtil.clamp(
+                            dxRotRadiansPerSecond / (2 * Math.PI), -kAlignMaxRotationalSpeed, kAlignMaxRotationalSpeed);
+
+                    setControl(
+                            request
+                                    .withVelocityX(MetersPerSecond.of(vx))
+                                    .withVelocityY(MetersPerSecond.of(vy))
+                                    .withRotationalRate(dxRot));
+                },
+                interrupted -> idle(),
+                () -> {
+                    boolean atPos = getState().Pose.getTranslation().getDistance(targetPOI.get()) < kAlignTolerance;
+                    boolean atRot = Math.abs(MathUtil.angleModulus(
+                            getState().Pose.getRotation().getRadians()
+                                    - targetPOI.getTargetRotation().getRadians())) < kAlignRotationTolerance;
+                    return atPos && atRot;
+                },
+                this);
+    }
+
+    private static final double kTrackHeadingToleranceRad = Math.toRadians(2.0);
+
+    /** Rotates to face the hub (from Vision's AprilTag-layout-averaged position) while driving. Ported from Target. */
+    public Command trackHub(Vision vision, double maxSpeed, DoubleSupplier xSupplier, DoubleSupplier ySupplier,
+            boolean finishOnAlign) {
+        return trackTarget(vision::getHubPosition, maxSpeed, xSupplier, ySupplier, finishOnAlign);
+    }
+
+    /** Rotates to face the pass target while driving. Ported from Target. */
+    public Command trackPassTarget(Vision vision, double maxSpeed, DoubleSupplier xSupplier, DoubleSupplier ySupplier,
+            boolean finishOnAlign) {
+        return trackTarget(vision::getPassTargetPosition, maxSpeed, xSupplier, ySupplier, finishOnAlign);
+    }
+
+    private Command trackTarget(Supplier<Optional<Translation2d>> targetSupplier, double maxSpeed,
+            DoubleSupplier xSupplier, DoubleSupplier ySupplier, boolean finishOnAlign) {
+        PIDController headingPID = new PIDController(5.0, 0.0, 0.15);
+        headingPID.enableContinuousInput(-Math.PI, Math.PI);
+        SwerveRequest.FieldCentric driveReq = new SwerveRequest.FieldCentric()
+                .withDriveRequestType(DriveRequestType.Velocity);
+
+        return new FunctionalCommand(
+                () -> {
+                    headingPID.reset();
+                    double currentHeading = getState().Pose.getRotation().getRadians();
+                    headingPID.calculate(currentHeading, currentHeading);
+                },
+                () -> {
+                    Optional<Translation2d> targetOpt = targetSupplier.get();
+                    if (targetOpt.isEmpty()) {
+                        setControl(new SwerveRequest.Idle());
+                        return;
+                    }
+
+                    Pose2d robotPose = getState().Pose;
+                    double target = trackingAngle(targetOpt.get(), robotPose);
+                    double rotationOutput = headingPID.calculate(robotPose.getRotation().getRadians(), target);
+
+                    double vx = -ySupplier.getAsDouble() * maxSpeed;
+                    double vy = -xSupplier.getAsDouble() * maxSpeed;
+
+                    setControl(
+                            driveReq
+                                    .withDriveRequestType(DriveRequestType.Velocity)
+                                    .withVelocityX(vx)
+                                    .withVelocityY(vy)
+                                    .withRotationalRate(rotationOutput));
+                },
+                interrupted -> setControl(new SwerveRequest.Idle()),
+                () -> {
+                    if (!finishOnAlign) {
+                        return false;
+                    }
+                    Optional<Translation2d> targetOpt = targetSupplier.get();
+                    if (targetOpt.isEmpty()) {
+                        return false;
+                    }
+                    Pose2d robotPose = getState().Pose;
+                    double target = trackingAngle(targetOpt.get(), robotPose);
+                    double error = Math.abs(MathUtil.angleModulus(robotPose.getRotation().getRadians() - target));
+                    return error < kTrackHeadingToleranceRad;
+                },
+                this);
+    }
+
+    private static double trackingAngle(Translation2d targetPos, Pose2d robotPose) {
+        double offsetDeg = SmartDashboard.getNumber("offset", 0);
+        Translation2d toTarget = targetPos.minus(robotPose.getTranslation());
+        return toTarget.getAngle().getRadians() + Math.toRadians(offsetDeg);
     }
 
     @Override
