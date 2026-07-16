@@ -59,4 +59,14 @@ public final class Constants {
   public static final double kAgitatorReduction = 1.0;
   public static final double kAgitatorMOI = 0.0005; // kg*m^2, TODO: tune
 
+  // Drivetrain simulation (maple-sim) physical constants (placeholder estimates -- TODO: measure/tune against real robot)
+  public static final double kRobotMassWithBumpersKg = 55.0; // TODO: weigh the real robot with bumpers
+  public static final double kBumperLengthXMeters = 0.9; // TODO: measure real bumper footprint
+  public static final double kBumperWidthYMeters = 0.9; // TODO: measure real bumper footprint
+  public static final double kWheelCOF = 1.2; // TODO: tune -- 1.2 is a typical rubber-tread-on-carpet estimate
+
+  // Intake simulation (maple-sim) physical constants (placeholder estimates -- TODO: measure/tune against real robot)
+  public static final double kIntakeSimWidthMeters = 0.7; // TODO: measure real intake width
+  public static final int kIntakeSimCapacity = 1; // TODO: confirm real max held-piece count
+
 }
