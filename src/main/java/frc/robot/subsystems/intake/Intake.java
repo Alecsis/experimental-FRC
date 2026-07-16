@@ -183,6 +183,13 @@ public class Intake extends SubsystemBase {
         this);
   }
 
+  public Command startRoller() {
+    return Commands.startEnd(
+        () -> setRoller(Roller.INTAKE),
+        () -> setRoller(Roller.STOP),
+        this);
+  }
+
   public boolean hardstop() {
     return inputs.pivotStatorCurrentAmps > kHardstopStatorCurrentAmps;
   }
