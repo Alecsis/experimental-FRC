@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hub_counter"
+version = "1.0.0"
+description = "FRC ball counter for Team 6328 hub counter system"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "Team 6328"}
+]
+
+dependencies = [
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "pyyaml>=6.0",
+    "pyntcore>=2024.1.1",
+]
+
+[project.optional-dependencies]
+pi = [
+    "gpiozero>=2.0",
+    "rpi-ws281x>=5.0.0",
+    "RPi.GPIO>=0.7.1",
+]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.23.0",
+    "httpx>=0.26.0",
+]
+
+[project.scripts]
+hub_counter = "hub_counter.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["hub_counter"]
+
+[tool.setuptools.package-data]
+hub_counter = ["web/static/*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

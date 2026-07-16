@@ -1,0 +1,11 @@
+[Unit]
+Description=Hub Ball Counter
+
+[Service]
+Type=exec
+ExecStart=/home/hub/Projects/hub_counter/venv/bin/python main.py
+WorkingDirectory=/home/hub/Projects/hub_counter/
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
