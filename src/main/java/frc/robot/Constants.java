@@ -28,13 +28,22 @@ public final class Constants {
     REPLAY
   }
 
-  // Intake 
+  // Intake
   public static final int intakePivot = 2;
   public static final int roller = 5;
 
-    // shooter 
+    // shooter
   public static final int shootMotor = 3;
   public static final int indexMotor = 4;
   public static final int agitator = 6;
+
+  // Intake pivot/roller sim & physical constants (placeholder estimates -- TODO: measure/tune against real robot)
+  public static final double kIntakePivotReduction = 17.50;
+  public static final double kIntakePivotMassKg = 0.9; // TODO: measure real arm mass
+  public static final double kIntakePivotLengthMeters = 0.25; // TODO: measure real arm length
+  public static final double kIntakePivotMinAngleDeg = -260; // TODO: measure real range of motion
+  public static final double kIntakePivotMaxAngleDeg = 20; // TODO: measure real range of motion
+  public static final double kIntakeRollerReduction = 1.0;
+  public static final double kIntakeRollerMOI = 0.001; // kg*m^2, TODO: tune, typical roller estimate
 
 }

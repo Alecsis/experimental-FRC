@@ -7,10 +7,10 @@ package frc.robot.commands;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
-import frc.robot.subsystems.Intake;
+import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Vision;
-import frc.robot.subsystems.Intake.Roller;
+import frc.robot.subsystems.intake.Intake.Roller;
 import frc.robot.utility.RoboMath;
 import org.littletonrobotics.junction.Logger;
 

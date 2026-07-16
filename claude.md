@@ -6,11 +6,9 @@
 - **Goal:** Build a modular, simulation-first codebase combining 1678's IO-isolation and 254's state machine.
 
 ## 🛠️ Superpowers (Available MCP Tools & Plugins)
-- **Claude-Mem:** Core context & lifecycle memory loop tracker.
-- **Context7:** Up-to-date WPILib & JavaDocs API reference layer.
-- **Gemini MCP:** Deep semantic workspace/repository analysis.
-- **Tavily/DuckDuckGo:** Real-time web-search validation engine.
-- **Fetch:** Remote markdown/URL scraping capability.
+- **Context7 (online):** Up-to-date WPILib & JavaDocs API reference layer.
+- **WebSearch (built-in search):** Real-time web-search validation engine.
+- **WebFetch (built-in scraping):** Remote markdown/URL scraping capability.
 
 ## 📂 Reference Directories (`temp_reference/`)
 You have read access to elite architectural templates inside these subdirectories. Use them for structural examples, but never merge or import them directly:
