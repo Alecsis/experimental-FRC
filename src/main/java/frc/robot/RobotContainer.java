@@ -62,6 +62,7 @@ public class RobotContainer {
         private final CommandXboxController joystick = new CommandXboxController(0);
         private final CommandGenericHID controlBox = new CommandGenericHID(1);
         private final CommandXboxController sysid = new CommandXboxController(2);
+        private final CommandXboxController simController = new CommandXboxController(3);
         public static CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
         public static Intake intake = Intake.getInstance();
         public static Shooter shooter = Shooter.getInstance();
@@ -234,6 +235,68 @@ public class RobotContainer {
                 controlBox.button(5).whileTrue(intake.agitatePivot());
                 controlBox.button(5).whileTrue(intake.intake());
                 controlBox.button(5).onFalse(Commands.either(intake.intake(), intake.stopRoller(), () -> ctrlBtn));
+
+                if (edu.wpi.first.wpilibj.RobotBase.isSimulation()) {
+                        // 1. Override default drivetrain command with Port 3 Controller
+                        drivetrain.setDefaultCommand(
+                                drivetrain.applyRequest(() -> drive
+                                        .withVelocityX(-simController.getLeftY() * MaxSpeed)
+                                        .withVelocityY(-simController.getLeftX() * MaxSpeed)
+                                        .withRotationalRate(-simController.getRightX() * MaxAngularRate)
+                                )
+                        );
+
+                        // 2. Vision Target Tracking (Hold Right Bumper or Right Trigger)
+                        simController.rightBumper().whileTrue(
+                                drivetrain.trackHub(vision, MaxSpeed, simController::getLeftX, simController::getLeftY, false)
+                        );
+                        simController.rightTrigger().whileTrue(
+                                drivetrain.trackPassTarget(vision, MaxSpeed, simController::getLeftX, simController::getLeftY, false)
+                        );
+
+                        // 3. Reset Gyro & Heading (Left Bumper)
+                        simController.leftBumper().onTrue(Commands.runOnce(() -> {
+                                drivetrain.runOnce(drivetrain::seedFieldCentric);
+                                vision.getPoseResetEstimate().ifPresent(drivetrain::resetPose);
+                        }));
+
+                        // 4. Manual Shooter Spin-Up Macro (Left Trigger)
+                        // When pressed: Spin up shooter to 1600 RPM
+                        simController.leftTrigger().onTrue(Commands.runOnce(() -> shooter.targetRPMShooter(1600)));
+                        // While held: Wait until at speed, then index & agitate
+                        simController.leftTrigger().whileTrue(Commands.sequence(
+                                Commands.waitUntil(() -> shooter.shooterAtSpeed(shooter.getTargetRPM())),
+                                Commands.run(() -> {
+                                        shooter.indexControl(Shooter.indexing.INDEX);
+                                        shooter.setAgitator(Shooter.Agitate.IN);
+                                })
+                        ));
+                        // When released: Drop to idle RPM and stop indexing/agitating
+                        simController.leftTrigger().onFalse(Commands.runOnce(() -> {
+                                shooter.targetRPMShooter(1000);
+                                shooter.indexControl(Shooter.indexing.STOP);
+                                shooter.setAgitator(Shooter.Agitate.STOP);
+                        }));
+
+                        // 5. Automatic Superstructure Shoot (A Button)
+                        simController.a().whileTrue(superstructure.shootCmd());
+
+                        // 6. Floor Intake (X Button)
+                        simController.x().whileTrue(intake.intake());
+                        simController.x().whileTrue(Commands.run(() -> {
+                                shooter.setAgitator(Agitate.OUT);
+                                ctrlBtn = true;
+                        }));
+                        simController.x().onFalse(intake.stopRoller());
+                        simController.x().onFalse(Commands.runOnce(() -> {
+                                shooter.setAgitator(Agitate.STOP);
+                                ctrlBtn = false;
+                        }));
+
+                        // 7. Intake Eject (B Button)
+                        simController.b().whileTrue(intake.eject());
+                        simController.b().onFalse(Commands.either(intake.intake(), intake.stopRoller(), () -> ctrlBtn));
+                }
         }
 
         public Command getAutonomousCommand() {
