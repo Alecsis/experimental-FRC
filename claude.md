@@ -34,3 +34,9 @@ To ensure elite execution, strictly adhere to these behaviors:
 - **Simplicity First (Anti-Overengineering):** Write the cleanest, most minimalist code required to satisfy the immediate structural requirement or simulation goal.
 - **Surgical Changes Only:** Modify *only* the specific files related to the active task. Do not rewrite, clean up, or change formatting in adjacent methods or unrelated classes.
 - **Never Declare Success Early:** A task is not complete until you explicitly run `./gradlew compileJava` via the shell tool and confirm a zero-error output. If it breaks, fix it immediately.
+
+## 🕒 Current Task State
+- **Intake refactor:** 100% complete. `subsystems/intake/` now holds `IntakeIO.java`, `IntakeIOReal.java`, `IntakeIOSim.java`, and `Intake.java` (Singleton via `getInstance()`, zero vendor imports). Compiling cleanly.
+- **Shooter refactor:** 100% complete. `subsystems/shooter/` now holds `ShooterIO.java`, `ShooterIOReal.java`, `ShooterIOSim.java`, and `Shooter.java` (Singleton via `getInstance()`, zero vendor imports). Compiling cleanly.
+- **Known placeholders to revisit:** sim physical constants (masses, lengths, MOIs) in `Constants.java` are estimates marked `TODO`; `IntakeIOSim`/`ShooterIOSim` assume Kraken X60 motors, and the Shooter agitator sim assumes a plain NEO in place of the real NEO 550 (no `DCMotor.getNEO550()` factory was confirmed available).
+- **Next step on resume:** Begin **Phase 2: Vision and Limelight isolation.**
