@@ -5,15 +5,21 @@
 package frc.robot.subsystems.intake;
 
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Radians;
+
+import org.ironmaple.simulation.IntakeSimulation;
+import org.ironmaple.simulation.drivesims.AbstractDriveTrainSimulation;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import frc.robot.Constants;
+import frc.robot.RobotContainer;
 
 /**
  * IntakeIO implementation backed by WPILib physics simulation. No vendor hardware
@@ -57,6 +63,9 @@ public class IntakeIOSim implements IntakeIO {
   private boolean rollerClosedLoop = false;
   private double rollerVelocitySetpointRadPerSec = 0.0;
 
+  private IntakeSimulation intakeSimulation;
+  private boolean intakeRunning = false;
+
   @Override
   public void updateInputs(IntakeIOInputs inputs) {
     if (DriverStation.isDisabled()) {
@@ -97,6 +106,25 @@ public class IntakeIOSim implements IntakeIO {
     inputs.rollerStatorCurrentAmps = rollerSim.getCurrentDrawAmps();
     inputs.rollerSupplyCurrentAmps = rollerSim.getCurrentDrawAmps();
     inputs.rollerTempCelsius = 0.0;
+
+    if (intakeSimulation == null) {
+      AbstractDriveTrainSimulation driveSim = RobotContainer.drivetrain.getMapleSimDrive();
+      if (driveSim != null) {
+        Distance width = Meters.of(Constants.kIntakeSimWidthMeters);
+        intakeSimulation = IntakeSimulation.InTheFrameIntake(
+            "Fuel", driveSim, width, IntakeSimulation.IntakeSide.FRONT, Constants.kIntakeSimCapacity);
+      }
+    }
+
+    if (intakeSimulation != null) {
+      if (intakeRunning && !intakeSimulation.isRunning()) {
+        intakeSimulation.startIntake();
+      } else if (!intakeRunning && intakeSimulation.isRunning()) {
+        intakeSimulation.stopIntake();
+      }
+    }
+
+    inputs.hasGamePiece = intakeSimulation != null && intakeSimulation.getGamePiecesAmount() > 0;
   }
 
   @Override
@@ -121,11 +149,13 @@ public class IntakeIOSim implements IntakeIO {
   public void setRollerVoltage(double volts) {
     rollerClosedLoop = false;
     rollerAppliedVolts = MathUtil.clamp(volts, -12.0, 12.0);
+    intakeRunning = false;
   }
 
   @Override
   public void setRollerVelocity(double velocityRadPerSec) {
     rollerClosedLoop = true;
     rollerVelocitySetpointRadPerSec = velocityRadPerSec;
+    intakeRunning = velocityRadPerSec > 0;
   }
 }
