@@ -20,7 +20,6 @@ import edu.wpi.first.math.controller.ProfiledPIDController;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -44,14 +43,12 @@ import frc.robot.subsystems.PoseHelpers;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.Intake.Roller;
 import frc.robot.subsystems.intake.Intake.PivotState;
-import frc.robot.subsystems.Limelight;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.Shooter.indexing;
 import frc.robot.subsystems.shooter.Shooter.Agitate;
 import frc.robot.commands.AutoAlignPOI;
 import frc.robot.commands.Shooting_Sequence;
-import frc.robot.subsystems.Vision;
-import frc.robot.utility.LimelightHelpers;
+import frc.robot.subsystems.vision.Vision;
 import frc.robot.utility.RoboMath;
 
 @SuppressWarnings("unused")
@@ -76,10 +73,9 @@ public class RobotContainer {
         public static CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
         public static Intake intake = Intake.getInstance();
         public static Shooter shooter = Shooter.getInstance();
-        private final Limelight limelight = new Limelight("limelight-bow", "limelight-intake");
         private final AutoAlignPOI aPOI = new AutoAlignPOI(drivetrain, POI.Hub);
         private final PoseHelpers poseHelpers = new PoseHelpers(drivetrain);
-        private final Vision vision = new Vision(limelight, drivetrain);
+        private final Vision vision = Vision.getInstance(drivetrain);
         private boolean ctrlBtn;
         private final Intake_Start cmd_Intake_Start = new Intake_Start(intake);
         private final Intake_Stop cmd_Intake_Stop = new Intake_Stop(intake);
@@ -135,7 +131,6 @@ public class RobotContainer {
         }
 
         private void configureBindings() {
-                limelight.setDefaultCommand(updatePose());
                 // Note that X is defined as forward according to WPILib convention,
                 // and Y is defined as to the left according to WPILib convention.
                 drivetrain.setDefaultCommand(
@@ -187,10 +182,7 @@ public class RobotContainer {
                 // Reset the field-centric headiazng on left bumper press.
                 joystick.leftBumper().onTrue(Commands.runOnce(() -> {
                         drivetrain.runOnce(drivetrain::seedFieldCentric);
-                        var mt = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight-bow");
-                        if (mt != null && mt.tagCount > 0 && mt.pose.getX() != 0) {
-                                drivetrain.resetPose(mt.pose);
-                        }
+                        vision.getPoseResetEstimate().ifPresent(drivetrain::resetPose);
                 }));
                 drivetrain.registerTelemetry(logger::telemeterize);
                 // joystick.povUp().whileTrue(new AutoAlignPOI(drivetrain, POI.Hub));
@@ -263,22 +255,5 @@ public class RobotContainer {
 
         public Command getAutonomousCommand() {
                 return autoChooser.getSelected();
-        }
-
-        public Command updatePose() {
-                return limelight.run(() -> {
-                        double omega = drivetrain.getState().Speeds.omegaRadiansPerSecond;
-                        if (Math.abs(omega) > 2 * Math.PI)
-                                return;
-                        final Pose2d currentPose = drivetrain.getState().Pose;
-                        var measurements = limelight.getMeasurement(currentPose);
-                        for (Limelight.Measurement m : measurements) {
-                                drivetrain.addVisionMeasurement(
-                                                m.poseEstimate.pose,
-                                                m.poseEstimate.timestampSeconds,
-                                                m.standardDeviations);
-                        }
-                })
-                                .ignoringDisable(true);
         }
 }
