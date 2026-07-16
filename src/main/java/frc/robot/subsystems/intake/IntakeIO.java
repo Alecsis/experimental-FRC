@@ -24,6 +24,8 @@ public interface IntakeIO {
     public double rollerStatorCurrentAmps = 0.0;
     public double rollerSupplyCurrentAmps = 0.0;
     public double rollerTempCelsius = 0.0;
+
+    public boolean hasGamePiece = false;
   }
 
   /** Updates the set of loggable inputs. */
