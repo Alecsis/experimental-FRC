@@ -42,6 +42,8 @@ public class Shooter extends SubsystemBase {
 
   public double targetRPM = 0.0;
   public boolean shooterTuningModeEnable = false;
+  private Agitate currentAgitate = Agitate.STOP;
+  private indexing currentIndexing = indexing.STOP;
 
   public enum Agitate {
     STOP(0),
@@ -82,7 +84,13 @@ public class Shooter extends SubsystemBase {
 
   public void setAgitator(Agitate state) {
     io.setAgitatorVoltage(state.voltage().in(Volts));
+    currentAgitate = state;
     Logger.recordOutput("Agitator State", state);
+  }
+
+  /** The agitator state most recently sent via {@link #setAgitator(Agitate)}. */
+  public Agitate getAgitateState() {
+    return currentAgitate;
   }
 
   public Command agitate() {
@@ -155,7 +163,13 @@ public class Shooter extends SubsystemBase {
 
   public void indexControl(indexing state) {
     io.setIndexVoltage(state.voltage().in(Volts));
+    currentIndexing = state;
     Logger.recordOutput("Indexer State", state);
+  }
+
+  /** The indexer state most recently sent via {@link #indexControl(indexing)}. */
+  public indexing getIndexerState() {
+    return currentIndexing;
   }
 
   public Command index() {
