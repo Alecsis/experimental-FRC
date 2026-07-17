@@ -92,7 +92,8 @@ test {
 }
 
 // Simulation configuration (e.g. environment variables).
-wpi.sim.addGui().defaultEnabled = true
+// GUI on for interactive use; SKILLS/run_headless_sim.py passes -Pheadless=true.
+wpi.sim.addGui().defaultEnabled = !project.hasProperty('headless')
 wpi.sim.addDriverstation()
 
 // Setting up my Jar File. In this case, adding all libraries into the main jar ('fat jar')
