@@ -5,6 +5,7 @@
 package frc.robot;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import edu.wpi.first.hal.HAL;
@@ -42,10 +43,15 @@ class RobotLifecycleTest {
 
   @AfterEach
   void teardown() throws InterruptedException {
-    robot.endCompetition();
-    robotThread.join(1000);
-    robot.close();
-    SimHooks.resumeTiming();
+    try {
+      robot.endCompetition();
+      robotThread.join(1000);
+      assertFalse(robotThread.isAlive(),
+          "startCompetition() loop should have exited within 1s of endCompetition()");
+      robot.close();
+    } finally {
+      SimHooks.resumeTiming();
+    }
   }
 
   @Test

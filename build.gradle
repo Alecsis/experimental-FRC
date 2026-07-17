@@ -92,8 +92,16 @@ test {
     // Forks a fresh JVM per test CLASS (Gradle semantics, not per method): Vision/Intake/
     // Shooter/Superstructure are Singletons with no reset hook, so reusing a JVM across test
     // classes would cross-wire a later class's Robot with an earlier class's cached singleton
-    // instances. Within a class, methods still share one JVM -- see RobotLifecycleTest, which
-    // is deliberately kept to a single @Test method for exactly this reason.
+    // instances. Within a class, methods still share one JVM -- see RobotLifecycleTest and
+    // SuperstructureEjectingTest, each deliberately kept to a single @Test method for exactly
+    // this reason.
+    //
+    // Any test that boots Robot must drive the real startCompetition() loop on a background
+    // thread via DriverStationSim/SimHooks, never call disabledInit()/autonomousInit()/etc.
+    // directly: AdvantageKit's Logger.periodicBeforeUser()/periodicAfterUser() -- which flush
+    // recordOutput() calls to the data receivers and back every getter these tests assert on --
+    // only run inside that loop. A direct-call test would pass while proving nothing. See
+    // docs/superpowers/plans/2026-07-17-phase3-imu-mode-junit-test.md for how this was found.
     forkEvery = 1
 }
 
