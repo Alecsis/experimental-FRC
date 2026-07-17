@@ -206,6 +206,7 @@ public class Vision extends SubsystemBase {
       // Fix C -- std-dev floor: without this, a close-range/high-tag-count read can drive dev toward
       // 0, telling the Kalman filter to treat a single frame as perfectly trustworthy.
       double dev = Math.max(Constants.kVisionStdDevMinMeters, Constants.kVisionStdDevCoefficient * trust);
+      Logger.recordOutput("Vision/AcceptedStdDevMeters", dev);
 
       drivetrain.addVisionMeasurement(
           measuredPose, inputs.timestampSeconds[i], VecBuilder.fill(dev, dev, 999999));
