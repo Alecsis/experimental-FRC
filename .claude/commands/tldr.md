@@ -27,15 +27,14 @@ cd "C:/Users/xdm/Claude/experimental-FRC" && ./gradlew compileJava
 
 If `compileJava` was not run this session, say so — do not write "compiling cleanly" on faith.
 
-## Step 1 — Update `CLAUDE.md`
+## Step 1 — Update `CLAUDE.md`, `docs/claudex/history.md`, and `docs/claudex/architecture.md`
 
-Edit **only** the `## 🕒 Current Task State` section, surgically:
-- Move finished items into **Done**, with the file paths that prove it.
-- Update **Next up** so the next session knows where to start.
-- Add anything new to **Backlog** / **Static Calibrations Needed**.
-- Refresh the `*Verified against the tree on <date> at commit <sha>*` line to the real current date and SHA.
+`CLAUDE.md` is a slim current-state snapshot, not the changelog — as of 2026-07-17 the `Done` log and the Verification Loop mechanics live under `docs/claudex/`. Edit surgically:
+- In `CLAUDE.md`'s `## 🕒 Current Task State`: update **Next up** so the next session knows where to start, add anything new to **Backlog** / **Static Calibrations Needed**, and refresh the `*Verified against the tree on <date> at commit <sha>*` line to the real current date and SHA. Do **not** add a `Done` list here.
+- In `docs/claudex/history.md`: append finished items to the **bottom** of the changelog, with the file paths and verification evidence that prove them. This is where "Done" entries go now.
+- In `docs/claudex/architecture.md`: update this if the session established or revised an architecture decision (a new sanctioned exception, a closed vendor leak, a Superstructure rule change, a newly-accepted or newly-closed gap). Leave it alone otherwise.
 
-Leave the rest of the file alone unless the user asked otherwise.
+Leave the rest of `CLAUDE.md` alone unless the user asked otherwise.
 
 ## Step 2 — Write the session note to the vault
 
