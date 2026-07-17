@@ -84,6 +84,8 @@ def main():
                     help="seconds to let the sim run after init (default 12)")
     ap.add_argument("--echo", action="store_true",
                     help="echo every sim/gradle output line")
+    ap.add_argument("--parse", action="store_true",
+                    help="on PASS, chain straight into parse_akit_log.py on the newest logs/*.wpilog")
     args = ap.parse_args()
 
     print(f"🤖 Launching headless sim: {' '.join(gradle_cmd())}")
@@ -157,6 +159,21 @@ def main():
           "periodic loops with no exceptions.")
     print("   Scope: launch/construction only — no commands or state-machine "
           "behavior were exercised (sim boots disabled, no DS attached).")
+
+    log_dir = PROJECT_ROOT / "logs"
+    wpilogs = sorted(log_dir.glob("*.wpilog"), key=lambda p: p.stat().st_mtime) if log_dir.is_dir() else []
+    if wpilogs:
+        newest = wpilogs[-1]
+        print(f"📄 Newest log: {newest}")
+        if args.parse:
+            parser_script = PROJECT_ROOT / "SKILLS" / "parse_akit_log.py"
+            print(f"--- Parsing {newest.name} ---")
+            subprocess.run([sys.executable, str(parser_script), str(newest)], cwd=str(PROJECT_ROOT))
+    else:
+        print("⚠️  No logs/*.wpilog found — SIM mode should have written one this run.")
+        if args.parse:
+            print("   --parse requested but there is nothing to parse.")
+
     sys.exit(0)
 
 
