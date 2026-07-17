@@ -26,7 +26,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandGenericHID;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -35,10 +34,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.intake.Intake;
-import frc.robot.subsystems.intake.Intake.Roller;
-import frc.robot.subsystems.intake.Intake.PivotState;
 import frc.robot.subsystems.shooter.Shooter;
-import frc.robot.subsystems.shooter.Shooter.indexing;
 import frc.robot.subsystems.shooter.Shooter.Agitate;
 import frc.robot.subsystems.superstructure.Superstructure;
 import frc.robot.subsystems.vision.Vision;
@@ -81,10 +77,16 @@ public class RobotContainer {
                                 "Shooting Sequence", superstructure.shootingSequence(5.0));
                 NamedCommands.registerCommand(
                                 "Quick Shooting", superstructure.shootingSequence(3.0));
+                // Deliberately NOT superstructure.intakeCmd() -- INTAKING drives the roller directly with
+                // no jam handling, and jam-reverse protection hasn't been migrated into Intake or the state
+                // machine yet. Swapping this registration would silently drop stall protection from autos.
+                // Don't move this to the Superstructure until jam handling has a new home.
                 NamedCommands.registerCommand(
                                 "Intake Start Sequence", Commands.parallel(
                                                 intake.intakeJamReverse(),
                                                 Commands.runOnce(() -> shooter.setAgitator(Agitate.IN))));
+                // Paired with "Intake Start Sequence" above -- kept at the same mechanism-level as its
+                // start command for the same reason (not yet safe to route through the state machine).
                 NamedCommands.registerCommand(
                                 "Intake Stop", intake.stopRoller());
                 autoChooser = AutoBuilder.buildAutoChooser();
@@ -96,16 +98,14 @@ public class RobotContainer {
 
         private void dashboard() {
                 SmartDashboard.putData(shooter);
-                SmartDashboard.putData("Index Run", new InstantCommand(() -> shooter.indexControl(indexing.INDEX)));
-                SmartDashboard.putData("Index Stop", new InstantCommand(() -> shooter.indexControl(indexing.STOP)));
-                SmartDashboard.putData("Index Eject", new InstantCommand(() -> shooter.indexControl(indexing.EJECT)));
-                SmartDashboard.putData("Stop Shooter", new InstantCommand(() -> shooter.targetRPMShooter(0)));
-                SmartDashboard.putData("Agitator", new InstantCommand(() -> shooter.setAgitator(Agitate.IN)));
-                SmartDashboard.putData("Agitator Stop", new InstantCommand(() -> shooter.setAgitator(Agitate.STOP)));
-                SmartDashboard.putData("Set Pivot Up", new InstantCommand(() -> intake.goTo(Intake.PivotState.STOW)));
-                SmartDashboard.putData("Set Pivot Down", new InstantCommand(() -> intake.goTo(Intake.PivotState.DOWN)));
-                SmartDashboard.putData("Intake", new InstantCommand(() -> intake.setRoller(Roller.INTAKE)));
-                SmartDashboard.putData("Intake Stop", new InstantCommand(() -> intake.setRoller(Roller.STOP)));
+                // State-machine-respecting dashboard actions only -- these route through Superstructure
+                // so testing from the dashboard can't fight the periodic() arbitration the way raw
+                // subsystem InstantCommands used to (e.g. dashboard "Intake" + operator "Eject" held
+                // at once used to fight over the roller; now both funnel into the same wanted-state).
+                SmartDashboard.putData("State: Intake", superstructure.intakeCmd());
+                SmartDashboard.putData("State: Eject", superstructure.ejectCmd());
+                SmartDashboard.putData("State: Stow", superstructure.stowCmd());
+                SmartDashboard.putData("State: Shoot", superstructure.shootCmd());
                 SmartDashboard.putData("Auto Chooser", autoChooser);
         }
 
