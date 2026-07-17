@@ -39,4 +39,3 @@ To ensure elite execution, strictly adhere to these behaviors:
 - **Intake refactor:** 100% complete. `subsystems/intake/` now holds `IntakeIO.java`, `IntakeIOReal.java`, `IntakeIOSim.java`, and `Intake.java` (Singleton via `getInstance()`, zero vendor imports). Compiling cleanly.
 - **Shooter refactor:** 100% complete. `subsystems/shooter/` now holds `ShooterIO.java`, `ShooterIOReal.java`, `ShooterIOSim.java`, and `Shooter.java` (Singleton via `getInstance()`, zero vendor imports). Compiling cleanly.
 - **Known placeholders to revisit:** sim physical constants (masses, lengths, MOIs) in `Constants.java` are estimates marked `TODO`; `IntakeIOSim`/`ShooterIOSim` assume Kraken X60 motors, and the Shooter agitator sim assumes a plain NEO in place of the real NEO 550 (no `DCMotor.getNEO550()` factory was confirmed available).
-- **Next step on resume:** Begin **Phase 2: Vision and Limelight isolation.**
