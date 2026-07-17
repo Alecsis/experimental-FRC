@@ -146,6 +146,11 @@ public class Vision extends SubsystemBase {
     currentIMUMode = mode;
   }
 
+  /** The IMU mode most recently sent via {@link #setIMUMode(int)}. */
+  public int getIMUMode() {
+    return currentIMUMode;
+  }
+
   /** Forwards to the active VisionIO implementation. See {@link VisionIO#setIMUAssistAlpha}. */
   public void setIMUAssistAlpha(double alpha) {
     io.setIMUAssistAlpha(alpha);
