@@ -42,6 +42,7 @@ public class Intake extends SubsystemBase {
   private boolean homed = false;
   private boolean deploy = false;
   private boolean sysIdActive = false;
+  private Roller currentRoller = Roller.STOP;
 
   public enum Roller {
     STOP(0),
@@ -105,7 +106,13 @@ public class Intake extends SubsystemBase {
     } else {
       io.setRollerVelocity(RotationsPerSecond.of(state.getRPM() / 60.0).in(RadiansPerSecond));
     }
+    currentRoller = state;
     Logger.recordOutput("Intake/TargetState", state);
+  }
+
+  /** The roller state most recently sent via {@link #setRoller(Roller)}. */
+  public Roller getRollerState() {
+    return currentRoller;
   }
 
   private boolean isJammed() {
