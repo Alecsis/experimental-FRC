@@ -190,10 +190,22 @@ public class Vision extends SubsystemBase {
         continue;
       }
 
-      double trust = inputs.avgTagDist[i] * (1.0 / inputs.tagCount[i]);
-      double dev = Constants.kVisionStdDevCoefficient * trust;
       Pose2d measuredPose = new Pose2d(
           inputs.poseX[i], inputs.poseY[i], new Rotation2d(inputs.poseThetaRad[i]));
+
+      // Fix B -- innovation gate: reject a reading that teleports too far from the current estimate
+      // instead of trusting it outright. A single bad/ambiguous MegaTag2 solve can look otherwise
+      // valid (tagCount>0, avgTagDist within range, nonzero X/Y) while still being wrong.
+      double jumpMeters = measuredPose.getTranslation().getDistance(drivetrain.getState().Pose.getTranslation());
+      if (jumpMeters > Constants.kMaxVisionJumpMeters) {
+        Logger.recordOutput("Vision/RejectedJumpMeters", jumpMeters);
+        continue;
+      }
+
+      double trust = inputs.avgTagDist[i] * (1.0 / inputs.tagCount[i]);
+      // Fix C -- std-dev floor: without this, a close-range/high-tag-count read can drive dev toward
+      // 0, telling the Kalman filter to treat a single frame as perfectly trustworthy.
+      double dev = Math.max(Constants.kVisionStdDevMinMeters, Constants.kVisionStdDevCoefficient * trust);
 
       drivetrain.addVisionMeasurement(
           measuredPose, inputs.timestampSeconds[i], VecBuilder.fill(dev, dev, 999999));
