@@ -103,14 +103,16 @@ When the user invokes `/tldr`, immediately:
 See `.claude/commands/tldr.md` for the full command definition.
 
 ## 🔁 Advanced Agent Verification Loop
-*Adopted 2026-07-17 after the SKILLS/ audit. Every agent session verifies changes through this lifecycle. "Caveman debugging" — eyeballing code, or trusting a script's printed "SUCCESS" without knowing what it measured — is rejected.*
+*Adopted 2026-07-17 after the SKILLS/ audit. "Caveman debugging" — eyeballing code, or trusting a script's printed "SUCCESS" without knowing what it measured — is banned outright.*
+
+**Mandate: every agent workflow that modifies robot code MUST pass gate 1 and gate 2 (`python SKILLS/run_headless_sim.py`; use `python3` on POSIX shells) before claiming completion.** Gate 3 runs whenever a `.wpilog` exists for the claim being verified. A skipped gate means the claim is reported UNVERIFIED — no exceptions.
 
 ### The lifecycle (run in order; stop at the first failing gate)
 1. **Static gate:** `./gradlew compileJava` exits 0 (with `JAVA_HOME` → WPILib JDK 17, see Build & Test Commands). Never claim a change works before this passes.
 2. **Runtime launch gate:** `python SKILLS/run_headless_sim.py`. Launches `gradlew simulateJava -Pheadless=true --no-daemon` (build.gradle disables the sim GUI when `-Pheadless` is set), sets `JAVA_HOME` itself, waits up to 420 s for `********** Robot program starting **********`, then lets the sim run a 12 s settle window and kills the full process tree (`taskkill /T` on Windows).
    - **A PASS proves:** the build compiled, every subsystem/Superstructure singleton constructed without throwing, and disabled-mode periodic loops ran clean.
    - **A PASS does NOT prove:** any command or state-machine *behavior*. The headless sim boots **disabled with no driver station attached**, so the scheduler never runs `intakeCmd()`/`ejectCmd()`/`shootCmd()`. Behavior claims require a JUnit test driving `DriverStationSim`/`SimHooks`, or an interactive `simulateJava` session with the GUI.
-3. **Evidence gate:** `python SKILLS/parse_akit_log.py <file.wpilog>` — a real WPILOG v1.0 binary parser (entry table, record counts, `--dump`, and `--pose-entry`/`--jump-threshold` frame-to-frame pose-jump analysis for `struct:Pose2d`/`double[3]` entries). Every number it prints is computed from the log bytes.
+3. **Evidence gate:** `python SKILLS/parse_akit_log.py <file.wpilog>` — a real WPILOG v1.0 binary parser (entry table, record counts, `--dump`, and `--pose-entry`/`--jump-threshold` frame-to-frame pose-jump analysis for `struct:Pose2d`/`double[3]` entries). Every number it prints is computed from the log bytes. Hardened 2026-07-17 against three spec edge cases verified by synthetic-log self-test: records are sorted by timestamp before analysis (the spec does not guarantee order), entry-ID reuse after a Finish record no longer drops the earlier entry's data, and all standard array types (`boolean[]`/`int64[]`/`float[]`/`string[]`/`double[]`) decode.
    - **Known gaps that block evidence today:** `Robot.java` adds a `WPILOGWriter` only in REAL/REPLAY — **SIM logs to NT4 only**, so a sim run produces no `.wpilog` to parse. And nothing logs the Limelight IMU mode (`Vision` logs pose/std-dev outputs, not the mode). Until a SIM `WPILOGWriter` and a `Vision/IMUMode` output exist, **no log can confirm the `IMUMode(4)` auto fix — do not claim it is verified.**
 
 ### Honesty rules (non-negotiable)
