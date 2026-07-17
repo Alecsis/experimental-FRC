@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
+import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
@@ -175,6 +176,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             SwerveModuleConstants<?, ?, ?>... modules) {
         super(drivetrainConstants, MapleSimSwerveDrivetrain.regulateModuleConstantsForSimulation(modules));
         moduleConstantsForSim = modules;
+        logCancoderBootReadings();
         if (Utils.isSimulation()) {
             startSimThread();
         }
@@ -203,6 +205,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         super(drivetrainConstants, odometryUpdateFrequency,
                 MapleSimSwerveDrivetrain.regulateModuleConstantsForSimulation(modules));
         moduleConstantsForSim = modules;
+        logCancoderBootReadings();
         if (Utils.isSimulation()) {
             startSimThread();
         }
@@ -245,10 +248,51 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         super(drivetrainConstants, odometryUpdateFrequency, odometryStandardDeviation, visionStandardDeviation,
                 MapleSimSwerveDrivetrain.regulateModuleConstantsForSimulation(modules));
         moduleConstantsForSim = modules;
+        logCancoderBootReadings();
         if (Utils.isSimulation()) {
             startSimThread();
         }
         configureAutoBuilder();
+    }
+
+    /**
+     * CANcoder boot barrier: blocks construction (real hardware only) until every module's
+     * CANcoder has published a fresh absolute reading over the CAN bus, then logs each
+     * module's first reading so startup state is auditable against the TunerConstants
+     * offsets. The magnet offsets themselves are applied inside super() by the generated
+     * SwerveDrivetrain -- this cannot run earlier without leaving the generated flow, but
+     * it guarantees no code after construction ever sees a stale/cached absolute position.
+     */
+    private void logCancoderBootReadings() {
+        // Sim CANcoders are driven by the maple-sim thread, which hasn't started yet at
+        // construction time -- a blocking wait here would stall desktop startup on signals
+        // that never arrive. Real readings only.
+        if (Utils.isSimulation()) {
+            return;
+        }
+
+        final String[] moduleLabels = { "FL", "FR", "BL", "BR" };
+        BaseStatusSignal[] absoluteSignals = new BaseStatusSignal[moduleLabels.length];
+        for (int i = 0; i < moduleLabels.length; i++) {
+            absoluteSignals[i] = getModule(i).getEncoder().getAbsolutePosition();
+        }
+
+        var status = BaseStatusSignal.waitForAll(1.5, absoluteSignals);
+        if (!status.isOK()) {
+            DriverStation.reportWarning(
+                    "CANcoder boot barrier: no fresh data within 1.5 s (" + status
+                            + "); readings below may be stale.",
+                    false);
+        }
+
+        for (int i = 0; i < moduleLabels.length; i++) {
+            double rotations = absoluteSignals[i].getValueAsDouble();
+            int deviceId = getModule(i).getEncoder().getDeviceID();
+            System.out.printf(
+                    "CANcoder boot read %s (id %d): %.12f rot [%s]%n",
+                    moduleLabels[i], deviceId, rotations, absoluteSignals[i].getStatus());
+            Logger.recordOutput("Drive/CancoderBootReadRotations/" + moduleLabels[i], rotations);
+        }
     }
 
     private void configureAutoBuilder() {

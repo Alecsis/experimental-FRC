@@ -68,7 +68,6 @@ public class RobotContainer {
         public static Shooter shooter = Shooter.getInstance();
         private final Vision vision = Vision.getInstance(drivetrain);
         private final Superstructure superstructure = Superstructure.getInstance(drivetrain);
-        private boolean ctrlBtn;
         private SendableChooser<Command> autoChooser;
 
         public RobotContainer() {
@@ -110,7 +109,10 @@ public class RobotContainer {
                 SmartDashboard.putData("Auto Chooser", autoChooser);
         }
 
-        /** Called every scheduler run from {@link Robot#robotPeriodic()} to publish live dashboard values. */
+        /**
+         * Called every scheduler run from {@link Robot#robotPeriodic()} to publish live
+         * dashboard values.
+         */
         public void periodic() {
                 SmartDashboard.putNumber("Current Speed Up/Down", -joystick.getLeftY() * MaxSpeed);
                 SmartDashboard.putNumber("Current Speed Right/Left", -joystick.getLeftX() * MaxSpeed);
@@ -155,14 +157,17 @@ public class RobotContainer {
 
                 // }
 
-                // run quasistatic sysid routine on button hold, with forward and reverse directions then do dynamic
+                // run quasistatic sysid routine on button hold, with forward and reverse
+                // directions then do dynamic
                 // drivetrain
                 sysid.leftBumper().onTrue(Commands.runOnce(drivetrain::useTranslationSysId));
                 sysid.leftTrigger().onTrue(Commands.runOnce(drivetrain::useSteerSysId));
                 sysid.rightTrigger().onTrue(Commands.runOnce(drivetrain::useRotationSysId));
 
-                sysid.y().and(sysid.leftBumper()).whileTrue(drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
-                sysid.a().and(sysid.leftBumper()).whileTrue(drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
+                sysid.y().and(sysid.leftBumper())
+                                .whileTrue(drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
+                sysid.a().and(sysid.leftBumper())
+                                .whileTrue(drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
                 sysid.b().and(sysid.leftBumper()).whileTrue(drivetrain.sysIdDynamic(SysIdRoutine.Direction.kForward));
                 sysid.x().and(sysid.leftBumper()).whileTrue(drivetrain.sysIdDynamic(SysIdRoutine.Direction.kReverse));
                 // Reset the field-centric headiazng on left bumper press.
@@ -178,83 +183,31 @@ public class RobotContainer {
                 joystick.x().whileTrue(drivetrain.driveToPOI(POI.LeftStage));
                 joystick.y().whileTrue(drivetrain.driveToPOI(POI.CenterStage));
                 joystick.b().whileTrue(drivetrain.driveToPOI(POI.RightStage));
+                /*
+                 * Operator control board -- pure routing into Superstructure state requests.
+                 * Manual fixed-RPM shooting lives behind the "Shooter Tuning Mode" dashboard
+                 * toggle, which shootCmd() honors through the Superstructure's RPM arbitration.
+                 */
                 controlBox.button(2).whileTrue(superstructure.shootCmd());
-                controlBox.button(1).onTrue(Commands.runOnce(() -> shooter.targetRPMShooter(1600)));
-                controlBox.button(1)
-                                .whileTrue(Commands.sequence(
-                                                Commands.waitUntil(
-                                                                () -> shooter.shooterAtSpeed(shooter.getTargetRPM())),
-                                                Commands.run(() -> {
-                                                        shooter.indexControl(Shooter.indexing.INDEX);
-                                                        shooter.setAgitator(Shooter.Agitate.IN);
-                                                })));
-
-                controlBox.button(1).onFalse(Commands.runOnce(() -> {
-                        shooter.targetRPMShooter(1000);
-                        shooter.indexControl(Shooter.indexing.STOP);
-                        shooter.setAgitator(Shooter.Agitate.STOP);
-                }));
-                /*
-                 * controlBox.button(2).onFalse(Commands.runOnce(() -> {
-                 * shooter.targetRPMShooter(800);
-                 * shooter.indexControl(Shooter.indexing.STOP);
-                 * shooter.setAgitator(Shooter.Agitate.STOP);
-                 * }));
-                 */
-                controlBox.button(4).whileTrue(Commands.runOnce(() -> {
-                        shooter.indexControl(indexing.EJECT);
-                        shooter.setAgitator(Agitate.OUT);
-                }));
-                controlBox.button(4).onFalse(Commands.runOnce(() -> {
-
-                        shooter.indexControl(indexing.STOP);
-                        shooter.setAgitator(Agitate.STOP);
-
-                }));
-                /*
-                 * 
-                 * controlBox.button(2).whileFalse(
-                 * Commands.sequence(
-                 * Commands.runOnce(() -> shooter.targetRPMShooter(0)),
-                 * Commands.runOnce(() -> shooter.indexControl(indexing.STOP)))
-                 * );
-                 */
-                // operator.a().whileTrue(shooter.index());
-                // operator.b().whileTrue(shooter.indexEject());
-                controlBox.button(3).whileTrue(intake.eject()); // inverted
-                controlBox.button(3).onFalse(Commands.either(intake.intake(), intake.stopRoller(), () -> ctrlBtn));
-
-                controlBox.button(6).whileTrue(intake.intake()); // inverted
-                controlBox.button(6).whileTrue(Commands.run(() -> {
-                        shooter.setAgitator(Agitate.OUT);
-                        ctrlBtn = true;
-                }));
-                controlBox.button(6).onFalse(intake.stopRoller()); // inverted
-                controlBox.button(6).onFalse(Commands.runOnce(() -> {
-                        shooter.setAgitator(Agitate.STOP);
-                        ctrlBtn = false;
-                }));
-                controlBox.button(5).whileTrue(intake.agitatePivot());
-                controlBox.button(5).whileTrue(intake.intake());
-                controlBox.button(5).onFalse(Commands.either(intake.intake(), intake.stopRoller(), () -> ctrlBtn));
+                controlBox.button(6).whileTrue(superstructure.intakeCmd());
+                controlBox.button(3).whileTrue(superstructure.ejectCmd());
 
                 if (edu.wpi.first.wpilibj.RobotBase.isSimulation()) {
                         // 1. Override default drivetrain command with Port 3 Controller
                         drivetrain.setDefaultCommand(
-                                drivetrain.applyRequest(() -> drive
-                                        .withVelocityX(-simController.getLeftY() * MaxSpeed)
-                                        .withVelocityY(-simController.getLeftX() * MaxSpeed)
-                                        .withRotationalRate(-simController.getRightX() * MaxAngularRate)
-                                )
-                        );
+                                        drivetrain.applyRequest(() -> drive
+                                                        .withVelocityX(-simController.getLeftY() * MaxSpeed)
+                                                        .withVelocityY(-simController.getLeftX() * MaxSpeed)
+                                                        .withRotationalRate(
+                                                                        -simController.getRightX() * MaxAngularRate)));
 
                         // 2. Vision Target Tracking (Hold Right Bumper or Right Trigger)
                         simController.rightBumper().whileTrue(
-                                drivetrain.trackHub(vision, MaxSpeed, simController::getLeftX, simController::getLeftY, false)
-                        );
+                                        drivetrain.trackHub(vision, MaxSpeed, simController::getLeftX,
+                                                        simController::getLeftY, false));
                         simController.rightTrigger().whileTrue(
-                                drivetrain.trackPassTarget(vision, MaxSpeed, simController::getLeftX, simController::getLeftY, false)
-                        );
+                                        drivetrain.trackPassTarget(vision, MaxSpeed, simController::getLeftX,
+                                                        simController::getLeftY, false));
 
                         // 3. Reset Gyro & Heading (Left Bumper)
                         simController.leftBumper().onTrue(Commands.runOnce(() -> {
@@ -262,42 +215,10 @@ public class RobotContainer {
                                 vision.getPoseResetEstimate().ifPresent(drivetrain::resetPose);
                         }));
 
-                        // 4. Manual Shooter Spin-Up Macro (Left Trigger)
-                        // When pressed: Spin up shooter to 1600 RPM
-                        simController.leftTrigger().onTrue(Commands.runOnce(() -> shooter.targetRPMShooter(1600)));
-                        // While held: Wait until at speed, then index & agitate
-                        simController.leftTrigger().whileTrue(Commands.sequence(
-                                Commands.waitUntil(() -> shooter.shooterAtSpeed(shooter.getTargetRPM())),
-                                Commands.run(() -> {
-                                        shooter.indexControl(Shooter.indexing.INDEX);
-                                        shooter.setAgitator(Shooter.Agitate.IN);
-                                })
-                        ));
-                        // When released: Drop to idle RPM and stop indexing/agitating
-                        simController.leftTrigger().onFalse(Commands.runOnce(() -> {
-                                shooter.targetRPMShooter(1000);
-                                shooter.indexControl(Shooter.indexing.STOP);
-                                shooter.setAgitator(Shooter.Agitate.STOP);
-                        }));
-
-                        // 5. Automatic Superstructure Shoot (A Button)
+                        // 4. Superstructure routing -- mirrors the operator control board
                         simController.a().whileTrue(superstructure.shootCmd());
-
-                        // 6. Floor Intake (X Button)
-                        simController.x().whileTrue(intake.intake());
-                        simController.x().whileTrue(Commands.run(() -> {
-                                shooter.setAgitator(Agitate.OUT);
-                                ctrlBtn = true;
-                        }));
-                        simController.x().onFalse(intake.stopRoller());
-                        simController.x().onFalse(Commands.runOnce(() -> {
-                                shooter.setAgitator(Agitate.STOP);
-                                ctrlBtn = false;
-                        }));
-
-                        // 7. Intake Eject (B Button)
-                        simController.b().whileTrue(intake.eject());
-                        simController.b().onFalse(Commands.either(intake.intake(), intake.stopRoller(), () -> ctrlBtn));
+                        simController.x().whileTrue(superstructure.intakeCmd());
+                        simController.b().whileTrue(superstructure.ejectCmd());
                 }
         }
 

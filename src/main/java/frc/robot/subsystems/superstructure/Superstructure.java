@@ -29,7 +29,7 @@ public class Superstructure extends SubsystemBase {
   private static final double kIdleRPM = 700;
 
   public enum SuperstructureState {
-    OFF, INTAKING, STOWED, ALIGNING, SHOOTING
+    OFF, INTAKING, EJECTING, STOWED, ALIGNING, SHOOTING
   }
 
   private static Superstructure instance;
@@ -86,6 +86,11 @@ public class Superstructure extends SubsystemBase {
     mWantedState = SuperstructureState.INTAKING;
   }
 
+  /** Requests reverse/eject: intake down, roller and indexer running backwards (unjam / dump). */
+  public void requestEject() {
+    mWantedState = SuperstructureState.EJECTING;
+  }
+
   /** Returns to the idle/ready posture -- shoot button released, intaking finished, shot completed, etc. */
   public void requestStow() {
     mWantedState = SuperstructureState.STOWED;
@@ -131,6 +136,21 @@ public class Superstructure extends SubsystemBase {
     return Commands.startEnd(this::requestShoot, this::requestStow, this);
   }
 
+  /** Hold-to-intake: floor intake while held, stow on release. */
+  public Command intakeCmd() {
+    return Commands.startEnd(this::requestIntake, this::requestStow, this);
+  }
+
+  /** Hold-to-eject: intake down with roller and indexer reversed while held, stow on release. */
+  public Command ejectCmd() {
+    return Commands.startEnd(this::requestEject, this::requestStow, this);
+  }
+
+  /** Self-finishing: return everything to the idle/ready posture. */
+  public Command stowCmd() {
+    return Commands.runOnce(this::requestStow, this);
+  }
+
   /** Bridges the state machine into a bounded, self-finishing Command for autonomous/NamedCommands. */
   public Command shootingSequence(double timeoutSeconds) {
     return Commands.sequence(
@@ -151,18 +171,30 @@ public class Superstructure extends SubsystemBase {
         shooter.targetRPMShooter(0);
         shooter.indexControl(Shooter.indexing.STOP);
         shooter.setAgitator(Shooter.Agitate.STOP);
+        intake.setRoller(Roller.STOP);
         break;
 
       case STOWED:
         shooter.indexControl(Shooter.indexing.STOP);
         shooter.setAgitator(Shooter.Agitate.STOP);
         shooter.targetRPMShooter(kIdleRPM);
+        intake.setRoller(Roller.STOP);
         intake.goTo(Intake.PivotState.DOWN);
         break;
 
       case INTAKING:
         intake.goTo(Intake.PivotState.DOWN);
         intake.setRoller(Roller.INTAKE);
+        // Matches the old teleop intake binding: agitator runs outward while intaking so
+        // incoming fuel doesn't pack against the indexer.
+        shooter.setAgitator(Shooter.Agitate.OUT);
+        break;
+
+      case EJECTING:
+        intake.goTo(Intake.PivotState.DOWN);
+        intake.setRoller(Roller.EJECT);
+        shooter.indexControl(Shooter.indexing.EJECT);
+        shooter.setAgitator(Shooter.Agitate.OUT);
         break;
 
       case ALIGNING:
