@@ -42,8 +42,10 @@ export JAVA_HOME="/c/Users/Public/wpilib/2026/jdk"   # Temurin 17.0.16
 
 ## 📐 Architecture Rules
 1. **Strict Hardware Isolation:** No vendor hardware APIs (CTRE Phoenix, REVLib, etc.) are allowed in standard subsystem files. They must live strictly inside `*IOReal.java` implementations.
+   - **Sanctioned vendor exception (decided 2026-07-16):** `subsystems/CommandSwerveDrivetrain.java` and `utility/simulation/MapleSimSwerveDrivetrain.java` are the **singular** sanctioned exception to this rule. They are CTRE Tuner X / swerve-generator output and stay vendor-inline rather than wrapped in a `DriveIO` — regenerating them from Tuner X would otherwise conflict with a hand-maintained IO wrapper. Every other file must stay vendor-free.
+   - **Utility layer is NOT exempt.** `utility/HubActiveState.java` used to import `com.ctre.phoenix6` (`HootAutoReplay`, `Utils`) directly for Hoot auto-log/auto-replay. That hookup is now isolated in `utility/HootReplayBridge.java` (package-private, the only file in `utility/` that touches Phoenix 6); `HubActiveState.java` itself is vendor-free.
 2. **Singleton Subsystems:** Every subsystem and the `Superstructure` must implement the Singleton pattern (`private` constructor and `public static Subsystem getInstance()`).
-3. **Centralized States:** The `Superstructure` coordinates complex multi-subsystem states. Subsystems themselves only handle their immediate mechanism control.
+3. **Centralized States:** The `Superstructure` coordinates complex multi-subsystem states via a `SuperstructureState` enum (`OFF`, `INTAKING`, `STOWED`, `ALIGNING`, `SHOOTING`) and a `periodic()` switch-case that commands Shooter/Intake/Vision directly. `shootCmd()`/`shootingSequence(double)` are thin Command bridges kept only because RobotContainer's `whileTrue` binding and PathPlanner's NamedCommands both require real Command objects — the actual arbitration logic lives in `periodic()`, not in composed Commands. Subsystems themselves still only handle their own immediate mechanism control (e.g. `Intake.agitatePivot()` stays owned by Intake; Superstructure schedules/cancels it as a unit rather than reimplementing its oscillation).
 
 ## 🧠 Karpathy Guidelines (Anti-Failure Mode Protocol)
 To ensure elite execution, strictly adhere to these behaviors:
@@ -54,30 +56,29 @@ To ensure elite execution, strictly adhere to these behaviors:
 - **Don't Invent Files:** If the user references a class that does not exist in `src/` (e.g. `FuelSim`), say so and stop. Do not create it from a reference-directory copy, and do not edit files under `temp_reference/`.
 
 ## 🕒 Current Task State
-*Verified against the tree on 2026-07-16 at commit `d32388a`. `./gradlew compileJava` exits 0 (2 deprecation warnings).*
+*Verified against the tree on 2026-07-16 at commit `39c7fee` + uncommitted working-tree changes (Vision/Superstructure/HubActiveState refactor, PathPlanner sync — not yet committed). `./gradlew compileJava` exits 0, 0 warnings.*
 
 ### Done
 - **Intake refactor:** complete. `subsystems/intake/` holds `IntakeIO.java`, `IntakeIOReal.java`, `IntakeIOSim.java`, `Intake.java` (Singleton via `getInstance()`, zero vendor imports).
 - **Shooter refactor:** complete. `subsystems/shooter/` holds `ShooterIO.java`, `ShooterIOReal.java`, `ShooterIOSim.java`, `Shooter.java` (Singleton via `getInstance()`, zero vendor imports).
-- **Phase 2 — Vision/Limelight isolation:** complete in the subsystem layer. `subsystems/vision/` holds `VisionIO.java`, `VisionIOReal.java`, `VisionIOSim.java`, `Vision.java` (Singleton via `getInstance(drivetrain)`). `LimelightHelpers` is imported only by `VisionIOReal.java`. One leak remains outside the subsystem — see Phase 3 below.
-- **Superstructure:** exists as a Singleton (`getInstance(drivetrain)`) and owns `shootCmd()` + `shootingSequence(timeout)`, composing Shooter + Intake + Vision.
+- **Vision/Limelight isolation — complete end-to-end (Phase 2 + Phase 3, 2026-07-16):** `subsystems/vision/` holds `VisionIO.java`, `VisionIOReal.java`, `VisionIOSim.java`, `Vision.java` (Singleton via `getInstance(drivetrain)`). `LimelightHelpers` is imported only by `VisionIOReal.java`. Phase 3 closed the last leak: `VisionIO` gained `setIMUMode(int)`/`setIMUAssistAlpha(double)`; `Robot.java` now goes through `Vision.getInstance(...)` exclusively (no `LimelightHelpers` import anywhere outside `VisionIOReal.java`).
+- **Superstructure — now a real 254-style state machine (2026-07-16):** Singleton via `getInstance(drivetrain)`. `SuperstructureState` enum (`OFF`/`INTAKING`/`STOWED`/`ALIGNING`/`SHOOTING`) + `periodic()` switch-case arbitration commands Shooter/Intake/Vision directly each tick (RPM targeting, indexer/agitator control, align→shoot phase transitions with teleop-vs-auto timing). `shootCmd()`/`shootingSequence(double)` are thin Command bridges (`requestShoot()`/`requestStow()` underneath) kept only because RobotContainer's `whileTrue` binding and PathPlanner's NamedCommands both require real Command objects — no change needed in `RobotContainer.java`.
+- **Utility vendor isolation (2026-07-16):** `utility/HubActiveState.java` no longer imports `com.ctre.phoenix6` directly. The Hoot auto-log/auto-replay hookup (`HootAutoReplay`, `Utils`) is isolated in new `utility/HootReplayBridge.java` (package-private, the sole vendor-touching file in `utility/`).
+- **`CommandSwerveDrivetrain` vendor-exception decision (2026-07-16):** recorded in Architecture Rule 1 — `CommandSwerveDrivetrain.java` / `MapleSimSwerveDrivetrain.java` are the singular sanctioned Phoenix 6 exception, left un-wrapped.
+- **Deprecation & hygiene fixes (2026-07-16):** `AprilTagFields.loadAprilTagLayoutField()` replaced with `AprilTagFieldLayout.loadField(AprilTagFields)` at `FieldConstants.java:20` and `Vision.java:35`. Stale `@Logged` (Epilogue) annotation removed from `Robot.java`. The 3 dead `SmartDashboard` writes in `RobotContainer.java` moved into a new `RobotContainer.periodic()` called from `Robot.robotPeriodic()`, so they publish live instead of once at boot. `ShooterIOSim`'s agitator now uses `DCMotor.getNeo550(1)` (confirmed real hardware via `ShooterIOReal`'s `MotorArrangementValue.NEO550_JST`) instead of the `DCMotor.getNEO()` placeholder — the factory method exists in this WPILib version; the prior code comment claiming otherwise was wrong.
+- **PathPlanner `settings.json` partially synced to code (2026-07-16):** `robotTrackwidth`/`driveWheelRadius`/`driveGearing`/`maxDriveSpeed`/`driveCurrentLimit` and all 8 module X/Y fields now match `TunerConstants.java` (the file that actually drives the real swerve hardware, not a placeholder). `robotMass`/`robotMOI`/`wheelCOF`/`robotWidth`/`robotLength`/bumper offsets are untouched — no code-side ground truth exists for them (`Constants.java`'s equivalents are themselves unmeasured `TODO` placeholders); still needs a real-robot measurement pass, see Backlog.
 - **Sim field/alliance:** `FieldConstants.java` derives field parameters from the `k2026RebuiltAndymark` AprilTag layout and exposes `middleStartFor(Alliance)`. Never hard-code a field length — `16.51` is the 2022–24 field and is wrong for 2026. Gamepiece sim is maple-sim's `SimulatedArena`. **There is no custom project `FuelSim` class**; all simulator adjustments rely on the baseline maple-sim architecture. (The only `FuelSim.java` on this machine is 6328's, under reference dirs.)
 
-### Next up — Phase 3: finish hardware isolation
-1. **`Robot.java` calls `LimelightHelpers` directly** (lines ~109, ~135–136, ~144–146: `SetIMUMode`, `SetIMUAssistAlpha`, `getBotPoseEstimate_wpiBlue`). This violates Architecture Rule 1. Push these behind `VisionIO` (e.g. `setIMUMode(int)` / an `Optional<Pose2d>` seed accessor) and have `Robot` go through `Vision`.
-2. **`utility/HubActiveState.java` imports `com.ctre.phoenix6`** (`HootAutoReplay`, `Utils`). Decide whether the utility layer is exempt from Rule 1, or wrap it. **Record the decision in this file either way.**
-3. **`subsystems/CommandSwerveDrivetrain.java` (613 LOC) is CTRE-generated and uses Phoenix 6 inline**, as does `utility/simulation/MapleSimSwerveDrivetrain.java`. This is the largest open exception to Rule 1. Decide explicitly: leave it as a sanctioned vendor-generated exception, or wrap it in a `DriveIO`. **Do not start this without a decision — it is the biggest single item left.**
+### Next up
+- Commit this session's working-tree changes (9 files + new `HootReplayBridge.java`) — currently uncommitted.
+- Real-robot measurement pass for `Constants.java`/`settings.json` placeholders (see Backlog).
 
 ### Backlog
-- **Superstructure is command composition, not a state machine.** The project goal calls for 254-style centralized states; today there is no state enum and no `periodic()` arbitration. Revisit once Phase 3 settles.
-- **Deprecation:** `AprilTagFields.loadAprilTagLayoutField()` is deprecated and marked for removal — 2 call sites, `FieldConstants.java:20` and `Vision.java:35`.
 - **Static Calibrations Needed:**
   - Correct the matching front-left / back-right CANcoder offsets (both `0.066650390625` — almost certainly a calibration paste; re-zero BR in Tuner X and compare). *Unverified hypothesis — confirm on the real robot before editing.*
-  - Calibrate PathPlanner's robot config to match actual code metrics (track width **0.8128 m** actual vs **0.546 m** in `settings.json`; 9 of 9 physical quantities disagree). **Measure the real robot first** — the code-side values are themselves unvalidated `TODO` estimates, so don't assume either side is right.
-  - Clear the stale `@Logged` annotation on `Robot.java:26` — Epilogue is never bound and has no Gradle plugin, so it is inert.
-  - Fix or delete the 3 dead dashboard writes in `RobotContainer.java:112-114` (`dashboard()` runs once from the constructor, so they publish 0.0 forever).
+  - Measure the real robot's mass, MOI, wheel-COF, and bumper footprint to replace the remaining `TODO` placeholders in `Constants.java` and `settings.json` (`robotMass`, `robotMOI`, `wheelCOF`, `robotWidth`/`robotLength`, bumper offsets).
   - Audit the high flywheel feedforward `kA = 50` against `kV = 0.215` (~230×; not a plausible flywheel value). *Unverified.*
-- **Sim placeholder constants:** masses, lengths, MOIs, `kWheelCOF`, bumper dims in `Constants.java` are estimates marked `TODO`. `IntakeIOSim`/`ShooterIOSim` assume Kraken X60; the Shooter agitator sim uses `DCMotor.getNEO()` for a real NEO 550.
+  - Confirm on the real robot whether Intake pivot/roller and Shooter shoot/index are Kraken X60 or Falcon 500 (both real motors are plain `TalonFX` in `*IOReal.java`, so it's unconfirmable from code) — updates `IntakeIOSim.java`/`ShooterIOSim.java`.
 
 Full detail and evidence for every item above lives in the vault: `Best Practices & Upgrades.md`.
 

@@ -17,7 +17,7 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
  */
 public final class FieldConstants {
   private static final AprilTagFieldLayout layout =
-      AprilTagFields.k2026RebuiltAndymark.loadAprilTagLayoutField();
+      AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltAndymark);
 
   public static final double fieldLengthMeters = layout.getFieldLength();
   public static final double fieldWidthMeters = layout.getFieldWidth();

@@ -6,7 +6,9 @@ package frc.robot.subsystems.superstructure;
 
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
@@ -16,11 +18,20 @@ import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.vision.Vision;
 
 /**
- * Singleton Superstructure. Coordinates Shooter + Intake + Vision + drivetrain state together for
- * complex multi-subsystem sequences (shooting). Individual subsystems only handle their own
- * mechanism control; cross-subsystem orchestration lives here.
+ * Singleton Superstructure. Owns a centralized, 254-style state machine that arbitrates Shooter +
+ * Intake + Vision directly from {@link #periodic()} instead of composing long-running Commands.
+ * Callers request a state via {@code requestX()}; {@link #periodic()} decides each tick's actual
+ * {@link SuperstructureState} and commands subsystems accordingly. {@link #shootCmd()} and
+ * {@link #shootingSequence(double)} are thin Command bridges kept for the existing RobotContainer
+ * bindings and PathPlanner's NamedCommands, which both require real Command objects.
  */
 public class Superstructure extends SubsystemBase {
+  private static final double kIdleRPM = 700;
+
+  public enum SuperstructureState {
+    OFF, INTAKING, STOWED, ALIGNING, SHOOTING
+  }
+
   private static Superstructure instance;
 
   /** Creates (on first call) or returns the Superstructure Singleton. */
@@ -35,67 +46,153 @@ public class Superstructure extends SubsystemBase {
   private final Intake intake = Intake.getInstance();
   private final Vision vision;
 
+  private SuperstructureState mSystemState = SuperstructureState.OFF;
+  private SuperstructureState mWantedState = SuperstructureState.OFF;
+  private double mStateStartTimestamp = 0.0;
+  private boolean mShotInProgress = false;
+
+  /* Align/settle/feed timing -- teleop holds until released (infinite), auto is bounded. */
+  private double mAlignTimeoutSeconds = Double.POSITIVE_INFINITY;
+  private double mSettleDelaySeconds = 0.1;
+  private double mFeedTimeoutSeconds = Double.POSITIVE_INFINITY;
+
+  private Command mAgitateCommand;
+
   /** Creates a new Superstructure. Use {@link #getInstance(CommandSwerveDrivetrain)} instead of constructing directly. */
   private Superstructure(CommandSwerveDrivetrain drivetrain) {
     this.vision = Vision.getInstance(drivetrain);
   }
 
-  public Command shootCmd() {
-    return Commands.parallel(
-        intake.agitatePivot(),
-        Commands.sequence(
-            Commands.run(() -> {
-              if (shooter.shooterTuningModeEnable) {
-                shooter.targetRPMShooter(shooter.getTargetRPM());
-              } else {
-                var rpmOpt = vision.calculateRPM();
-                rpmOpt.ifPresent(shooter::targetRPMShooter);
-              }
-            }).until(() -> shooter.shooterAtSpeed(shooter.getTargetRPM())),
-            Commands.waitSeconds(0.1),
-            Commands.run(() -> {
-              shooter.indexControl(Shooter.indexing.INDEX);
-              shooter.setAgitator(Shooter.Agitate.IN);
-
-              if (shooter.shooterTuningModeEnable) {
-                shooter.targetRPMShooter(shooter.getTargetRPM());
-              } else {
-                var rpmOpt = vision.calculateRPM();
-                rpmOpt.ifPresent(shooter::targetRPMShooter);
-                rpmOpt.ifPresent(rpm -> Logger.recordOutput("Shooter/TargetRPM", rpm));
-              }
-            }, shooter)))
-        .finallyDo(() -> {
-          intake.setRoller(Roller.STOP);
-          shooter.indexControl(Shooter.indexing.STOP);
-          shooter.setAgitator(Shooter.Agitate.STOP);
-          shooter.targetRPMShooter(700);
-          intake.goTo(Intake.PivotState.DOWN);
-        });
+  /** Requests the shooting sequence, feeding continuously until {@link #requestStow()} (teleop hold-to-shoot). */
+  public void requestShoot() {
+    mAlignTimeoutSeconds = Double.POSITIVE_INFINITY;
+    mSettleDelaySeconds = 0.1;
+    mFeedTimeoutSeconds = Double.POSITIVE_INFINITY;
+    mShotInProgress = true;
+    mWantedState = SuperstructureState.ALIGNING;
   }
 
+  /** Requests the shooting sequence with a bounded spin-up/settle/feed window (autonomous). */
+  public void requestShoot(double timeoutSeconds) {
+    mAlignTimeoutSeconds = 1.0;
+    mSettleDelaySeconds = 0.3;
+    mFeedTimeoutSeconds = timeoutSeconds;
+    mShotInProgress = true;
+    mWantedState = SuperstructureState.ALIGNING;
+  }
+
+  /** Requests active floor intake. */
+  public void requestIntake() {
+    mWantedState = SuperstructureState.INTAKING;
+  }
+
+  /** Returns to the idle/ready posture -- shoot button released, intaking finished, shot completed, etc. */
+  public void requestStow() {
+    mWantedState = SuperstructureState.STOWED;
+    mShotInProgress = false;
+  }
+
+  public SuperstructureState getSystemState() {
+    return mSystemState;
+  }
+
+  private void setState(SuperstructureState state) {
+    if (mSystemState != state) {
+      mStateStartTimestamp = Timer.getFPGATimestamp();
+    }
+    mSystemState = state;
+    if (state != SuperstructureState.ALIGNING && state != SuperstructureState.SHOOTING && mAgitateCommand != null) {
+      mAgitateCommand.cancel();
+      mAgitateCommand = null;
+    }
+  }
+
+  /** Schedules Intake's own pivot-agitate routine if it isn't already running. Owned/mechanism-controlled by Intake. */
+  private void ensureAgitating() {
+    if (mAgitateCommand == null || !mAgitateCommand.isScheduled()) {
+      mAgitateCommand = intake.agitatePivot();
+      CommandScheduler.getInstance().schedule(mAgitateCommand);
+    }
+  }
+
+  private void updateShooterRPM() {
+    if (shooter.shooterTuningModeEnable) {
+      shooter.targetRPMShooter(shooter.getTargetRPM());
+    } else {
+      vision.calculateRPM().ifPresent(rpm -> {
+        shooter.targetRPMShooter(rpm);
+        Logger.recordOutput("Shooter/TargetRPM", rpm);
+      });
+    }
+  }
+
+  /** Bridges the state machine into a Command for the teleop hold-to-shoot binding ({@code whileTrue}). */
+  public Command shootCmd() {
+    return Commands.startEnd(this::requestShoot, this::requestStow, this);
+  }
+
+  /** Bridges the state machine into a bounded, self-finishing Command for autonomous/NamedCommands. */
   public Command shootingSequence(double timeoutSeconds) {
-    return Commands.parallel(
-        intake.agitatePivot(),
-        Commands.sequence(
-            Commands.run(() -> {
-              var rpmOpt = vision.calculateRPM();
-              rpmOpt.ifPresent(shooter::targetRPMShooter);
-              rpmOpt.ifPresent(rpm -> Logger.recordOutput("Shooter/Auto_TargetRPM", rpm));
-            }, shooter).until(() -> shooter.shooterAtSpeed(shooter.getTargetRPM())).withTimeout(1),
-            Commands.waitSeconds(0.3),
-            Commands.run(() -> {
-              shooter.setAgitator(Shooter.Agitate.IN);
-              shooter.indexControl(Shooter.indexing.INDEX);
-              var rpmOpt = vision.calculateRPM();
-              rpmOpt.ifPresent(shooter::targetRPMShooter);
-              rpmOpt.ifPresent(rpm -> Logger.recordOutput("Shooter/Auto_TargetRPM", rpm));
-            }, shooter).withTimeout(timeoutSeconds)))
-        .finallyDo(() -> {
-          shooter.indexControl(Shooter.indexing.STOP);
-          shooter.setAgitator(Shooter.Agitate.STOP);
-          intake.goTo(Intake.PivotState.DOWN);
-          shooter.targetRPMShooter(700);
-        });
+    return Commands.sequence(
+        Commands.runOnce(() -> requestShoot(timeoutSeconds)),
+        Commands.waitUntil(() -> !mShotInProgress));
+  }
+
+  @Override
+  public void periodic() {
+    if (mSystemState != SuperstructureState.ALIGNING && mSystemState != SuperstructureState.SHOOTING) {
+      setState(mWantedState);
+    }
+
+    double timeInState = Timer.getFPGATimestamp() - mStateStartTimestamp;
+
+    switch (mSystemState) {
+      case OFF:
+        shooter.targetRPMShooter(0);
+        shooter.indexControl(Shooter.indexing.STOP);
+        shooter.setAgitator(Shooter.Agitate.STOP);
+        break;
+
+      case STOWED:
+        shooter.indexControl(Shooter.indexing.STOP);
+        shooter.setAgitator(Shooter.Agitate.STOP);
+        shooter.targetRPMShooter(kIdleRPM);
+        intake.goTo(Intake.PivotState.DOWN);
+        break;
+
+      case INTAKING:
+        intake.goTo(Intake.PivotState.DOWN);
+        intake.setRoller(Roller.INTAKE);
+        break;
+
+      case ALIGNING:
+        if (mWantedState != SuperstructureState.ALIGNING) {
+          setState(mWantedState);
+          break;
+        }
+        ensureAgitating();
+        updateShooterRPM();
+        if (shooter.shooterAtSpeed(shooter.getTargetRPM()) || timeInState >= mAlignTimeoutSeconds) {
+          setState(SuperstructureState.SHOOTING);
+        }
+        break;
+
+      case SHOOTING:
+        if (mWantedState != SuperstructureState.ALIGNING) {
+          setState(mWantedState);
+          break;
+        }
+        ensureAgitating();
+        updateShooterRPM();
+        if (timeInState >= mSettleDelaySeconds) {
+          shooter.indexControl(Shooter.indexing.INDEX);
+          shooter.setAgitator(Shooter.Agitate.IN);
+        }
+        if (timeInState >= mFeedTimeoutSeconds) {
+          requestStow();
+          setState(SuperstructureState.STOWED);
+        }
+        break;
+    }
   }
 }

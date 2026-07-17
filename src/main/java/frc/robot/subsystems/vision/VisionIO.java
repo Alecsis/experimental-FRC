@@ -29,6 +29,12 @@ public interface VisionIO {
   /** Publishes the robot's current field-relative heading for MegaTag2 orientation-assisted pose estimation. */
   default void setRobotOrientation(double yawDegrees) {}
 
+  /** Sets the camera's internal IMU fusion mode (Limelight IMU modes 0-4). No-op without a real IMU-fused camera. */
+  default void setIMUMode(int mode) {}
+
+  /** Sets the internal-IMU assist weighting used by MegaTag2 orientation fusion. No-op without a real IMU-fused camera. */
+  default void setIMUAssistAlpha(double alpha) {}
+
   /**
    * Gets a MegaTag1 pose estimate suitable for seeding odometry on reset. Deliberately independent
    * of MegaTag2 (and {@link #setRobotOrientation}), since MT2 requires an already-correct yaw --

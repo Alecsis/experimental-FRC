@@ -32,7 +32,7 @@ public class Vision extends SubsystemBase {
   private static final double kMaxOmegaRadPerSec = 2 * Math.PI;
 
   private final AprilTagFieldLayout fieldLayout =
-      AprilTagFields.k2026RebuiltAndymark.loadAprilTagLayoutField();
+      AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltAndymark);
   private final int[] redHubIds = { 2, 5, 8, 9, 10, 11 };
   private final int[] blueHubIds = { 18, 21, 24, 25, 26, 27 };
   private final int[] redPassIds = { 9, 10, 15, 16 };
@@ -136,6 +136,16 @@ public class Vision extends SubsystemBase {
   /** MegaTag1-based pose estimate suitable for seeding odometry on reset. See {@link VisionIO#getPoseResetEstimate}. */
   public Optional<Pose2d> getPoseResetEstimate() {
     return io.getPoseResetEstimate();
+  }
+
+  /** Forwards to the active VisionIO implementation. See {@link VisionIO#setIMUMode}. */
+  public void setIMUMode(int mode) {
+    io.setIMUMode(mode);
+  }
+
+  /** Forwards to the active VisionIO implementation. See {@link VisionIO#setIMUAssistAlpha}. */
+  public void setIMUAssistAlpha(double alpha) {
+    io.setIMUAssistAlpha(alpha);
   }
 
   private Optional<Pose2d> getVisionPose(Pose2d currentRobotPose) {
