@@ -50,7 +50,7 @@ class RobotLifecycleTest {
 
   @Test
   @Timeout(30)
-  void competitionLoopInitializesAndHoldsSeedModeWhileDisabled() {
+  void autonomousInitSwitchesIMUModeFromSeedToFusion() {
     assertTrue(robotThread.isAlive(),
         "startCompetition() loop should still be running after waitForProgramStart()");
 
@@ -62,5 +62,14 @@ class RobotLifecycleTest {
 
     assertEquals(1, Vision.getInstance(null).getIMUMode(),
         "disabledInit/disabledPeriodic should hold IMUMode at 1 (EXTERNAL_SEED)");
+
+    // Autonomous: the actual 2026-07-17 fix under test.
+    DriverStationSim.setAutonomous(true);
+    DriverStationSim.setEnabled(true);
+    DriverStationSim.notifyNewData();
+    SimHooks.stepTiming(0.1); // ~5 20ms cycles of autonomousPeriodic
+
+    assertEquals(4, Vision.getInstance(null).getIMUMode(),
+        "autonomousInit should switch IMUMode to 4 (fusion) -- verifies the auto-snap fix");
   }
 }
