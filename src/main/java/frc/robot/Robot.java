@@ -4,7 +4,6 @@
 
 package frc.robot;
 
-import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -23,7 +22,6 @@ import org.littletonrobotics.junction.LoggedRobot;
  * the TimedRobot documentation. If you change the name of this class or the package after creating
  * this project, you must also update the Main.java file in the project.
  */
-@Logged
 public class Robot extends LoggedRobot {
   private Command m_autonomousCommand;
 
@@ -91,6 +89,7 @@ public class Robot extends LoggedRobot {
   @Override
   public void robotPeriodic() {
     m_hubInstance.periodic();
+    m_robotContainer.periodic();
     // Runs the Scheduler.  This is responsible for polling buttons, adding newly-scheduled
     // commands, running already-scheduled commands, removing finished or interrupted commands,
     // and running subsystem periodic() methods.  This must be called from the robot's periodic

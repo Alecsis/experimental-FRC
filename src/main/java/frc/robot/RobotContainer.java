@@ -108,11 +108,13 @@ public class RobotContainer {
                 SmartDashboard.putData("Intake", new InstantCommand(() -> intake.setRoller(Roller.INTAKE)));
                 SmartDashboard.putData("Intake Stop", new InstantCommand(() -> intake.setRoller(Roller.STOP)));
                 SmartDashboard.putData("Auto Chooser", autoChooser);
+        }
 
+        /** Called every scheduler run from {@link Robot#robotPeriodic()} to publish live dashboard values. */
+        public void periodic() {
                 SmartDashboard.putNumber("Current Speed Up/Down", -joystick.getLeftY() * MaxSpeed);
                 SmartDashboard.putNumber("Current Speed Right/Left", -joystick.getLeftX() * MaxSpeed);
                 SmartDashboard.putNumber("Current Angle Speed", -joystick.getRightX() * MaxAngularRate);
-
         }
 
         private void configureBindings() {
