@@ -56,7 +56,7 @@ public class Vision extends SubsystemBase {
       instance = new Vision(
           Constants.currentMode == Constants.Mode.REAL
               ? new VisionIOReal(Constants.visionCameraNames)
-              : new VisionIOSim(() -> drivetrain.getState().Pose),
+              : new VisionIOSim(drivetrain::getSimulatedGroundTruthPose),
           drivetrain);
     }
     return instance;

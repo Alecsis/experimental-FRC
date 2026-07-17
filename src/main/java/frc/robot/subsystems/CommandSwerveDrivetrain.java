@@ -522,6 +522,16 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     }
 
     /**
+     * Returns the physics simulation's ground-truth pose, or null on real hardware / before the sim
+     * thread starts. Unlike getState().Pose (the Kalman-filtered estimate vision measurements are
+     * fused into), this is independent of vision entirely -- safe to use as a vision-sim ground truth
+     * source without creating a self-referential feedback loop.
+     */
+    public Pose2d getSimulatedGroundTruthPose() {
+        return mapleSim == null ? null : mapleSim.mapleSimDrive.getSimulatedDriveTrainPose();
+    }
+
+    /**
      * Raw Pigeon 2 yaw in degrees, independent of the vision-fused pose estimate. Safe to feed into
      * MegaTag2's SetRobotOrientation -- unlike getState().Pose.getRotation(), this value is never
      * itself corrected by a vision measurement, so it can't create a self-referential feedback loop.
