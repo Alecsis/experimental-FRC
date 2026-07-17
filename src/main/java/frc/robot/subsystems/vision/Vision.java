@@ -176,41 +176,49 @@ public class Vision extends SubsystemBase {
   }
 
   private void fuseMeasurements() {
+    // Both defaults to 0.0 -- a real rejected jump is always > kMaxVisionJumpMeters (1.0) and a real
+    // accepted dev is always >= kVisionStdDevMinMeters (0.05), so 0.0 unambiguously means "nothing to
+    // report this cycle" while still guaranteeing both topics are published every cycle, from the
+    // first one, so they show up in the log browser before anything has actually happened yet.
+    double rejectedJumpMeters = 0.0;
+    double acceptedStdDevMeters = 0.0;
+
     double omega = drivetrain.getState().Speeds.omegaRadiansPerSecond;
-    if (Math.abs(omega) > kMaxOmegaRadPerSec) {
-      return;
+    if (Math.abs(omega) <= kMaxOmegaRadPerSec) {
+      for (int i = 0; i < inputs.hasTarget.length; i++) {
+        if (!inputs.hasTarget[i]
+            || inputs.tagCount[i] <= 0
+            || inputs.avgTagDist[i] >= Constants.kVisionMaxTagDistMeters
+            || inputs.poseX[i] == 0
+            || inputs.poseY[i] == 0) {
+          continue;
+        }
+
+        Pose2d measuredPose = new Pose2d(
+            inputs.poseX[i], inputs.poseY[i], new Rotation2d(inputs.poseThetaRad[i]));
+
+        // Fix B -- innovation gate: reject a reading that teleports too far from the current estimate
+        // instead of trusting it outright. A single bad/ambiguous MegaTag2 solve can look otherwise
+        // valid (tagCount>0, avgTagDist within range, nonzero X/Y) while still being wrong.
+        double jumpMeters = measuredPose.getTranslation().getDistance(drivetrain.getState().Pose.getTranslation());
+        if (jumpMeters > Constants.kMaxVisionJumpMeters) {
+          rejectedJumpMeters = jumpMeters;
+          continue;
+        }
+
+        double trust = inputs.avgTagDist[i] * (1.0 / inputs.tagCount[i]);
+        // Fix C -- std-dev floor: without this, a close-range/high-tag-count read can drive dev toward
+        // 0, telling the Kalman filter to treat a single frame as perfectly trustworthy.
+        double dev = Math.max(Constants.kVisionStdDevMinMeters, Constants.kVisionStdDevCoefficient * trust);
+        acceptedStdDevMeters = dev;
+
+        drivetrain.addVisionMeasurement(
+            measuredPose, inputs.timestampSeconds[i], VecBuilder.fill(dev, dev, 999999));
+      }
     }
 
-    for (int i = 0; i < inputs.hasTarget.length; i++) {
-      if (!inputs.hasTarget[i]
-          || inputs.tagCount[i] <= 0
-          || inputs.avgTagDist[i] >= Constants.kVisionMaxTagDistMeters
-          || inputs.poseX[i] == 0
-          || inputs.poseY[i] == 0) {
-        continue;
-      }
-
-      Pose2d measuredPose = new Pose2d(
-          inputs.poseX[i], inputs.poseY[i], new Rotation2d(inputs.poseThetaRad[i]));
-
-      // Fix B -- innovation gate: reject a reading that teleports too far from the current estimate
-      // instead of trusting it outright. A single bad/ambiguous MegaTag2 solve can look otherwise
-      // valid (tagCount>0, avgTagDist within range, nonzero X/Y) while still being wrong.
-      double jumpMeters = measuredPose.getTranslation().getDistance(drivetrain.getState().Pose.getTranslation());
-      if (jumpMeters > Constants.kMaxVisionJumpMeters) {
-        Logger.recordOutput("Vision/RejectedJumpMeters", jumpMeters);
-        continue;
-      }
-
-      double trust = inputs.avgTagDist[i] * (1.0 / inputs.tagCount[i]);
-      // Fix C -- std-dev floor: without this, a close-range/high-tag-count read can drive dev toward
-      // 0, telling the Kalman filter to treat a single frame as perfectly trustworthy.
-      double dev = Math.max(Constants.kVisionStdDevMinMeters, Constants.kVisionStdDevCoefficient * trust);
-      Logger.recordOutput("Vision/AcceptedStdDevMeters", dev);
-
-      drivetrain.addVisionMeasurement(
-          measuredPose, inputs.timestampSeconds[i], VecBuilder.fill(dev, dev, 999999));
-    }
+    Logger.recordOutput("Vision/RejectedJumpMeters", rejectedJumpMeters);
+    Logger.recordOutput("Vision/AcceptedStdDevMeters", acceptedStdDevMeters);
   }
 
   @Override

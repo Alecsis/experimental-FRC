@@ -474,11 +474,14 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                                     ? kRedAlliancePerspectiveRotation
                                     : kBlueAlliancePerspectiveRotation);
                     m_lastAppliedAlliance = allianceColor;
-                    Logger.recordOutput("Vision/PerspectiveFlip", allianceColor.toString());
                 }
                 m_hasAppliedOperatorPerspective = true;
             });
         }
+        // Logged every cycle (not just on a flip) so the topic exists in the log browser from tick 1 --
+        // "None" until the alliance first resolves, then steps to "Red"/"Blue" exactly at a flip.
+        Logger.recordOutput("Vision/PerspectiveFlip",
+                m_lastAppliedAlliance == null ? "None" : m_lastAppliedAlliance.toString());
         if (DriverStation.isDisabled()) {
             Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
         }
