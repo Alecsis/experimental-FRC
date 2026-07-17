@@ -103,6 +103,7 @@ public class Robot extends LoggedRobot {
   /** This function is called once each time the robot enters Disabled mode. */
   @Override
   public void disabledInit() {
+    m_vision.setIMUMode(1);
   }
 
   @Override
@@ -119,6 +120,11 @@ public void robotInit() {
 
   @Override
 public void autonomousInit() {
+    // Was previously left in disabledPeriodic's IMUMode(1) (EXTERNAL_SEED) for the whole match --
+    // auto never switched to fusion mode, so MegaTag2 solves rotated field coordinates against a
+    // stale IMU seed and produces odometry snaps the first time a tag comes into view.
+    m_vision.setIMUMode(4);
+    m_vision.setIMUAssistAlpha(0.001);
     m_autonomousCommand = m_robotContainer.getAutonomousCommand();
 
     // schedule the autonomous command (example)
