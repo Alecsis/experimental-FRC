@@ -89,6 +89,12 @@ dependencies {
 test {
     useJUnitPlatform()
     systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
+    // Forks a fresh JVM per test CLASS (Gradle semantics, not per method): Vision/Intake/
+    // Shooter/Superstructure are Singletons with no reset hook, so reusing a JVM across test
+    // classes would cross-wire a later class's Robot with an earlier class's cached singleton
+    // instances. Within a class, methods still share one JVM -- see RobotLifecycleTest, which
+    // is deliberately kept to a single @Test method for exactly this reason.
+    forkEvery = 1
 }
 
 // Simulation configuration (e.g. environment variables).
