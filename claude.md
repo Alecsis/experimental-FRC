@@ -120,7 +120,12 @@ See `.claude/commands/tldr.md` for the full command definition.
    launch/construction. A PASS here plus a parsed `.wpilog` (gate 3) is what "verified" means for
    this specific fix — see `docs/superpowers/plans/2026-07-17-phase3-imu-mode-junit-test.md`.
 3. **Evidence gate:** `python SKILLS/parse_akit_log.py <file.wpilog>` — a real WPILOG v1.0 binary parser (entry table, record counts, `--dump`, and `--pose-entry`/`--jump-threshold` frame-to-frame pose-jump analysis for `struct:Pose2d`/`double[3]` entries). Every number it prints is computed from the log bytes. Hardened 2026-07-17 against three spec edge cases verified by synthetic-log self-test: records are sorted by timestamp before analysis (the spec does not guarantee order), entry-ID reuse after a Finish record no longer drops the earlier entry's data, and all standard array types (`boolean[]`/`int64[]`/`float[]`/`string[]`/`double[]`) decode.
-   - **Known gaps that block evidence today:** `Robot.java` adds a `WPILOGWriter` only in REAL/REPLAY — **SIM logs to NT4 only**, so a sim run produces no `.wpilog` to parse. And nothing logs the Limelight IMU mode (`Vision` logs pose/std-dev outputs, not the mode). Until a SIM `WPILOGWriter` and a `Vision/IMUMode` output exist, **no log can confirm the `IMUMode(4)` auto fix — do not claim it is verified.**
+   - **Evidence path (closed 2026-07-17):** `Robot.java`'s SIM case now adds a `WPILOGWriter("logs")`
+     alongside `NT4Publisher`, and `Vision.periodic()` now logs `Vision/IMUMode`/`Vision/IMUAssistAlpha`
+     every tick. A `./gradlew test` run (gate 2.5) produces a real `.wpilog` under `logs/` that
+     `--dump "/RealOutputs/Vision/IMUMode"` confirms transitions 1→4 at the disabled→autonomous
+     boundary — verified from log bytes, not memory. See
+     `docs/superpowers/plans/2026-07-17-phase3-imu-mode-junit-test.md` Task 3 for the full evidence run.
 
 ### Honesty rules (non-negotiable)
 - Verification scripts must **never print canned or hardcoded metrics**. The pre-2026-07-17 `parse_akit_log.py` fabricated `"IMU Fusion Mode 4 detected"` and `"Pose Stability: STABLE"` unconditionally — treat any historical output from it as fiction.
