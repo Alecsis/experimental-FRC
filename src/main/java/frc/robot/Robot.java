@@ -58,7 +58,8 @@ public class Robot extends LoggedRobot {
         break;
 
       case SIM:
-        // Running a physics simulator, log to NT
+        // Running a physics simulator, log to NT and to a local .wpilog for the verification loop
+        Logger.addDataReceiver(new WPILOGWriter("logs"));
         Logger.addDataReceiver(new NT4Publisher());
         break;
 

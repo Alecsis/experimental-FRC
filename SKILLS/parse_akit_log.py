@@ -11,12 +11,15 @@ unsupported type), it says so and the claim stays unverified.
 Usage:
   python SKILLS/parse_akit_log.py <log.wpilog>                 # entry summary
   python SKILLS/parse_akit_log.py <log.wpilog> --grep Vision   # filter entries
-  python SKILLS/parse_akit_log.py <log.wpilog> --pose-entry "RealOutputs/Odometry/Robot"
-  python SKILLS/parse_akit_log.py <log.wpilog> --dump "Vision/RejectedJumpMeters"
+  python SKILLS/parse_akit_log.py <log.wpilog> --pose-entry "/RealOutputs/Odometry/Robot"
+  python SKILLS/parse_akit_log.py <log.wpilog> --dump "/RealOutputs/Vision/IMUMode"
 
-Note: this project's Robot.java only adds a WPILOGWriter in REAL and REPLAY
-modes — SIM logs to NetworkTables only, so a plain sim run produces no
-.wpilog. Point this at a robot/replay log, or add a WPILOGWriter to SIM mode.
+Note: entry names include their leading slash exactly as printed in the
+summary table (e.g. "/RealOutputs/Vision/IMUMode", not "Vision/IMUMode").
+--dump/--pose-entry do an exact match against that name.
+
+SIM mode writes a WPILOGWriter to logs/ (Robot.java), same as REAL/REPLAY,
+so a headless or interactive sim run produces a .wpilog here too.
 """
 
 import argparse

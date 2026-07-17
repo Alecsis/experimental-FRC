@@ -65,6 +65,8 @@ public class Vision extends SubsystemBase {
   private final VisionIO io;
   private final VisionIOInputsAutoLogged inputs = new VisionIOInputsAutoLogged();
   private final CommandSwerveDrivetrain drivetrain;
+  private int currentIMUMode;
+  private double currentIMUAssistAlpha;
 
   /** Creates a new Vision. Use {@link #getInstance(CommandSwerveDrivetrain)} instead of constructing directly. */
   private Vision(VisionIO io, CommandSwerveDrivetrain drivetrain) {
@@ -141,11 +143,13 @@ public class Vision extends SubsystemBase {
   /** Forwards to the active VisionIO implementation. See {@link VisionIO#setIMUMode}. */
   public void setIMUMode(int mode) {
     io.setIMUMode(mode);
+    currentIMUMode = mode;
   }
 
   /** Forwards to the active VisionIO implementation. See {@link VisionIO#setIMUAssistAlpha}. */
   public void setIMUAssistAlpha(double alpha) {
     io.setIMUAssistAlpha(alpha);
+    currentIMUAssistAlpha = alpha;
   }
 
   private Optional<Pose2d> getVisionPose(Pose2d currentRobotPose) {
@@ -244,6 +248,8 @@ public class Vision extends SubsystemBase {
     io.setRobotOrientation(drivetrain.getRawGyroYawDegrees());
     io.updateInputs(inputs);
     Logger.processInputs("Vision", inputs);
+    Logger.recordOutput("Vision/IMUMode", currentIMUMode);
+    Logger.recordOutput("Vision/IMUAssistAlpha", currentIMUAssistAlpha);
 
     fuseMeasurements();
 
