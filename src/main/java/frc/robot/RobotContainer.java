@@ -27,7 +27,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
-import edu.wpi.first.wpilibj2.command.button.CommandGenericHID;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -55,10 +54,8 @@ public class RobotContainer {
         private final ProfiledPIDController hubPID = new ProfiledPIDController(
                         5.0, 0.0, 0.0,
                         new TrapezoidProfile.Constraints(MaxAngularRate, MaxAngularRate * 2));
-        private final CommandXboxController joystick = new CommandXboxController(0);
-        private final CommandGenericHID controlBox = new CommandGenericHID(1);
         private final CommandXboxController sysid = new CommandXboxController(2);
-        private final CommandXboxController simController = new CommandXboxController(3);
+        private final OperatorControls operatorControls = new OperatorControls();
         public static CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
         public static Intake intake = Intake.getInstance();
         public static Shooter shooter = Shooter.getInstance();
@@ -114,35 +111,10 @@ public class RobotContainer {
          * dashboard values.
          */
         public void periodic() {
-                SmartDashboard.putNumber("Current Speed Up/Down", -joystick.getLeftY() * MaxSpeed);
-                SmartDashboard.putNumber("Current Speed Right/Left", -joystick.getLeftX() * MaxSpeed);
-                SmartDashboard.putNumber("Current Angle Speed", -joystick.getRightX() * MaxAngularRate);
+                operatorControls.periodic(MaxSpeed, MaxAngularRate);
         }
 
         private void configureBindings() {
-                // Note that X is defined as forward according to WPILib convention,
-                // and Y is defined as to the left according to WPILib convention.
-                drivetrain.setDefaultCommand(
-                                // Drivetrain will execute this command periodically
-                                drivetrain.applyRequest(() -> drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive
-                                                                                                                   // forward
-                                                                                                                   // with
-                                                                                                                   // negative
-                                                                                                                   // Y
-                                                                                                                   // (forward)
-                                                .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with
-                                                                                                // negative X (left)
-                                                .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive
-                                                                                                            // counterclockwise
-                                                                                                            // with
-                                                                                                            // negative
-                                                                                                            // X (left)
-                                ));
-                joystick.rightBumper().whileTrue(
-                                drivetrain.trackHub(vision, MaxSpeed, joystick::getLeftX, joystick::getLeftY, false));
-                joystick.rightTrigger().whileTrue(
-                                drivetrain.trackPassTarget(vision, MaxSpeed, joystick::getLeftX, joystick::getLeftY,
-                                                false));
                 // Idle while the robot is disabled. This ensures the configured
                 // neutral mode is applied to the drive motors while disabled.
                 final var idle = new SwerveRequest.Idle();
@@ -170,56 +142,10 @@ public class RobotContainer {
                                 .whileTrue(drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
                 sysid.b().and(sysid.leftBumper()).whileTrue(drivetrain.sysIdDynamic(SysIdRoutine.Direction.kForward));
                 sysid.x().and(sysid.leftBumper()).whileTrue(drivetrain.sysIdDynamic(SysIdRoutine.Direction.kReverse));
-                // Reset the field-centric headiazng on left bumper press.
-                joystick.leftBumper().onTrue(Commands.runOnce(() -> {
-                        drivetrain.runOnce(drivetrain::seedFieldCentric);
-                        vision.getPoseResetEstimate().ifPresent(drivetrain::resetPose);
-                }));
                 drivetrain.registerTelemetry(logger::telemeterize);
-                // joystick.povUp().whileTrue(drivetrain.driveToPOI(POI.Hub));
-                // joystick.povLeft().whileTrue(drivetrain.driveToPOI(POI.poi1));
-                joystick.povRight().whileTrue(drivetrain.driveToPOI(POI.Right));
-                joystick.povLeft().whileTrue(drivetrain.driveToPOI(POI.Left));
-                joystick.x().whileTrue(drivetrain.driveToPOI(POI.LeftStage));
-                joystick.y().whileTrue(drivetrain.driveToPOI(POI.CenterStage));
-                joystick.b().whileTrue(drivetrain.driveToPOI(POI.RightStage));
-                /*
-                 * Operator control board -- pure routing into Superstructure state requests.
-                 * Manual fixed-RPM shooting lives behind the "Shooter Tuning Mode" dashboard
-                 * toggle, which shootCmd() honors through the Superstructure's RPM arbitration.
-                 */
-                controlBox.button(2).whileTrue(superstructure.shootCmd());
-                controlBox.button(6).whileTrue(superstructure.intakeCmd());
-                controlBox.button(3).whileTrue(superstructure.ejectCmd());
 
-                if (edu.wpi.first.wpilibj.RobotBase.isSimulation()) {
-                        // 1. Override default drivetrain command with Port 3 Controller
-                        drivetrain.setDefaultCommand(
-                                        drivetrain.applyRequest(() -> drive
-                                                        .withVelocityX(-simController.getLeftY() * MaxSpeed)
-                                                        .withVelocityY(-simController.getLeftX() * MaxSpeed)
-                                                        .withRotationalRate(
-                                                                        -simController.getRightX() * MaxAngularRate)));
-
-                        // 2. Vision Target Tracking (Hold Right Bumper or Right Trigger)
-                        simController.rightBumper().whileTrue(
-                                        drivetrain.trackHub(vision, MaxSpeed, simController::getLeftX,
-                                                        simController::getLeftY, false));
-                        simController.rightTrigger().whileTrue(
-                                        drivetrain.trackPassTarget(vision, MaxSpeed, simController::getLeftX,
-                                                        simController::getLeftY, false));
-
-                        // 3. Reset Gyro & Heading (Left Bumper)
-                        simController.leftBumper().onTrue(Commands.runOnce(() -> {
-                                drivetrain.runOnce(drivetrain::seedFieldCentric);
-                                vision.getPoseResetEstimate().ifPresent(drivetrain::resetPose);
-                        }));
-
-                        // 4. Superstructure routing -- mirrors the operator control board
-                        simController.a().whileTrue(superstructure.shootCmd());
-                        simController.x().whileTrue(superstructure.intakeCmd());
-                        simController.b().whileTrue(superstructure.ejectCmd());
-                }
+                // Driver, operator, and sim-mirror HID bindings -- see OperatorControls.
+                operatorControls.configureBindings(drivetrain, vision, superstructure, drive, MaxSpeed, MaxAngularRate);
         }
 
         public Command getAutonomousCommand() {
