@@ -41,6 +41,7 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import org.ironmaple.simulation.drivesims.AbstractDriveTrainSimulation;
 
 import frc.robot.Constants;
+import frc.robot.FieldConstants;
 import frc.robot.POI;
 import frc.robot.generated.TunerConstants;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
@@ -478,6 +479,18 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                                     ? kRedAlliancePerspectiveRotation
                                     : kBlueAlliancePerspectiveRotation);
                     m_lastAppliedAlliance = allianceColor;
+
+                    // Sim-only auto-spawn. This is the earliest point the alliance is actually
+                    // knowable -- getAlliance() is empty during construction (the DS hasn't
+                    // connected yet), so spawning in startSimThread() would always get the fallback.
+                    // resetPose() seeds both the odometry and the maple-sim physics world. The
+                    // enclosing block only runs while disabled (or before the first apply), so this
+                    // can never yank the robot mid-drive.
+                    if (mapleSim != null) {
+                        Pose2d spawnPose = FieldConstants.middleStartFor(allianceColor);
+                        resetPose(spawnPose);
+                        Logger.recordOutput("Drivetrain/SimSpawnPose", spawnPose);
+                    }
                 }
                 m_hasAppliedOperatorPerspective = true;
             });
