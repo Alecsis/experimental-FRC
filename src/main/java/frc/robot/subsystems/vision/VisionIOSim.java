@@ -25,6 +25,20 @@ public class VisionIOSim implements VisionIO {
   public void updateInputs(VisionIOInputs inputs) {
     Pose2d pose = groundTruthPoseSupplier.get();
 
+    // No ground truth yet (e.g. the drivetrain's sim thread hasn't constructed its physics sim on
+    // this exact tick) -- report no target this cycle rather than publishing a stale/fake reading.
+    if (pose == null) {
+      inputs.hasTarget = new boolean[] { false };
+      inputs.tagCount = new int[] { 0 };
+      inputs.avgTagDist = new double[] { 0.0 };
+      inputs.latencySeconds = new double[] { 0.0 };
+      inputs.timestampSeconds = new double[] { Timer.getFPGATimestamp() };
+      inputs.poseX = new double[] { 0.0 };
+      inputs.poseY = new double[] { 0.0 };
+      inputs.poseThetaRad = new double[] { 0.0 };
+      return;
+    }
+
     inputs.hasTarget = new boolean[] { true };
     inputs.tagCount = new int[] { 1 };
     inputs.avgTagDist = new double[] { 1.0 };
