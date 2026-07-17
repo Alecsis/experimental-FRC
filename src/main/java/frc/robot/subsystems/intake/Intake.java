@@ -105,6 +105,7 @@ public class Intake extends SubsystemBase {
     } else {
       io.setRollerVelocity(RotationsPerSecond.of(state.getRPM() / 60.0).in(RadiansPerSecond));
     }
+    Logger.recordOutput("Intake/TargetState", state);
   }
 
   private boolean isJammed() {
