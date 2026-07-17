@@ -57,7 +57,11 @@ import frc.robot.utility.simulation.MapleSimSwerveDrivetrain;
  * https://v6.docs.ctr-electronics.com/en/stable/docs/tuner/tuner-swerve/index.html
  */
 public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Subsystem {
-    private static final double kSimLoopPeriod = 0.02; // 20 ms
+    // 5 ms (200 Hz). This drives BOTH the notifier and maple-sim's SimulatedArena timing. It must stay
+    // well below the 20 ms main-loop period: the steer gains regulateModuleConstantsForSimulation()
+    // installs (kP=70) go numerically unstable at 20 ms, diverging at gain ~= -2 and flinging the pose.
+    // Matches Team 254's reference integration; maple-sim's own default is 250 Hz.
+    private static final double kSimLoopPeriod = 0.005;
     private Notifier m_simNotifier = null;
     private SwerveModuleConstants<?, ?, ?>[] moduleConstantsForSim;
     private MapleSimSwerveDrivetrain mapleSim;
