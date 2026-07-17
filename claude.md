@@ -3,7 +3,7 @@
 ## 🤖 System Context
 - **Project Type:** FRC Robotics Code (2026/2027 Transition)
 - **Team:** 4935 (Trex4935). Both this repo and `C:\Users\xdm\frc-2026\2026` declare `"teamNumber": 4935`. The Obsidian vault folder is named `6767 frc bible` — that's a naming meme, not a team number.
-- **User Role:** Lead Programmer/Mentor overseeing the system architecture.
+- **User Role:** Mentor overseeing the system architecture.
 - **Goal:** Build a modular, simulation-first codebase combining 1678's IO-isolation and 254's state machine.
 
 ## 🧠 Permanent Brain Sync (Obsidian Workflow)
