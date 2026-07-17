@@ -60,8 +60,9 @@ def parse_log(buf):
     extra_len = int.from_bytes(buf[8:12], "little")
     off = 12 + extra_len
 
-    entries = {}  # id -> Entry
-    finished = []
+    active = {}       # id -> Entry currently accepting data records
+    all_entries = []  # every Start creates a new Entry; Finish only deactivates,
+                      # because the spec allows entry-ID reuse after a Finish
     skipped = 0
     while off < len(buf):
         bitfield = buf[off]
@@ -86,16 +87,18 @@ def parse_log(buf):
                 name, p = read_string4(payload, p)
                 type_str, p = read_string4(payload, p)
                 metadata, p = read_string4(payload, p)
-                entries[target] = Entry(target, name, type_str, metadata)
+                e = Entry(target, name, type_str, metadata)
+                active[target] = e
+                all_entries.append(e)
             elif ctrl == CONTROL_FINISH:
-                finished.append(int.from_bytes(payload[1:5], "little"))
+                active.pop(int.from_bytes(payload[1:5], "little"), None)
             # SetMetadata: nothing needed for our analyses
-        elif entry_id in entries:
-            entries[entry_id].records.append((timestamp, payload))
+        elif entry_id in active:
+            active[entry_id].records.append((timestamp, payload))
         else:
             skipped += 1
 
-    return version, entries, skipped
+    return version, all_entries, skipped
 
 
 def decode_scalar(type_str, payload):
@@ -112,7 +115,20 @@ def decode_scalar(type_str, payload):
             return payload.decode("utf-8", errors="replace")
         if type_str == "double[]" and len(payload) % 8 == 0:
             return list(struct.unpack(f"<{len(payload)//8}d", payload))
-    except struct.error:
+        if type_str == "boolean[]":
+            return [bool(b) for b in payload]
+        if type_str == "int64[]" and len(payload) % 8 == 0:
+            return list(struct.unpack(f"<{len(payload)//8}q", payload))
+        if type_str == "float[]" and len(payload) % 4 == 0:
+            return list(struct.unpack(f"<{len(payload)//4}f", payload))
+        if type_str == "string[]" and len(payload) >= 4:
+            n = int.from_bytes(payload[:4], "little")
+            off, out = 4, []
+            for _ in range(n):
+                s, off = read_string4(payload, off)
+                out.append(s)
+            return out
+    except (struct.error, IndexError, UnicodeDecodeError):
         pass
     return None  # unsupported / struct types stay raw
 
@@ -174,10 +190,22 @@ def main():
         print(f"❌ log file not found: {path}")
         sys.exit(1)
     try:
-        version, entries, skipped = parse_log(path.read_bytes())
+        version, all_entries, skipped = parse_log(path.read_bytes())
     except ValueError as e:
         print(f"❌ {e}")
         sys.exit(1)
+
+    # Merge same-name restarts (entry-ID reuse) and sort each entry's records —
+    # the spec does not guarantee records appear in timestamp order.
+    entries = {}
+    for e in all_entries:
+        m = entries.get(e.name)
+        if m is not None and m.type == e.type:
+            m.records.extend(e.records)
+        else:
+            entries[e.name if m is None else f"{e.name} ({e.type})"] = e
+    for e in entries.values():
+        e.records.sort(key=lambda r: r[0])
 
     total = sum(len(e.records) for e in entries.values())
     all_ts = [ts for e in entries.values() for ts, _ in e.records]
@@ -196,7 +224,7 @@ def main():
         print(f"   ... {len(shown) - 40} more (use --grep to filter)")
 
     rc = 0
-    by_name = {e.name: e for e in entries.values()}
+    by_name = entries
 
     if args.dump:
         e = by_name.get(args.dump)
