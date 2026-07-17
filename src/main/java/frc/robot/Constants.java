@@ -41,6 +41,8 @@ public final class Constants {
   public static final String[] visionCameraNames = { "limelight-bow", "limelight-intake" };
   public static final double kVisionMaxTagDistMeters = 5.0; // MegaTag2 trust filter cutoff
   public static final double kVisionStdDevCoefficient = 0.1; // dev = coefficient * (avgTagDist / tagCount)
+  public static final double kMaxVisionJumpMeters = 1.0; // reject a vision read this far from the current estimate
+  public static final double kVisionStdDevMinMeters = 0.05; // floor so no single frame gets near-total trust
 
   // Intake pivot/roller sim & physical constants (placeholder estimates -- TODO: measure/tune against real robot)
   public static final double kIntakePivotReduction = 17.50;
