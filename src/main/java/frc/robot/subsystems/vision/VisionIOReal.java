@@ -12,6 +12,9 @@ import frc.robot.utility.LimelightHelpers.PoseEstimate;
 
 /** VisionIO implementation for real Limelight cameras. The only file allowed to touch LimelightHelpers/NetworkTables. */
 public class VisionIOReal implements VisionIO {
+  /** The only camera with a fused IMU (Pigeon) -- matches the sole camera Robot.java used to target directly. */
+  private static final String kIMUCameraName = "limelight-bow";
+
   private final String[] cameraNames;
 
   public VisionIOReal(String[] cameraNames) {
@@ -23,6 +26,16 @@ public class VisionIOReal implements VisionIO {
     for (String name : cameraNames) {
       LimelightHelpers.SetRobotOrientation(name, yawDegrees, 0, 0, 0, 0, 0);
     }
+  }
+
+  @Override
+  public void setIMUMode(int mode) {
+    LimelightHelpers.SetIMUMode(kIMUCameraName, mode);
+  }
+
+  @Override
+  public void setIMUAssistAlpha(double alpha) {
+    LimelightHelpers.SetIMUAssistAlpha(kIMUCameraName, alpha);
   }
 
   @Override

@@ -8,7 +8,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import frc.robot.utility.LimelightHelpers;
+import frc.robot.subsystems.vision.Vision;
 import frc.robot.utility.HubActiveState;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
@@ -27,6 +27,7 @@ public class Robot extends LoggedRobot {
 
   private final RobotContainer m_robotContainer;
   private final HubActiveState m_hubInstance = HubActiveState.getInstance();
+  private final Vision m_vision;
 
 
   /**
@@ -75,6 +76,7 @@ public class Robot extends LoggedRobot {
     // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
     // autonomous chooser on the dashboard.
     m_robotContainer = new RobotContainer();
+    m_vision = Vision.getInstance(m_robotContainer.drivetrain);
 
   }
   
@@ -105,7 +107,7 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void disabledPeriodic() {
-    LimelightHelpers.SetIMUMode("limelight-bow", 1);
+    m_vision.setIMUMode(1);
 
   }
 
@@ -131,8 +133,8 @@ public void autonomousInit() {
 
   @Override
   public void teleopInit() {
-    LimelightHelpers.SetIMUMode("limelight-bow", 4);
-    LimelightHelpers.SetIMUAssistAlpha("limelight-bow", 0.001);
+    m_vision.setIMUMode(4);
+    m_vision.setIMUAssistAlpha(0.001);
     // This makes sure that the autonomous stops running when
     // teleop starts running. If you want the autonomous to
     // continue until interrupted by another command, remove
@@ -140,10 +142,7 @@ public void autonomousInit() {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
     }
-    var mt = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight-bow");
-    if (mt != null && mt.tagCount > 0 && mt.pose.getX() !=0){
-      m_robotContainer.drivetrain.resetPose(mt.pose);
-    }
+    m_vision.getPoseResetEstimate().ifPresent(m_robotContainer.drivetrain::resetPose);
   }
 
   /** This function is called periodically during operator control. */
@@ -152,8 +151,8 @@ public void autonomousInit() {
 
   @Override
   public void testInit() {
-    LimelightHelpers.SetIMUMode("limelight-bow", 4);
-    LimelightHelpers.SetIMUAssistAlpha("limelight-bow", 0.001);
+    m_vision.setIMUMode(4);
+    m_vision.setIMUAssistAlpha(0.001);
     // Cancels all running commands at the start of test mode.
     CommandScheduler.getInstance().cancelAll();
   }
