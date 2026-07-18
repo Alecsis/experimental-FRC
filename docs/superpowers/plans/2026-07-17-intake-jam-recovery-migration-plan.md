@@ -31,7 +31,7 @@
   - `Intake.forceJamConditionForTest(double statorCurrentAmps, double velocityRadsPerSec): void` — package-private, consumed by Task 2's test.
   - `Intake.clearJamOverrideForTest(): void` — package-private, consumed by Task 2's test.
 
-- [ ] **Step 1: Add the `Timer` import and jam-recovery/test-override fields**
+- [x] **Step 1: Add the `Timer` import and jam-recovery/test-override fields**
 
 In `src/main/java/frc/robot/subsystems/intake/Intake.java`, add to the import block (after the existing `edu.wpi.first.units.measure.Angle` import, alphabetically before `smartdashboard`):
 
@@ -61,7 +61,7 @@ Add new fields next to `currentRoller` (around line 45):
   private double testJamVelocityRadsPerSec;
 ```
 
-- [ ] **Step 2: Rewrite `setRoller()` to intercept jams, add `applyRoller()`**
+- [x] **Step 2: Rewrite `setRoller()` to intercept jams, add `applyRoller()`**
 
 Replace the existing `setRoller()` (currently lines 103-111):
 
@@ -116,7 +116,7 @@ with:
   }
 ```
 
-- [ ] **Step 3: Add the test-only jam-override hook**
+- [x] **Step 3: Add the test-only jam-override hook**
 
 Add these two methods directly below `isJammed()` (currently lines 118-121):
 
@@ -135,7 +135,7 @@ Add these two methods directly below `isJammed()` (currently lines 118-121):
   }
 ```
 
-- [ ] **Step 4: Apply the test override inside `periodic()`**
+- [x] **Step 4: Apply the test override inside `periodic()`**
 
 Replace the start of `periodic()` (currently lines 224-227):
 
@@ -159,7 +159,7 @@ with:
     Logger.processInputs("Intake", inputs);
 ```
 
-- [ ] **Step 5: Static gate — compile clean**
+- [x] **Step 5: Static gate — compile clean**
 
 Run:
 ```bash
@@ -168,7 +168,7 @@ cd "C:/Users/xdm/Claude/experimental-FRC" && ./gradlew compileJava
 ```
 Expected: `BUILD SUCCESSFUL`. (`intakeJamReverse()` and `intake()` still exist and still compile at this point — they're deleted in Task 4, after `RobotContainer.java` stops referencing them in Task 3.)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/main/java/frc/robot/subsystems/intake/Intake.java
@@ -188,7 +188,7 @@ git commit -m "intake: move jam recovery into setRoller(), add test-only overrid
 
 This test still boots the real `Robot` via `startCompetition()`, even though it calls `Intake.setRoller()` directly rather than going through `Superstructure`/`CommandScheduler`, because `IntakeIOSim.updateInputs()` (`IntakeIOSim.java:111`) reaches into the static field `RobotContainer.drivetrain`, which is only populated once `RobotContainer` — and therefore the full `Robot` — has been constructed. Booting the real robot also ensures `Intake.periodic()` actually runs each tick (via `CommandScheduler.run()`'s subsystem loop), which is what applies the test-override values to `inputs` before `isJammed()`/`setRoller()` reads them from the test thread.
 
-- [ ] **Step 1: Write the test**
+- [x] **Step 1: Write the test**
 
 **Revised 2026-07-17 during Task 2's implementation** — the original version of this step called `Intake.setRoller()` directly, deliberately bypassing `Superstructure`. That failed deterministically: `Superstructure` is constructed as part of the required `Robot` boot regardless, sits in its default `OFF` state for the test's whole duration (nothing ever moves it), and `Superstructure.periodic()`'s `OFF` case unconditionally calls `intake.setRoller(Roller.STOP)` every tick — resetting `jamRecoveryActive` between the test's own calls. The design doc's Context finding #2 named this exact race but assumed Task 3 closes it; Task 3 only makes `Superstructure` the sole writer *during `INTAKING`*, which this test never entered. Fixed by routing through `Superstructure.requestIntake()`/`requestStow()` instead, matching how this logic is actually driven in production and turning every assertion into a stable state rather than a race against Superstructure's next tick.
 
@@ -315,7 +315,7 @@ class IntakeJamRecoveryTest {
 
 **Known risk to verify empirically, not by further reasoning:** `IntakeIOSim`'s roller uses closed-loop velocity control over a real `DCMotorSim`. A normal 0→800 RPM spin-up briefly produces high current at low velocity — the same electrical signature `isJammed()` looks for. If the very first assertion (baseline INTAKE, no forced jam) is flaky or fails because the roller hasn't cleared the 5 RPS threshold yet when checked, that's a real spin-up transient, not a broken test — increase the `SimHooks.stepTiming(0.1)` right after `requestIntake()` (more settle time before checking) rather than changing the assertion itself.
 
-- [ ] **Step 2: Run the test and verify it passes**
+- [x] **Step 2: Run the test and verify it passes**
 
 Run:
 ```bash
@@ -324,7 +324,7 @@ cd "C:/Users/xdm/Claude/experimental-FRC" && ./gradlew test --tests "frc.robot.s
 ```
 Expected: `BUILD SUCCESSFUL`, 1 test PASSED.
 
-- [ ] **Step 3: Negative control — prove the assertions actually discriminate**
+- [x] **Step 3: Negative control — prove the assertions actually discriminate**
 
 Temporarily change the first assertion's expected value, e.g.:
 ```java
@@ -332,7 +332,7 @@ Temporarily change the first assertion's expected value, e.g.:
 ```
 (where it currently expects `Intake.Roller.EJECT`). Run the same command from Step 2 again. Expected: FAILS with a real `AssertionFailedError: ... expected: <INTAKE> but was: <EJECT>`. Revert the change back to `Intake.Roller.EJECT` and re-run to confirm green again.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/test/java/frc/robot/subsystems/intake/IntakeJamRecoveryTest.java
@@ -350,7 +350,7 @@ git commit -m "intake: add jam-recovery behavior proof"
 - Consumes: `Superstructure.intakeCmd(): Command`, `Superstructure.stowCmd(): Command` — already exist (`Superstructure.java:140-142,150-152`).
 - Produces: nothing consumed elsewhere.
 
-- [ ] **Step 1: Remove the now-unused `Agitate` import**
+- [x] **Step 1: Remove the now-unused `Agitate` import**
 
 In `src/main/java/frc/robot/RobotContainer.java`, remove line 37:
 
@@ -360,7 +360,7 @@ import frc.robot.subsystems.shooter.Shooter.Agitate;
 
 (Confirmed unused elsewhere in this file after Step 2 below — `Agitate` only appeared at the line being replaced.)
 
-- [ ] **Step 2: Replace the NamedCommand registrations**
+- [x] **Step 2: Replace the NamedCommand registrations**
 
 Replace (currently lines 77-88):
 
@@ -391,7 +391,7 @@ with:
                                 "Intake Stop", superstructure.stowCmd());
 ```
 
-- [ ] **Step 3: Static gate — compile clean**
+- [x] **Step 3: Static gate — compile clean**
 
 Run:
 ```bash
@@ -400,7 +400,7 @@ cd "C:/Users/xdm/Claude/experimental-FRC" && ./gradlew compileJava
 ```
 Expected: `BUILD SUCCESSFUL`. (`intake.intakeJamReverse()` still exists in `Intake.java` at this point, just no longer referenced here — no error, only an unused-method situation resolved in Task 4.)
 
-- [ ] **Step 4: Behavior gate — full test suite**
+- [x] **Step 4: Behavior gate — full test suite**
 
 Run:
 ```bash
@@ -408,7 +408,7 @@ Run:
 ```
 Expected: `BUILD SUCCESSFUL`, `RobotLifecycleTest`, `SuperstructureEjectingTest`, and `IntakeJamRecoveryTest` all PASSED. (This confirms the `RobotContainer` construction change didn't break anything the other two tests exercise.)
 
-- [ ] **Step 5: Runtime launch gate**
+- [x] **Step 5: Runtime launch gate**
 
 Run:
 ```bash
@@ -416,7 +416,7 @@ python SKILLS/run_headless_sim.py
 ```
 Expected: PASS, exit 0. Required because this task changes `RobotContainer`'s NamedCommands construction, per `CLAUDE.md`'s Verification Loop gate 2.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/main/java/frc/robot/RobotContainer.java
@@ -436,7 +436,7 @@ git commit -m "robotcontainer: route Intake Start Sequence/Stop through Superstr
 
 Both methods are dead code as of Task 3: `intakeJamReverse()`'s only caller was `RobotContainer.java` (removed in Task 3) and `Intake.intake()` itself (also deleted here); `Intake.intake()` has no callers anywhere in the codebase.
 
-- [ ] **Step 1: Delete `intakeJamReverse()`**
+- [x] **Step 1: Delete `intakeJamReverse()`**
 
 Remove from `src/main/java/frc/robot/subsystems/intake/Intake.java` (the method currently sits between `isJammed()` and `rollerSysIdQuasistatic()`, and by this point also between the new test-hook methods added in Task 1 and `rollerSysIdQuasistatic()`):
 
@@ -451,7 +451,7 @@ Remove from `src/main/java/frc/robot/subsystems/intake/Intake.java` (the method 
   }
 ```
 
-- [ ] **Step 2: Delete `Intake.intake()`**
+- [x] **Step 2: Delete `Intake.intake()`**
 
 Remove:
 
@@ -474,7 +474,7 @@ Remove:
   }
 ```
 
-- [ ] **Step 3: Static gate — compile clean**
+- [x] **Step 3: Static gate — compile clean**
 
 Run:
 ```bash
@@ -483,7 +483,7 @@ cd "C:/Users/xdm/Claude/experimental-FRC" && ./gradlew compileJava
 ```
 Expected: `BUILD SUCCESSFUL`.
 
-- [ ] **Step 4: Full verification loop**
+- [x] **Step 4: Full verification loop**
 
 Run:
 ```bash
@@ -492,7 +492,7 @@ python SKILLS/run_headless_sim.py
 ```
 Expected: `./gradlew test` → `BUILD SUCCESSFUL`, all three test classes PASSED. `run_headless_sim.py` → PASS, exit 0.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/main/java/frc/robot/subsystems/intake/Intake.java
