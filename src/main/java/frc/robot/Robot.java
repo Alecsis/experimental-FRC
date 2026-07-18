@@ -99,6 +99,10 @@ public class Robot extends LoggedRobot {
     // block in order for anything in the Command-based framework to work.
     SmartDashboard.putNumber("Match Time", DriverStation.getMatchTime());
     CommandScheduler.getInstance().run();
+    // After the scheduler, not before: this loop's PathPlanner setpoint (if any) has just been
+    // produced, so the tracker pairs it with a same-instant pose read instead of a stale one.
+    // See RobotContainer.trajectoryTrackerPeriodic().
+    m_robotContainer.trajectoryTrackerPeriodic();
   }
 
   /** This function is called once each time the robot enters Disabled mode. */
