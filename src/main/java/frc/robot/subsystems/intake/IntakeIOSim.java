@@ -35,7 +35,7 @@ public class IntakeIOSim implements IntakeIO {
 
   private static final double kPivotKP = 70.0;
   private static final double kPivotKD = 0.0;
-  private static final double kRollerKP = 0.35;
+  private static final double kRollerKP = 0.03;
 
   private final SingleJointedArmSim pivotSim = new SingleJointedArmSim(
       pivotGearbox,

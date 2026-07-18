@@ -25,6 +25,7 @@ public class Intake extends SubsystemBase {
   private static final double kJamStatorCurrentAmps = 80;
   private static final double kJamVelocityThresholdRadPerSec = RotationsPerSecond.of(5).in(RadiansPerSecond);
   private static final double kJamRecoveryPulseSeconds = 0.3;
+  private static final double kJamRecoveryCooldownSeconds = 0.3;
   private static final double kHardstopStatorCurrentAmps = 65;
   private static final double kHomingVoltage = 3.0;
 
@@ -47,6 +48,7 @@ public class Intake extends SubsystemBase {
   private Roller currentRoller = Roller.STOP;
   private boolean jamRecoveryActive = false;
   private double jamRecoveryStartTimestamp = 0.0;
+  private double jamRecoveryCooldownUntilTimestamp = 0.0;
 
   private boolean testJamOverrideActive = false;
   private double testJamStatorCurrentAmps;
@@ -110,13 +112,20 @@ public class Intake extends SubsystemBase {
 
   public void setRoller(Roller state) {
     if (state != Roller.INTAKE) {
-      // STOP or EJECT always wins immediately, aborting any in-progress recovery pulse.
+      // STOP or EJECT always wins immediately, aborting any in-progress recovery pulse/cooldown.
       jamRecoveryActive = false;
+      jamRecoveryCooldownUntilTimestamp = 0.0;
       applyRoller(state);
       return;
     }
 
-    if (!jamRecoveryActive && isJammed()) {
+    // Resuming INTAKE right after an EJECT pulse sweeps the roller back through low/negative
+    // velocity under elevated current -- the same electrical signature isJammed() looks for.
+    // Suppress re-arming the detector until that resume transient has had time to clear, or every
+    // recovery pulse immediately re-triggers itself.
+    boolean inCooldown = Timer.getFPGATimestamp() < jamRecoveryCooldownUntilTimestamp;
+
+    if (!jamRecoveryActive && !inCooldown && isJammed()) {
       jamRecoveryActive = true;
       jamRecoveryStartTimestamp = Timer.getFPGATimestamp();
     }
@@ -127,6 +136,7 @@ public class Intake extends SubsystemBase {
         return;
       }
       jamRecoveryActive = false; // pulse elapsed, fall through to resume INTAKE
+      jamRecoveryCooldownUntilTimestamp = Timer.getFPGATimestamp() + kJamRecoveryCooldownSeconds;
     }
 
     applyRoller(Roller.INTAKE);
