@@ -1,0 +1,863 @@
+{
+  "name": "experimental-FRC",
+  "description": "An FRC (FIRST Robotics Competition) robot codebase for Team 4935, built on WPILib/GradleRIO (2026.2.1) with CTRE Phoenix 6, AdvantageKit, PathPlannerLib, and the maple-sim physics simulator, following a hardware-isolation architecture that keeps IO interfaces separate from subsystem logic. Note: this project has over 100 source files; consider scoping analysis to a subdirectory for faster results.",
+  "languages": [
+    "auto",
+    "batch",
+    "gradle",
+    "jar",
+    "java",
+    "json",
+    "markdown",
+    "path",
+    "properties",
+    "python",
+    "txt",
+    "unknown",
+    "yaml"
+  ],
+  "frameworks": [
+    "WPILib",
+    "GradleRIO",
+    "CTRE Phoenix 6",
+    "AdvantageKit",
+    "PathPlannerLib",
+    "maple-sim",
+    "LumynLabs",
+    "JUnit",
+    "GitHub Actions"
+  ],
+  "files": [
+    {
+      "path": ".claude/commands/tldr.md",
+      "language": "markdown",
+      "sizeLines": 101,
+      "fileCategory": "docs"
+    },
+    {
+      "path": ".github/workflows/main.yml",
+      "language": "yaml",
+      "sizeLines": 30,
+      "fileCategory": "infra"
+    },
+    {
+      "path": ".ua/.understandignore",
+      "language": "unknown",
+      "sizeLines": 144,
+      "fileCategory": "code"
+    },
+    {
+      "path": ".wpilib/wpilib_preferences.json",
+      "language": "json",
+      "sizeLines": 5,
+      "fileCategory": "config"
+    },
+    {
+      "path": "build.gradle",
+      "language": "gradle",
+      "sizeLines": 143,
+      "fileCategory": "config"
+    },
+    {
+      "path": "claude.md",
+      "language": "markdown",
+      "sizeLines": 94,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/claudex/architecture.md",
+      "language": "markdown",
+      "sizeLines": 28,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/claudex/history.md",
+      "language": "markdown",
+      "sizeLines": 56,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/claudex/verification-loop.md",
+      "language": "markdown",
+      "sizeLines": 35,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-07-16-maple-sim-physics.md",
+      "language": "markdown",
+      "sizeLines": 685,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-07-16-vision-superstructure-cleanup.md",
+      "language": "markdown",
+      "sizeLines": 820,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-07-17-intake-jam-recovery-migration-plan.md",
+      "language": "markdown",
+      "sizeLines": 511,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-07-17-phase3-imu-mode-junit-test.md",
+      "language": "markdown",
+      "sizeLines": 251,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-07-17-phase3-test-b-ejecting-junit-test.md",
+      "language": "markdown",
+      "sizeLines": 384,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-07-16-maple-sim-physics-design.md",
+      "language": "markdown",
+      "sizeLines": 77,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-07-16-vision-superstructure-cleanup-design.md",
+      "language": "markdown",
+      "sizeLines": 123,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-07-17-intake-jam-recovery-migration-design.md",
+      "language": "markdown",
+      "sizeLines": 127,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "gradle/wrapper/gradle-wrapper.jar",
+      "language": "jar",
+      "sizeLines": 151,
+      "fileCategory": "code"
+    },
+    {
+      "path": "gradle/wrapper/gradle-wrapper.properties",
+      "language": "properties",
+      "sizeLines": 7,
+      "fileCategory": "config"
+    },
+    {
+      "path": "gradlew",
+      "language": "unknown",
+      "sizeLines": 252,
+      "fileCategory": "code"
+    },
+    {
+      "path": "gradlew.bat",
+      "language": "batch",
+      "sizeLines": 94,
+      "fileCategory": "script"
+    },
+    {
+      "path": "PLAN.md",
+      "language": "markdown",
+      "sizeLines": 61,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "README.md",
+      "language": "markdown",
+      "sizeLines": 5,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "settings.gradle",
+      "language": "gradle",
+      "sizeLines": 30,
+      "fileCategory": "config"
+    },
+    {
+      "path": "simgui-ds.json",
+      "language": "json",
+      "sizeLines": 108,
+      "fileCategory": "config"
+    },
+    {
+      "path": "SKILLS/parse_akit_log.py",
+      "language": "python",
+      "sizeLines": 256,
+      "fileCategory": "code"
+    },
+    {
+      "path": "SKILLS/run_headless_sim.py",
+      "language": "python",
+      "sizeLines": 181,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/example.txt",
+      "language": "txt",
+      "sizeLines": 2,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/autos/deploy/pathplanner/deploy/pathplanner/navgrid.json",
+      "language": "json",
+      "sizeLines": 0,
+      "fileCategory": "config"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/autos/deploy/pathplanner/navgrid.json",
+      "language": "json",
+      "sizeLines": 0,
+      "fileCategory": "config"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/autos/LB Depot.auto",
+      "language": "auto",
+      "sizeLines": 74,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/autos/LB Neutral.auto",
+      "language": "auto",
+      "sizeLines": 74,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/autos/LT Depot.auto",
+      "language": "auto",
+      "sizeLines": 74,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/autos/LT Neutral - Bump Recollect.auto",
+      "language": "auto",
+      "sizeLines": 80,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/autos/LT Neutral - Bump Route.auto",
+      "language": "auto",
+      "sizeLines": 74,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/autos/LT Neutral - Depot Recollect.auto",
+      "language": "auto",
+      "sizeLines": 80,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/autos/LT Neutral - Trench Recollect.auto",
+      "language": "auto",
+      "sizeLines": 80,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/autos/LT Neutral - U Turn.auto",
+      "language": "auto",
+      "sizeLines": 74,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/autos/LT Neutral.auto",
+      "language": "auto",
+      "sizeLines": 74,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/autos/RB Neutral.auto",
+      "language": "auto",
+      "sizeLines": 74,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/autos/RT Neutral - Trench Recollect.auto",
+      "language": "auto",
+      "sizeLines": 74,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/autos/RT Neutral - U Turn.auto",
+      "language": "auto",
+      "sizeLines": 68,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/autos/RT Neutral.auto",
+      "language": "auto",
+      "sizeLines": 68,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/navgrid.json",
+      "language": "json",
+      "sizeLines": 0,
+      "fileCategory": "config"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Backup into Depot.path",
+      "language": "path",
+      "sizeLines": 80,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Bump Neutral Left.path",
+      "language": "path",
+      "sizeLines": 94,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Bump Neutral Right.path",
+      "language": "path",
+      "sizeLines": 67,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Depot - Score.path",
+      "language": "path",
+      "sizeLines": 64,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Depot.path",
+      "language": "path",
+      "sizeLines": 115,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Human-Shoot.path",
+      "language": "path",
+      "sizeLines": 53,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Left Bump Depot.path",
+      "language": "path",
+      "sizeLines": 53,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Left Bump End.path",
+      "language": "path",
+      "sizeLines": 74,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Left Bump Recollect End.path",
+      "language": "path",
+      "sizeLines": 94,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Left Bump Recollect Start.path",
+      "language": "path",
+      "sizeLines": 112,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Left Bump Start.path",
+      "language": "path",
+      "sizeLines": 74,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Left Trench End.path",
+      "language": "path",
+      "sizeLines": 74,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Left Trench Neutral - U Turn.path",
+      "language": "path",
+      "sizeLines": 168,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Left Trench Neutral.path",
+      "language": "path",
+      "sizeLines": 154,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Left Trench Recollect End.path",
+      "language": "path",
+      "sizeLines": 78,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Left Trench Recollect Start.path",
+      "language": "path",
+      "sizeLines": 112,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Left Trench Start.path",
+      "language": "path",
+      "sizeLines": 104,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Left Trench to Depot.path",
+      "language": "path",
+      "sizeLines": 53,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Right Bump End.path",
+      "language": "path",
+      "sizeLines": 96,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Right Bump Start.path",
+      "language": "path",
+      "sizeLines": 74,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Right Trench End.path",
+      "language": "path",
+      "sizeLines": 74,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Right Trench Recollect End.path",
+      "language": "path",
+      "sizeLines": 78,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Right Trench Recollect Start.path",
+      "language": "path",
+      "sizeLines": 112,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Right Trench Start - U Turn.path",
+      "language": "path",
+      "sizeLines": 159,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Right Trench Start.path",
+      "language": "path",
+      "sizeLines": 174,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/settings.json",
+      "language": "json",
+      "sizeLines": 37,
+      "fileCategory": "config"
+    },
+    {
+      "path": "src/main/java/frc/robot/Constants.java",
+      "language": "java",
+      "sizeLines": 74,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/FieldConstants.java",
+      "language": "java",
+      "sizeLines": 46,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/generated/AdvantageScope Swerve Calibration.json",
+      "language": "json",
+      "sizeLines": 461,
+      "fileCategory": "config"
+    },
+    {
+      "path": "src/main/java/frc/robot/generated/tuner-swerve-project.json",
+      "language": "json",
+      "sizeLines": 231,
+      "fileCategory": "config"
+    },
+    {
+      "path": "src/main/java/frc/robot/generated/TunerConstants.java",
+      "language": "java",
+      "sizeLines": 288,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/Main.java",
+      "language": "java",
+      "sizeLines": 25,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/OperatorControls.java",
+      "language": "java",
+      "sizeLines": 98,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/POI.java",
+      "language": "java",
+      "sizeLines": 67,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/Robot.java",
+      "language": "java",
+      "sizeLines": 178,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/RobotContainer.java",
+      "language": "java",
+      "sizeLines": 148,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/CommandSwerveDrivetrain.java",
+      "language": "java",
+      "sizeLines": 657,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/intake/Intake.java",
+      "language": "java",
+      "sizeLines": 266,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/intake/IntakeIO.java",
+      "language": "java",
+      "sizeLines": 48,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/intake/IntakeIOReal.java",
+      "language": "java",
+      "sizeLines": 139,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/intake/IntakeIOSim.java",
+      "language": "java",
+      "sizeLines": 161,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/shooter/Shooter.java",
+      "language": "java",
+      "sizeLines": 236,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/shooter/ShooterIO.java",
+      "language": "java",
+      "sizeLines": 51,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/shooter/ShooterIOReal.java",
+      "language": "java",
+      "sizeLines": 146,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/shooter/ShooterIOSim.java",
+      "language": "java",
+      "sizeLines": 122,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/superstructure/Superstructure.java",
+      "language": "java",
+      "sizeLines": 230,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/vision/Vision.java",
+      "language": "java",
+      "sizeLines": 272,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/vision/VisionIO.java",
+      "language": "java",
+      "sizeLines": 46,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/vision/VisionIOReal.java",
+      "language": "java",
+      "sizeLines": 78,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/vision/VisionIOSim.java",
+      "language": "java",
+      "sizeLines": 51,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/Telemetry.java",
+      "language": "java",
+      "sizeLines": 181,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/utility/HootReplayBridge.java",
+      "language": "java",
+      "sizeLines": 33,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/utility/HubActiveState.java",
+      "language": "java",
+      "sizeLines": 140,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/utility/LimelightHelpers.java",
+      "language": "java",
+      "sizeLines": 1946,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/utility/simulation/MapleSimSwerveDrivetrain.java",
+      "language": "java",
+      "sizeLines": 167,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/test/java/frc/robot/RobotLifecycleTest.java",
+      "language": "java",
+      "sizeLines": 81,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/test/java/frc/robot/subsystems/intake/IntakeJamRecoveryTest.java",
+      "language": "java",
+      "sizeLines": 129,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/test/java/frc/robot/SuperstructureEjectingTest.java",
+      "language": "java",
+      "sizeLines": 96,
+      "fileCategory": "code"
+    },
+    {
+      "path": "V1 Layout.json",
+      "language": "json",
+      "sizeLines": 471,
+      "fileCategory": "config"
+    },
+    {
+      "path": "vendordeps/AdvantageKit.json",
+      "language": "json",
+      "sizeLines": 34,
+      "fileCategory": "config"
+    },
+    {
+      "path": "vendordeps/LumynLabs-2026.2.0.json",
+      "language": "json",
+      "sizeLines": 70,
+      "fileCategory": "config"
+    },
+    {
+      "path": "vendordeps/maple-sim.json",
+      "language": "json",
+      "sizeLines": 30,
+      "fileCategory": "config"
+    },
+    {
+      "path": "vendordeps/PathplannerLib-2026.1.2.json",
+      "language": "json",
+      "sizeLines": 37,
+      "fileCategory": "config"
+    },
+    {
+      "path": "vendordeps/Phoenix6-26.1.3.json",
+      "language": "json",
+      "sizeLines": 448,
+      "fileCategory": "config"
+    },
+    {
+      "path": "vendordeps/WPILibNewCommands.json",
+      "language": "json",
+      "sizeLines": 39,
+      "fileCategory": "config"
+    },
+    {
+      "path": "WPILib-License.md",
+      "language": "markdown",
+      "sizeLines": 24,
+      "fileCategory": "docs"
+    }
+  ],
+  "totalFiles": 110,
+  "filteredByIgnore": 1661,
+  "estimatedComplexity": "moderate",
+  "importMap": {
+    ".claude/commands/tldr.md": [],
+    ".github/workflows/main.yml": [],
+    ".ua/.understandignore": [],
+    ".wpilib/wpilib_preferences.json": [],
+    "build.gradle": [],
+    "claude.md": [],
+    "docs/claudex/architecture.md": [],
+    "docs/claudex/history.md": [],
+    "docs/claudex/verification-loop.md": [],
+    "docs/superpowers/plans/2026-07-16-maple-sim-physics.md": [],
+    "docs/superpowers/plans/2026-07-16-vision-superstructure-cleanup.md": [],
+    "docs/superpowers/plans/2026-07-17-intake-jam-recovery-migration-plan.md": [],
+    "docs/superpowers/plans/2026-07-17-phase3-imu-mode-junit-test.md": [],
+    "docs/superpowers/plans/2026-07-17-phase3-test-b-ejecting-junit-test.md": [],
+    "docs/superpowers/specs/2026-07-16-maple-sim-physics-design.md": [],
+    "docs/superpowers/specs/2026-07-16-vision-superstructure-cleanup-design.md": [],
+    "docs/superpowers/specs/2026-07-17-intake-jam-recovery-migration-design.md": [],
+    "gradle/wrapper/gradle-wrapper.jar": [],
+    "gradle/wrapper/gradle-wrapper.properties": [],
+    "gradlew": [],
+    "gradlew.bat": [],
+    "PLAN.md": [],
+    "README.md": [],
+    "settings.gradle": [],
+    "simgui-ds.json": [],
+    "SKILLS/parse_akit_log.py": [],
+    "SKILLS/run_headless_sim.py": [],
+    "src/main/deploy/example.txt": [],
+    "src/main/deploy/pathplanner/autos/deploy/pathplanner/deploy/pathplanner/navgrid.json": [],
+    "src/main/deploy/pathplanner/autos/deploy/pathplanner/navgrid.json": [],
+    "src/main/deploy/pathplanner/autos/LB Depot.auto": [],
+    "src/main/deploy/pathplanner/autos/LB Neutral.auto": [],
+    "src/main/deploy/pathplanner/autos/LT Depot.auto": [],
+    "src/main/deploy/pathplanner/autos/LT Neutral - Bump Recollect.auto": [],
+    "src/main/deploy/pathplanner/autos/LT Neutral - Bump Route.auto": [],
+    "src/main/deploy/pathplanner/autos/LT Neutral - Depot Recollect.auto": [],
+    "src/main/deploy/pathplanner/autos/LT Neutral - Trench Recollect.auto": [],
+    "src/main/deploy/pathplanner/autos/LT Neutral - U Turn.auto": [],
+    "src/main/deploy/pathplanner/autos/LT Neutral.auto": [],
+    "src/main/deploy/pathplanner/autos/RB Neutral.auto": [],
+    "src/main/deploy/pathplanner/autos/RT Neutral - Trench Recollect.auto": [],
+    "src/main/deploy/pathplanner/autos/RT Neutral - U Turn.auto": [],
+    "src/main/deploy/pathplanner/autos/RT Neutral.auto": [],
+    "src/main/deploy/pathplanner/navgrid.json": [],
+    "src/main/deploy/pathplanner/paths/Backup into Depot.path": [],
+    "src/main/deploy/pathplanner/paths/Bump Neutral Left.path": [],
+    "src/main/deploy/pathplanner/paths/Bump Neutral Right.path": [],
+    "src/main/deploy/pathplanner/paths/Depot - Score.path": [],
+    "src/main/deploy/pathplanner/paths/Depot.path": [],
+    "src/main/deploy/pathplanner/paths/Human-Shoot.path": [],
+    "src/main/deploy/pathplanner/paths/Left Bump Depot.path": [],
+    "src/main/deploy/pathplanner/paths/Left Bump End.path": [],
+    "src/main/deploy/pathplanner/paths/Left Bump Recollect End.path": [],
+    "src/main/deploy/pathplanner/paths/Left Bump Recollect Start.path": [],
+    "src/main/deploy/pathplanner/paths/Left Bump Start.path": [],
+    "src/main/deploy/pathplanner/paths/Left Trench End.path": [],
+    "src/main/deploy/pathplanner/paths/Left Trench Neutral - U Turn.path": [],
+    "src/main/deploy/pathplanner/paths/Left Trench Neutral.path": [],
+    "src/main/deploy/pathplanner/paths/Left Trench Recollect End.path": [],
+    "src/main/deploy/pathplanner/paths/Left Trench Recollect Start.path": [],
+    "src/main/deploy/pathplanner/paths/Left Trench Start.path": [],
+    "src/main/deploy/pathplanner/paths/Left Trench to Depot.path": [],
+    "src/main/deploy/pathplanner/paths/Right Bump End.path": [],
+    "src/main/deploy/pathplanner/paths/Right Bump Start.path": [],
+    "src/main/deploy/pathplanner/paths/Right Trench End.path": [],
+    "src/main/deploy/pathplanner/paths/Right Trench Recollect End.path": [],
+    "src/main/deploy/pathplanner/paths/Right Trench Recollect Start.path": [],
+    "src/main/deploy/pathplanner/paths/Right Trench Start - U Turn.path": [],
+    "src/main/deploy/pathplanner/paths/Right Trench Start.path": [],
+    "src/main/deploy/pathplanner/settings.json": [],
+    "src/main/java/frc/robot/Constants.java": [],
+    "src/main/java/frc/robot/FieldConstants.java": [],
+    "src/main/java/frc/robot/generated/AdvantageScope Swerve Calibration.json": [],
+    "src/main/java/frc/robot/generated/tuner-swerve-project.json": [],
+    "src/main/java/frc/robot/generated/TunerConstants.java": [
+      "src/main/java/frc/robot/subsystems/CommandSwerveDrivetrain.java"
+    ],
+    "src/main/java/frc/robot/Main.java": [],
+    "src/main/java/frc/robot/OperatorControls.java": [
+      "src/main/java/frc/robot/subsystems/CommandSwerveDrivetrain.java",
+      "src/main/java/frc/robot/subsystems/superstructure/Superstructure.java",
+      "src/main/java/frc/robot/subsystems/vision/Vision.java"
+    ],
+    "src/main/java/frc/robot/POI.java": [],
+    "src/main/java/frc/robot/Robot.java": [
+      "src/main/java/frc/robot/subsystems/vision/Vision.java",
+      "src/main/java/frc/robot/utility/HubActiveState.java"
+    ],
+    "src/main/java/frc/robot/RobotContainer.java": [
+      "src/main/java/frc/robot/generated/TunerConstants.java",
+      "src/main/java/frc/robot/subsystems/CommandSwerveDrivetrain.java",
+      "src/main/java/frc/robot/subsystems/intake/Intake.java",
+      "src/main/java/frc/robot/subsystems/shooter/Shooter.java",
+      "src/main/java/frc/robot/subsystems/superstructure/Superstructure.java",
+      "src/main/java/frc/robot/subsystems/vision/Vision.java"
+    ],
+    "src/main/java/frc/robot/subsystems/CommandSwerveDrivetrain.java": [
+      "src/main/java/frc/robot/Constants.java",
+      "src/main/java/frc/robot/FieldConstants.java",
+      "src/main/java/frc/robot/generated/TunerConstants.java",
+      "src/main/java/frc/robot/POI.java",
+      "src/main/java/frc/robot/RobotContainer.java",
+      "src/main/java/frc/robot/subsystems/vision/Vision.java",
+      "src/main/java/frc/robot/utility/simulation/MapleSimSwerveDrivetrain.java"
+    ],
+    "src/main/java/frc/robot/subsystems/intake/Intake.java": [
+      "src/main/java/frc/robot/Constants.java"
+    ],
+    "src/main/java/frc/robot/subsystems/intake/IntakeIO.java": [],
+    "src/main/java/frc/robot/subsystems/intake/IntakeIOReal.java": [
+      "src/main/java/frc/robot/Constants.java"
+    ],
+    "src/main/java/frc/robot/subsystems/intake/IntakeIOSim.java": [
+      "src/main/java/frc/robot/Constants.java",
+      "src/main/java/frc/robot/RobotContainer.java"
+    ],
+    "src/main/java/frc/robot/subsystems/shooter/Shooter.java": [
+      "src/main/java/frc/robot/Constants.java"
+    ],
+    "src/main/java/frc/robot/subsystems/shooter/ShooterIO.java": [],
+    "src/main/java/frc/robot/subsystems/shooter/ShooterIOReal.java": [
+      "src/main/java/frc/robot/Constants.java"
+    ],
+    "src/main/java/frc/robot/subsystems/shooter/ShooterIOSim.java": [
+      "src/main/java/frc/robot/Constants.java"
+    ],
+    "src/main/java/frc/robot/subsystems/superstructure/Superstructure.java": [
+      "src/main/java/frc/robot/subsystems/CommandSwerveDrivetrain.java",
+      "src/main/java/frc/robot/subsystems/intake/Intake.java",
+      "src/main/java/frc/robot/subsystems/shooter/Shooter.java",
+      "src/main/java/frc/robot/subsystems/vision/Vision.java"
+    ],
+    "src/main/java/frc/robot/subsystems/vision/Vision.java": [
+      "src/main/java/frc/robot/Constants.java",
+      "src/main/java/frc/robot/subsystems/CommandSwerveDrivetrain.java"
+    ],
+    "src/main/java/frc/robot/subsystems/vision/VisionIO.java": [],
+    "src/main/java/frc/robot/subsystems/vision/VisionIOReal.java": [
+      "src/main/java/frc/robot/utility/LimelightHelpers.java"
+    ],
+    "src/main/java/frc/robot/subsystems/vision/VisionIOSim.java": [],
+    "src/main/java/frc/robot/Telemetry.java": [],
+    "src/main/java/frc/robot/utility/HootReplayBridge.java": [],
+    "src/main/java/frc/robot/utility/HubActiveState.java": [],
+    "src/main/java/frc/robot/utility/LimelightHelpers.java": [],
+    "src/main/java/frc/robot/utility/simulation/MapleSimSwerveDrivetrain.java": [],
+    "src/test/java/frc/robot/RobotLifecycleTest.java": [
+      "src/main/java/frc/robot/subsystems/vision/Vision.java"
+    ],
+    "src/test/java/frc/robot/subsystems/intake/IntakeJamRecoveryTest.java": [
+      "src/main/java/frc/robot/Robot.java",
+      "src/main/java/frc/robot/subsystems/superstructure/Superstructure.java"
+    ],
+    "src/test/java/frc/robot/SuperstructureEjectingTest.java": [
+      "src/main/java/frc/robot/subsystems/intake/Intake.java",
+      "src/main/java/frc/robot/subsystems/shooter/Shooter.java",
+      "src/main/java/frc/robot/subsystems/superstructure/Superstructure.java"
+    ],
+    "V1 Layout.json": [],
+    "vendordeps/AdvantageKit.json": [],
+    "vendordeps/LumynLabs-2026.2.0.json": [],
+    "vendordeps/maple-sim.json": [],
+    "vendordeps/PathplannerLib-2026.1.2.json": [],
+    "vendordeps/Phoenix6-26.1.3.json": [],
+    "vendordeps/WPILibNewCommands.json": [],
+    "WPILib-License.md": []
+  }
+}
