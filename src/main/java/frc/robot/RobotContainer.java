@@ -36,6 +36,7 @@ import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.superstructure.Superstructure;
 import frc.robot.subsystems.vision.Vision;
+import frc.robot.utility.TrajectoryErrorTracker;
 
 @SuppressWarnings("unused")
 
@@ -60,9 +61,15 @@ public class RobotContainer {
         public static Shooter shooter = Shooter.getInstance();
         private final Vision vision = Vision.getInstance(drivetrain);
         private final Superstructure superstructure = Superstructure.getInstance(drivetrain);
+        // Owned here, not a singleton -- constructed with drivetrain's pose supplier, so it
+        // necessarily postdates drivetrain's own construction above. Injected into drivetrain
+        // below since configureAutoBuilder() already registered its callbacks by this point.
+        private final TrajectoryErrorTracker trajectoryErrorTracker =
+                        new TrajectoryErrorTracker(() -> drivetrain.getState().Pose);
         private SendableChooser<Command> autoChooser;
 
         public RobotContainer() {
+                drivetrain.setTrajectoryErrorTracker(trajectoryErrorTracker);
                 RobotModeTriggers.teleop().onTrue(intake.homing()); // if commented out its temp removed for testing
                                                                     // since intake is not chained
                 NamedCommands.registerCommand(
@@ -106,6 +113,17 @@ public class RobotContainer {
          */
         public void periodic() {
                 operatorControls.periodic(MaxSpeed, MaxAngularRate);
+        }
+
+        /**
+         * Called after {@link CommandScheduler#run()} from {@link Robot#robotPeriodic()} --
+         * deliberately after, not before. By this point this loop's PathPlanner setpoint (if any)
+         * has already been produced by the scheduler run that just finished, so pairing it with
+         * drivetrain.getState().Pose here reads both halves from the same instant instead of
+         * pairing this loop's pose against last loop's stale setpoint.
+         */
+        public void trajectoryTrackerPeriodic() {
+                trajectoryErrorTracker.periodic();
         }
 
         private void configureBindings() {

@@ -47,6 +47,7 @@ import frc.robot.POI;
 import frc.robot.generated.TunerConstants;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
 import frc.robot.subsystems.vision.Vision;
+import frc.robot.utility.TrajectoryErrorTracker;
 import frc.robot.utility.simulation.MapleSimSwerveDrivetrain;
 
 @SuppressWarnings("unused")
@@ -68,6 +69,12 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private SwerveModuleConstants<?, ?, ?>[] moduleConstantsForSim;
     private MapleSimSwerveDrivetrain mapleSim;
     private Alliance m_lastAppliedAlliance;
+
+    // Nullable: RobotContainer constructs this drivetrain before it can construct the tracker
+    // (which needs this drivetrain's pose supplier), so the reference arrives after
+    // configureAutoBuilder() has already registered the PathPlannerLogging callbacks below.
+    // Set once via setTrajectoryErrorTracker(); guarded at each call site until then.
+    private TrajectoryErrorTracker trajectoryErrorTracker;
 
     /* Blue alliance sees forward as 0 degrees (toward red alliance wall) */
     private static final Rotation2d kBlueAlliancePerspectiveRotation = Rotation2d.kZero;
@@ -329,11 +336,27 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 (activePath) -> {
                     Logger.recordOutput(
                             "Odometry/Trajectory", activePath.toArray(new Pose2d[activePath.size()]));
+                    if (trajectoryErrorTracker != null) {
+                        trajectoryErrorTracker.onActivePath(activePath);
+                    }
                 });
         PathPlannerLogging.setLogTargetPoseCallback(
                 (targetPose) -> {
                     Logger.recordOutput("Odometry/TrajectorySetpoint", targetPose);
+                    if (trajectoryErrorTracker != null) {
+                        trajectoryErrorTracker.onTargetPose(targetPose);
+                    }
                 });
+    }
+
+    /**
+     * Wires this drivetrain's PathPlannerLogging callbacks to also feed the tracker. Called once
+     * by RobotContainer after both this drivetrain and the tracker exist -- the tracker cannot be
+     * constructed until it has this drivetrain's pose supplier, so it necessarily postdates
+     * configureAutoBuilder()'s callback registration above.
+     */
+    public void setTrajectoryErrorTracker(TrajectoryErrorTracker trajectoryErrorTracker) {
+        this.trajectoryErrorTracker = trajectoryErrorTracker;
     }
 
     /**
