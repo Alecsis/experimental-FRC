@@ -13,6 +13,7 @@ import static edu.wpi.first.units.Units.Volts;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -23,6 +24,7 @@ import frc.robot.Constants;
 public class Intake extends SubsystemBase {
   private static final double kJamStatorCurrentAmps = 80;
   private static final double kJamVelocityThresholdRadPerSec = RotationsPerSecond.of(5).in(RadiansPerSecond);
+  private static final double kJamRecoveryPulseSeconds = 0.3;
   private static final double kHardstopStatorCurrentAmps = 65;
   private static final double kHomingVoltage = 3.0;
 
@@ -43,6 +45,12 @@ public class Intake extends SubsystemBase {
   private boolean deploy = false;
   private boolean sysIdActive = false;
   private Roller currentRoller = Roller.STOP;
+  private boolean jamRecoveryActive = false;
+  private double jamRecoveryStartTimestamp = 0.0;
+
+  private boolean testJamOverrideActive = false;
+  private double testJamStatorCurrentAmps;
+  private double testJamVelocityRadsPerSec;
 
   public enum Roller {
     STOP(0),
@@ -101,6 +109,30 @@ public class Intake extends SubsystemBase {
   }
 
   public void setRoller(Roller state) {
+    if (state != Roller.INTAKE) {
+      // STOP or EJECT always wins immediately, aborting any in-progress recovery pulse.
+      jamRecoveryActive = false;
+      applyRoller(state);
+      return;
+    }
+
+    if (!jamRecoveryActive && isJammed()) {
+      jamRecoveryActive = true;
+      jamRecoveryStartTimestamp = Timer.getFPGATimestamp();
+    }
+
+    if (jamRecoveryActive) {
+      if (Timer.getFPGATimestamp() - jamRecoveryStartTimestamp < kJamRecoveryPulseSeconds) {
+        applyRoller(Roller.EJECT); // recovery pulse in progress
+        return;
+      }
+      jamRecoveryActive = false; // pulse elapsed, fall through to resume INTAKE
+    }
+
+    applyRoller(Roller.INTAKE);
+  }
+
+  private void applyRoller(Roller state) {
     if (state == Roller.STOP) {
       io.setRollerVoltage(0);
     } else {
@@ -108,6 +140,7 @@ public class Intake extends SubsystemBase {
     }
     currentRoller = state;
     Logger.recordOutput("Intake/TargetState", state);
+    Logger.recordOutput("Intake/JamRecoveryActive", jamRecoveryActive);
   }
 
   /** The roller state most recently sent via {@link #setRoller(Roller)}. */
@@ -118,6 +151,19 @@ public class Intake extends SubsystemBase {
   private boolean isJammed() {
     return inputs.rollerStatorCurrentAmps > kJamStatorCurrentAmps
         && inputs.rollerVelocityRadsPerSec < kJamVelocityThresholdRadPerSec;
+  }
+
+  /** Test-only: forces isJammed()'s inputs, bypassing physics IntakeIOSim can't model (no
+   *  load/obstruction). Package-private -- only for JUnit tests in this package. */
+  void forceJamConditionForTest(double statorCurrentAmps, double velocityRadsPerSec) {
+    testJamOverrideActive = true;
+    testJamStatorCurrentAmps = statorCurrentAmps;
+    testJamVelocityRadsPerSec = velocityRadsPerSec;
+  }
+
+  /** Test-only: stops overriding sensor readings, resumes real IntakeIOSim physics. */
+  void clearJamOverrideForTest() {
+    testJamOverrideActive = false;
   }
 
   public Command intakeJamReverse() {
@@ -224,6 +270,10 @@ public class Intake extends SubsystemBase {
   @Override
   public void periodic() {
     io.updateInputs(inputs);
+    if (testJamOverrideActive) {
+      inputs.rollerStatorCurrentAmps = testJamStatorCurrentAmps;
+      inputs.rollerVelocityRadsPerSec = testJamVelocityRadsPerSec;
+    }
     Logger.processInputs("Intake", inputs);
 
     SmartDashboard.putBoolean("Intake/Roller Stall", inputs.rollerStatorCurrentAmps > kJamStatorCurrentAmps);
