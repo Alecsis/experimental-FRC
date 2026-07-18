@@ -76,18 +76,16 @@ class IntakeJamRecoveryTest {
     Intake intake = Intake.getInstance();
     Superstructure superstructure = Superstructure.getInstance(null);
 
-    // Force a healthy running state (0 amps, high velocity) to get past the spin-up transient safely
-    intake.forceJamConditionForTest(0.0, 1000.0);
     superstructure.requestIntake();
+    // Longer settle window than the other stepTiming(0.1) calls in this test: IntakeIOSim's roller
+    // is closed-loop velocity control over a real DCMotorSim, and a 0->800 RPM spin-up briefly
+    // produces high current at low velocity -- the same electrical signature isJammed() looks for.
+    // 0.1s wasn't enough settle time and this baseline assertion observed a real spin-up transient
+    // (EJECT) rather than a broken test; widened per the known-risk note in the migration plan.
     SimHooks.stepTiming(0.5);
-
-    System.out.println("[DEBUG] Roller state at baseline check: " + intake.getRollerState());
 
     assertEquals(Intake.Roller.INTAKE, intake.getRollerState(),
         "INTAKING with no jam should just command the roller INTAKE");
-
-    // Clear our healthy override right before we test the actual jam logic
-    intake.clearJamOverrideForTest();
 
     // Force a jam (high stator current, near-zero velocity -- isJammed()'s real condition).
     // Superstructure.periodic() re-calls setRoller(Roller.INTAKE) every tick during INTAKING,
@@ -101,11 +99,17 @@ class IntakeJamRecoveryTest {
     // Clear the jam (simulates the obstruction clearing during the pulse) and step past the
     // pulse duration (0.3s) -- this is now a stable end state, since nothing will re-trigger a
     // pulse once isJammed() reads false again.
-    intake.forceJamConditionForTest(0.0, 1000.0);
+    intake.clearJamOverrideForTest();
     SimHooks.stepTiming(0.4);
 
     assertEquals(Intake.Roller.INTAKE, intake.getRollerState(),
         "after the pulse elapses and the jam clears, INTAKE should resume and stay resumed");
+
+    // setRoller() holds off re-arming jam detection for kJamRecoveryCooldownSeconds after a pulse
+    // ends (resuming INTAKE from EJECT's speed briefly re-triggers isJammed() otherwise -- see
+    // Intake.java). Step past that cooldown before forcing a second, independent jam, or this
+    // jam gets legitimately suppressed as still-in-cooldown rather than exercising a fresh pulse.
+    SimHooks.stepTiming(0.3);
 
     // Force a second jam, confirm a new pulse fires, then abort mid-pulse via a real caller-level
     // stow request (matches a driver releasing the intake button / auto moving on).
