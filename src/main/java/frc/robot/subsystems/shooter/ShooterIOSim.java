@@ -20,10 +20,8 @@ import frc.robot.Constants;
  * dependencies -- suitable for desktop/sim-only testing and replay.
  */
 public class ShooterIOSim implements ShooterIO {
-  // TODO: confirm actual motors on the robot -- assumed Kraken X60 for shoot/index (both are
-  // TalonFX in ShooterIOReal, which is shared by Kraken X60 and Falcon 500).
-  // Agitator matches confirmed real hardware: ShooterIOReal configures the TalonFXS with
-  // MotorArrangementValue.NEO550_JST, i.e. a real NEO 550.
+  // Confirmed real hardware: shoot/index are Kraken X60 (TalonFX). Agitator is a NEO 550 driven
+  // by a TalonFXS (ShooterIOReal configures MotorArrangementValue.NEO550_JST).
   private static final DCMotor shootGearbox = DCMotor.getKrakenX60(1);
   private static final DCMotor indexGearbox = DCMotor.getKrakenX60(1);
   private static final DCMotor agitatorGearbox = DCMotor.getNeo550(1);
