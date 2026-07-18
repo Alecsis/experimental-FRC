@@ -34,7 +34,6 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.shooter.Shooter;
-import frc.robot.subsystems.shooter.Shooter.Agitate;
 import frc.robot.subsystems.superstructure.Superstructure;
 import frc.robot.subsystems.vision.Vision;
 
@@ -74,18 +73,13 @@ public class RobotContainer {
                                 "Shooting Sequence", superstructure.shootingSequence(5.0));
                 NamedCommands.registerCommand(
                                 "Quick Shooting", superstructure.shootingSequence(3.0));
-                // Deliberately NOT superstructure.intakeCmd() -- INTAKING drives the roller directly with
-                // no jam handling, and jam-reverse protection hasn't been migrated into Intake or the state
-                // machine yet. Swapping this registration would silently drop stall protection from autos.
-                // Don't move this to the Superstructure until jam handling has a new home.
+                // Jam recovery now lives inside Intake.setRoller() itself (mechanism-level), so
+                // Superstructure.INTAKING gets it automatically -- routing through the state machine no
+                // longer drops stall protection from autos.
                 NamedCommands.registerCommand(
-                                "Intake Start Sequence", Commands.parallel(
-                                                intake.intakeJamReverse(),
-                                                Commands.runOnce(() -> shooter.setAgitator(Agitate.IN))));
-                // Paired with "Intake Start Sequence" above -- kept at the same mechanism-level as its
-                // start command for the same reason (not yet safe to route through the state machine).
+                                "Intake Start Sequence", superstructure.intakeCmd());
                 NamedCommands.registerCommand(
-                                "Intake Stop", intake.stopRoller());
+                                "Intake Stop", superstructure.stowCmd());
                 autoChooser = AutoBuilder.buildAutoChooser();
                 configureBindings();
                 dashboard();
