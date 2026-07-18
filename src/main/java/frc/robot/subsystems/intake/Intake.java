@@ -176,15 +176,6 @@ public class Intake extends SubsystemBase {
     testJamOverrideActive = false;
   }
 
-  public Command intakeJamReverse() {
-    return Commands.sequence(
-        Commands.runOnce(() -> setRoller(Roller.INTAKE)),
-        Commands.waitUntil(this::isJammed),
-        Commands.runOnce(() -> setRoller(Roller.EJECT)),
-        Commands.waitSeconds(0.3),
-        Commands.runOnce(() -> setRoller(Roller.INTAKE))).repeatedly().finallyDo(() -> setRoller(Roller.STOP));
-  }
-
   public Command rollerSysIdQuasistatic(SysIdRoutine.Direction direction) {
     return Commands.runOnce(() -> sysIdActive = true)
         .andThen(m_rollerSysId.quasistatic(direction))
@@ -221,23 +212,6 @@ public class Intake extends SubsystemBase {
             Commands.runOnce(() -> goTo(PivotState.DOWN)),
             Commands.waitSeconds(0.5)).repeatedly())
         .finallyDo(() -> goTo(PivotState.DOWN));
-  }
-
-  public Command intake() {
-    return Commands.either(
-        Commands.sequence(
-            Commands.either(
-                Commands.sequence(
-                    Commands.runOnce(() -> {
-                      goTo(PivotState.DOWN);
-                      deploy = true;
-                    }, this),
-                    Commands.waitSeconds(0.5)),
-                Commands.none(),
-                () -> !deploy),
-            intakeJamReverse()),
-        intakeJamReverse(),
-        () -> homed);
   }
 
   public Command eject() {
