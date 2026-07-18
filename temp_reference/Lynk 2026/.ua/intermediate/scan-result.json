@@ -1,0 +1,1061 @@
+{
+  "name": "Lynk 2026",
+  "description": "No description available Note: this project has over 100 source files; consider scoping analysis to a subdirectory for faster results.",
+  "languages": [
+    "auto",
+    "batch",
+    "gradle",
+    "jar",
+    "java",
+    "json",
+    "markdown",
+    "path",
+    "properties",
+    "txt",
+    "unknown"
+  ],
+  "frameworks": [
+    "CTRE Phoenix 6",
+    "DogLog",
+    "GradleRIO",
+    "JUnit 5",
+    "Lombok",
+    "PathPlannerLib",
+    "PhotonVision",
+    "WPILib"
+  ],
+  "files": [
+    {
+      "path": ".ua/.understandignore",
+      "language": "unknown",
+      "sizeLines": 136,
+      "fileCategory": "code"
+    },
+    {
+      "path": ".wpilib/wpilib_preferences.json",
+      "language": "json",
+      "sizeLines": 5,
+      "fileCategory": "config"
+    },
+    {
+      "path": "build.gradle",
+      "language": "gradle",
+      "sizeLines": 147,
+      "fileCategory": "config"
+    },
+    {
+      "path": "gradle/wrapper/gradle-wrapper.jar",
+      "language": "jar",
+      "sizeLines": 151,
+      "fileCategory": "code"
+    },
+    {
+      "path": "gradle/wrapper/gradle-wrapper.properties",
+      "language": "properties",
+      "sizeLines": 7,
+      "fileCategory": "config"
+    },
+    {
+      "path": "gradlew",
+      "language": "unknown",
+      "sizeLines": 252,
+      "fileCategory": "code"
+    },
+    {
+      "path": "gradlew.bat",
+      "language": "batch",
+      "sizeLines": 94,
+      "fileCategory": "script"
+    },
+    {
+      "path": "settings.gradle",
+      "language": "gradle",
+      "sizeLines": 30,
+      "fileCategory": "config"
+    },
+    {
+      "path": "src/main/deploy/AdvantageScope.json",
+      "language": "json",
+      "sizeLines": 1247,
+      "fileCategory": "config"
+    },
+    {
+      "path": "src/main/deploy/apriltags/andymark/2026-none.json",
+      "language": "json",
+      "sizeLines": 7,
+      "fileCategory": "config"
+    },
+    {
+      "path": "src/main/deploy/apriltags/andymark/2026-official.json",
+      "language": "json",
+      "sizeLines": 584,
+      "fileCategory": "config"
+    },
+    {
+      "path": "src/main/deploy/apriltags/welded/2026-none.json",
+      "language": "json",
+      "sizeLines": 7,
+      "fileCategory": "config"
+    },
+    {
+      "path": "src/main/deploy/apriltags/welded/2026-official.json",
+      "language": "json",
+      "sizeLines": 584,
+      "fileCategory": "config"
+    },
+    {
+      "path": "src/main/deploy/config.json",
+      "language": "json",
+      "sizeLines": 17,
+      "fileCategory": "config"
+    },
+    {
+      "path": "src/main/deploy/elastic-layout.json",
+      "language": "json",
+      "sizeLines": 1135,
+      "fileCategory": "config"
+    },
+    {
+      "path": "src/main/deploy/example.txt",
+      "language": "txt",
+      "sizeLines": 2,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/autos/Demo - Bump Middle Sweep.auto",
+      "language": "auto",
+      "sizeLines": 30,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/autos/Demo - Double Bump Sweep.auto",
+      "language": "auto",
+      "sizeLines": 30,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/autos/Demo - Sweep Middle.auto",
+      "language": "auto",
+      "sizeLines": 30,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/navgrid.json",
+      "language": "json",
+      "sizeLines": 0,
+      "fileCategory": "config"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/AAAA.path",
+      "language": "path",
+      "sizeLines": 53,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Bump Return - Far.path",
+      "language": "path",
+      "sizeLines": 108,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Bump Return - Middle.path",
+      "language": "path",
+      "sizeLines": 108,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Bump Return - Near.path",
+      "language": "path",
+      "sizeLines": 108,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Bump Return - Special.path",
+      "language": "path",
+      "sizeLines": 108,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Bump Return IF - Middle.path",
+      "language": "path",
+      "sizeLines": 128,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Bump Return.path",
+      "language": "path",
+      "sizeLines": 88,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Bump to Trench.path",
+      "language": "path",
+      "sizeLines": 53,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Bump.path",
+      "language": "path",
+      "sizeLines": 121,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Debug Drive.path",
+      "language": "path",
+      "sizeLines": 53,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Disrupt Opt.path",
+      "language": "path",
+      "sizeLines": 190,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Disrupt.path",
+      "language": "path",
+      "sizeLines": 198,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/NZ back to Right Trench - Short.path",
+      "language": "path",
+      "sizeLines": 138,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Rapid Accel.path",
+      "language": "path",
+      "sizeLines": 53,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/SLOW Sweep.path",
+      "language": "path",
+      "sizeLines": 271,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/SOTM Calibration - Backward.path",
+      "language": "path",
+      "sizeLines": 60,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/SOTM Calibration - Circle.path",
+      "language": "path",
+      "sizeLines": 140,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/SOTM Calibration - Forward.path",
+      "language": "path",
+      "sizeLines": 60,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/SOTM Calibration - Sideways.path",
+      "language": "path",
+      "sizeLines": 60,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Sweep - Bump - Long.path",
+      "language": "path",
+      "sizeLines": 247,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Sweep - Bump.path",
+      "language": "path",
+      "sizeLines": 247,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Sweep - Narrow.path",
+      "language": "path",
+      "sizeLines": 258,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Sweep - Trench.path",
+      "language": "path",
+      "sizeLines": 258,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Test Accel.path",
+      "language": "path",
+      "sizeLines": 121,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Test Drive - 2.5m.path",
+      "language": "path",
+      "sizeLines": 53,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Test Drive - 5m.path",
+      "language": "path",
+      "sizeLines": 67,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Traverse Bump.path",
+      "language": "path",
+      "sizeLines": 67,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Trench - Fuel - Far.path",
+      "language": "path",
+      "sizeLines": 99,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Trench - Fuel - Middle.path",
+      "language": "path",
+      "sizeLines": 115,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Trench - Fuel - Near.path",
+      "language": "path",
+      "sizeLines": 99,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Trench - Midline - Far - Slow.path",
+      "language": "path",
+      "sizeLines": 99,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Trench - Midline - Far.path",
+      "language": "path",
+      "sizeLines": 99,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Trench - Midline - Middle.path",
+      "language": "path",
+      "sizeLines": 99,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Trench - Midline - Near.path",
+      "language": "path",
+      "sizeLines": 99,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Trench - Special.path",
+      "language": "path",
+      "sizeLines": 99,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Trench Return - Far.path",
+      "language": "path",
+      "sizeLines": 125,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Trench Return - Middle.path",
+      "language": "path",
+      "sizeLines": 125,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/paths/Trench Return - Near.path",
+      "language": "path",
+      "sizeLines": 125,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/deploy/pathplanner/settings.json",
+      "language": "json",
+      "sizeLines": 39,
+      "fileCategory": "config"
+    },
+    {
+      "path": "src/main/java/frc/lib/math/Conversions.java",
+      "language": "java",
+      "sizeLines": 43,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/lib/math/Hysteresis.java",
+      "language": "java",
+      "sizeLines": 23,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/lib/util/CalibrationTable.java",
+      "language": "java",
+      "sizeLines": 47,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/lib/util/CANdleGroup.java",
+      "language": "java",
+      "sizeLines": 60,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/lib/util/COTSTalonFXSwerveConstants.java",
+      "language": "java",
+      "sizeLines": 400,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/lib/util/Elastic.java",
+      "language": "java",
+      "sizeLines": 423,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/lib/util/Interpolatable.java",
+      "language": "java",
+      "sizeLines": 6,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/lib/util/LoggedAlert.java",
+      "language": "java",
+      "sizeLines": 54,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/lib/util/LoggedCommand.java",
+      "language": "java",
+      "sizeLines": 23,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/lib/util/LoggedCommands.java",
+      "language": "java",
+      "sizeLines": 161,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/lib/util/LynkMotor.java",
+      "language": "java",
+      "sizeLines": 122,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/lib/util/LynkSubsystem.java",
+      "language": "java",
+      "sizeLines": 79,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/lib/util/SwerveModule.java",
+      "language": "java",
+      "sizeLines": 143,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/lib/util/SwerveModuleConstants.java",
+      "language": "java",
+      "sizeLines": 29,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/lib/util/TunableOption.java",
+      "language": "java",
+      "sizeLines": 48,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/Aiming.java",
+      "language": "java",
+      "sizeLines": 286,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/autos/AutoConstants.java",
+      "language": "java",
+      "sizeLines": 62,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/autos/Autos.java",
+      "language": "java",
+      "sizeLines": 460,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/commands/AimOnly.java",
+      "language": "java",
+      "sizeLines": 50,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/commands/pidswerve/PIDSwerve.java",
+      "language": "java",
+      "sizeLines": 138,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/commands/pidswerve/PIDSwerveConstants.java",
+      "language": "java",
+      "sizeLines": 35,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/commands/pidswerve/SwerveToObject.java",
+      "language": "java",
+      "sizeLines": 106,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/commands/TeleopSwerve.java",
+      "language": "java",
+      "sizeLines": 158,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/Constants.java",
+      "language": "java",
+      "sizeLines": 23,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/CTREConfigs.java",
+      "language": "java",
+      "sizeLines": 68,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/Field.java",
+      "language": "java",
+      "sizeLines": 51,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/FieldConstants.java",
+      "language": "java",
+      "sizeLines": 359,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/Main.java",
+      "language": "java",
+      "sizeLines": 26,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/Options.java",
+      "language": "java",
+      "sizeLines": 19,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/Ports.java",
+      "language": "java",
+      "sizeLines": 41,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/Robot.java",
+      "language": "java",
+      "sizeLines": 268,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/Shift.java",
+      "language": "java",
+      "sizeLines": 119,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/climber/Climber.java",
+      "language": "java",
+      "sizeLines": 26,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/climber/ClimberConstants.java",
+      "language": "java",
+      "sizeLines": 49,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/controls/Controls.java",
+      "language": "java",
+      "sizeLines": 194,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/controls/ControlsConstants.java",
+      "language": "java",
+      "sizeLines": 12,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/detection/Detection.java",
+      "language": "java",
+      "sizeLines": 90,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/detection/DetectionConstants.java",
+      "language": "java",
+      "sizeLines": 6,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/feeder/Feeder.java",
+      "language": "java",
+      "sizeLines": 116,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/feeder/FeederConstants.java",
+      "language": "java",
+      "sizeLines": 99,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/intake/Intake.java",
+      "language": "java",
+      "sizeLines": 139,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/intake/IntakeConstants.java",
+      "language": "java",
+      "sizeLines": 59,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/led/LED.java",
+      "language": "java",
+      "sizeLines": 346,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/led/LEDConstants.java",
+      "language": "java",
+      "sizeLines": 27,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/pose/Pose.java",
+      "language": "java",
+      "sizeLines": 345,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/pose/PoseConstants.java",
+      "language": "java",
+      "sizeLines": 26,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/shooter/Shooter.java",
+      "language": "java",
+      "sizeLines": 280,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/shooter/ShooterConstants.java",
+      "language": "java",
+      "sizeLines": 157,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/swerve/Swerve.java",
+      "language": "java",
+      "sizeLines": 281,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/swerve/SwerveAlign.java",
+      "language": "java",
+      "sizeLines": 80,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/swerve/SwerveConstants.java",
+      "language": "java",
+      "sizeLines": 144,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/vision/Vision.java",
+      "language": "java",
+      "sizeLines": 330,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/subsystems/vision/VisionConstants.java",
+      "language": "java",
+      "sizeLines": 70,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main/java/frc/robot/superstructure/Superstructure.java",
+      "language": "java",
+      "sizeLines": 191,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/test/java/frc/lib/util/CalibrationTableTest.java",
+      "language": "java",
+      "sizeLines": 50,
+      "fileCategory": "code"
+    },
+    {
+      "path": "vendordeps/DogLog.json",
+      "language": "json",
+      "sizeLines": 19,
+      "fileCategory": "config"
+    },
+    {
+      "path": "vendordeps/PathplannerLib.json",
+      "language": "json",
+      "sizeLines": 37,
+      "fileCategory": "config"
+    },
+    {
+      "path": "vendordeps/Phoenix6-frc2026-latest.json",
+      "language": "json",
+      "sizeLines": 448,
+      "fileCategory": "config"
+    },
+    {
+      "path": "vendordeps/photonlib.json",
+      "language": "json",
+      "sizeLines": 70,
+      "fileCategory": "config"
+    },
+    {
+      "path": "vendordeps/WPILibNewCommands.json",
+      "language": "json",
+      "sizeLines": 39,
+      "fileCategory": "config"
+    },
+    {
+      "path": "WPILib-License.md",
+      "language": "markdown",
+      "sizeLines": 24,
+      "fileCategory": "docs"
+    }
+  ],
+  "totalFiles": 120,
+  "filteredByIgnore": 0,
+  "estimatedComplexity": "moderate",
+  "importMap": {
+    ".ua/.understandignore": [],
+    ".wpilib/wpilib_preferences.json": [],
+    "build.gradle": [],
+    "gradle/wrapper/gradle-wrapper.jar": [],
+    "gradle/wrapper/gradle-wrapper.properties": [],
+    "gradlew": [],
+    "gradlew.bat": [],
+    "settings.gradle": [],
+    "src/main/deploy/AdvantageScope.json": [],
+    "src/main/deploy/apriltags/andymark/2026-none.json": [],
+    "src/main/deploy/apriltags/andymark/2026-official.json": [],
+    "src/main/deploy/apriltags/welded/2026-none.json": [],
+    "src/main/deploy/apriltags/welded/2026-official.json": [],
+    "src/main/deploy/config.json": [],
+    "src/main/deploy/elastic-layout.json": [],
+    "src/main/deploy/example.txt": [],
+    "src/main/deploy/pathplanner/autos/Demo - Bump Middle Sweep.auto": [],
+    "src/main/deploy/pathplanner/autos/Demo - Double Bump Sweep.auto": [],
+    "src/main/deploy/pathplanner/autos/Demo - Sweep Middle.auto": [],
+    "src/main/deploy/pathplanner/navgrid.json": [],
+    "src/main/deploy/pathplanner/paths/AAAA.path": [],
+    "src/main/deploy/pathplanner/paths/Bump Return - Far.path": [],
+    "src/main/deploy/pathplanner/paths/Bump Return - Middle.path": [],
+    "src/main/deploy/pathplanner/paths/Bump Return - Near.path": [],
+    "src/main/deploy/pathplanner/paths/Bump Return - Special.path": [],
+    "src/main/deploy/pathplanner/paths/Bump Return IF - Middle.path": [],
+    "src/main/deploy/pathplanner/paths/Bump Return.path": [],
+    "src/main/deploy/pathplanner/paths/Bump to Trench.path": [],
+    "src/main/deploy/pathplanner/paths/Bump.path": [],
+    "src/main/deploy/pathplanner/paths/Debug Drive.path": [],
+    "src/main/deploy/pathplanner/paths/Disrupt Opt.path": [],
+    "src/main/deploy/pathplanner/paths/Disrupt.path": [],
+    "src/main/deploy/pathplanner/paths/NZ back to Right Trench - Short.path": [],
+    "src/main/deploy/pathplanner/paths/Rapid Accel.path": [],
+    "src/main/deploy/pathplanner/paths/SLOW Sweep.path": [],
+    "src/main/deploy/pathplanner/paths/SOTM Calibration - Backward.path": [],
+    "src/main/deploy/pathplanner/paths/SOTM Calibration - Circle.path": [],
+    "src/main/deploy/pathplanner/paths/SOTM Calibration - Forward.path": [],
+    "src/main/deploy/pathplanner/paths/SOTM Calibration - Sideways.path": [],
+    "src/main/deploy/pathplanner/paths/Sweep - Bump - Long.path": [],
+    "src/main/deploy/pathplanner/paths/Sweep - Bump.path": [],
+    "src/main/deploy/pathplanner/paths/Sweep - Narrow.path": [],
+    "src/main/deploy/pathplanner/paths/Sweep - Trench.path": [],
+    "src/main/deploy/pathplanner/paths/Test Accel.path": [],
+    "src/main/deploy/pathplanner/paths/Test Drive - 2.5m.path": [],
+    "src/main/deploy/pathplanner/paths/Test Drive - 5m.path": [],
+    "src/main/deploy/pathplanner/paths/Traverse Bump.path": [],
+    "src/main/deploy/pathplanner/paths/Trench - Fuel - Far.path": [],
+    "src/main/deploy/pathplanner/paths/Trench - Fuel - Middle.path": [],
+    "src/main/deploy/pathplanner/paths/Trench - Fuel - Near.path": [],
+    "src/main/deploy/pathplanner/paths/Trench - Midline - Far - Slow.path": [],
+    "src/main/deploy/pathplanner/paths/Trench - Midline - Far.path": [],
+    "src/main/deploy/pathplanner/paths/Trench - Midline - Middle.path": [],
+    "src/main/deploy/pathplanner/paths/Trench - Midline - Near.path": [],
+    "src/main/deploy/pathplanner/paths/Trench - Special.path": [],
+    "src/main/deploy/pathplanner/paths/Trench Return - Far.path": [],
+    "src/main/deploy/pathplanner/paths/Trench Return - Middle.path": [],
+    "src/main/deploy/pathplanner/paths/Trench Return - Near.path": [],
+    "src/main/deploy/pathplanner/settings.json": [],
+    "src/main/java/frc/lib/math/Conversions.java": [],
+    "src/main/java/frc/lib/math/Hysteresis.java": [],
+    "src/main/java/frc/lib/util/CalibrationTable.java": [],
+    "src/main/java/frc/lib/util/CANdleGroup.java": [
+      "src/main/java/frc/robot/subsystems/led/LEDConstants.java"
+    ],
+    "src/main/java/frc/lib/util/COTSTalonFXSwerveConstants.java": [],
+    "src/main/java/frc/lib/util/Elastic.java": [],
+    "src/main/java/frc/lib/util/Interpolatable.java": [],
+    "src/main/java/frc/lib/util/LoggedAlert.java": [
+      "src/main/java/frc/robot/Constants.java"
+    ],
+    "src/main/java/frc/lib/util/LoggedCommand.java": [],
+    "src/main/java/frc/lib/util/LoggedCommands.java": [],
+    "src/main/java/frc/lib/util/LynkMotor.java": [
+      "src/main/java/frc/robot/Ports.java"
+    ],
+    "src/main/java/frc/lib/util/LynkSubsystem.java": [
+      "src/main/java/frc/robot/Constants.java",
+      "src/main/java/frc/robot/Ports.java"
+    ],
+    "src/main/java/frc/lib/util/SwerveModule.java": [
+      "src/main/java/frc/lib/math/Conversions.java",
+      "src/main/java/frc/robot/Robot.java",
+      "src/main/java/frc/robot/subsystems/swerve/SwerveConstants.java"
+    ],
+    "src/main/java/frc/lib/util/SwerveModuleConstants.java": [],
+    "src/main/java/frc/lib/util/TunableOption.java": [],
+    "src/main/java/frc/robot/Aiming.java": [
+      "src/main/java/frc/robot/subsystems/intake/Intake.java",
+      "src/main/java/frc/robot/subsystems/pose/Pose.java",
+      "src/main/java/frc/robot/subsystems/shooter/Shooter.java",
+      "src/main/java/frc/robot/subsystems/shooter/ShooterConstants.java",
+      "src/main/java/frc/robot/subsystems/swerve/Swerve.java",
+      "src/main/java/frc/robot/superstructure/Superstructure.java"
+    ],
+    "src/main/java/frc/robot/autos/AutoConstants.java": [
+      "src/main/java/frc/robot/Constants.java",
+      "src/main/java/frc/robot/subsystems/swerve/SwerveConstants.java"
+    ],
+    "src/main/java/frc/robot/autos/Autos.java": [
+      "src/main/java/frc/lib/util/LoggedAlert.java",
+      "src/main/java/frc/lib/util/LoggedCommands.java",
+      "src/main/java/frc/robot/Aiming.java",
+      "src/main/java/frc/robot/commands/AimOnly.java",
+      "src/main/java/frc/robot/Constants.java",
+      "src/main/java/frc/robot/Robot.java",
+      "src/main/java/frc/robot/subsystems/feeder/Feeder.java",
+      "src/main/java/frc/robot/subsystems/intake/Intake.java",
+      "src/main/java/frc/robot/subsystems/pose/Pose.java",
+      "src/main/java/frc/robot/subsystems/shooter/Shooter.java",
+      "src/main/java/frc/robot/subsystems/swerve/Swerve.java",
+      "src/main/java/frc/robot/subsystems/vision/Vision.java",
+      "src/main/java/frc/robot/superstructure/Superstructure.java"
+    ],
+    "src/main/java/frc/robot/commands/AimOnly.java": [
+      "src/main/java/frc/lib/util/LoggedCommand.java",
+      "src/main/java/frc/robot/subsystems/swerve/Swerve.java",
+      "src/main/java/frc/robot/subsystems/swerve/SwerveAlign.java",
+      "src/main/java/frc/robot/subsystems/swerve/SwerveConstants.java"
+    ],
+    "src/main/java/frc/robot/commands/pidswerve/PIDSwerve.java": [
+      "src/main/java/frc/lib/util/LoggedCommand.java",
+      "src/main/java/frc/robot/subsystems/pose/Pose.java",
+      "src/main/java/frc/robot/subsystems/swerve/Swerve.java",
+      "src/main/java/frc/robot/subsystems/swerve/SwerveAlign.java"
+    ],
+    "src/main/java/frc/robot/commands/pidswerve/PIDSwerveConstants.java": [
+      "src/main/java/frc/robot/subsystems/swerve/SwerveConstants.java"
+    ],
+    "src/main/java/frc/robot/commands/pidswerve/SwerveToObject.java": [
+      "src/main/java/frc/lib/util/LoggedCommand.java",
+      "src/main/java/frc/robot/subsystems/detection/Detection.java",
+      "src/main/java/frc/robot/subsystems/pose/Pose.java",
+      "src/main/java/frc/robot/subsystems/swerve/Swerve.java",
+      "src/main/java/frc/robot/subsystems/swerve/SwerveConstants.java"
+    ],
+    "src/main/java/frc/robot/commands/TeleopSwerve.java": [
+      "src/main/java/frc/lib/util/LoggedCommand.java",
+      "src/main/java/frc/robot/Constants.java",
+      "src/main/java/frc/robot/Options.java",
+      "src/main/java/frc/robot/Robot.java",
+      "src/main/java/frc/robot/subsystems/pose/Pose.java",
+      "src/main/java/frc/robot/subsystems/shooter/Shooter.java",
+      "src/main/java/frc/robot/subsystems/swerve/Swerve.java",
+      "src/main/java/frc/robot/subsystems/swerve/SwerveAlign.java",
+      "src/main/java/frc/robot/subsystems/swerve/SwerveConstants.java"
+    ],
+    "src/main/java/frc/robot/Constants.java": [],
+    "src/main/java/frc/robot/CTREConfigs.java": [
+      "src/main/java/frc/robot/subsystems/swerve/SwerveConstants.java"
+    ],
+    "src/main/java/frc/robot/Field.java": [],
+    "src/main/java/frc/robot/FieldConstants.java": [],
+    "src/main/java/frc/robot/Main.java": [],
+    "src/main/java/frc/robot/Options.java": [
+      "src/main/java/frc/lib/util/TunableOption.java"
+    ],
+    "src/main/java/frc/robot/Ports.java": [],
+    "src/main/java/frc/robot/Robot.java": [
+      "src/main/java/frc/lib/util/Elastic.java",
+      "src/main/java/frc/lib/util/LoggedCommands.java",
+      "src/main/java/frc/robot/autos/Autos.java",
+      "src/main/java/frc/robot/subsystems/controls/Controls.java",
+      "src/main/java/frc/robot/subsystems/feeder/Feeder.java",
+      "src/main/java/frc/robot/subsystems/led/LED.java",
+      "src/main/java/frc/robot/subsystems/pose/Pose.java",
+      "src/main/java/frc/robot/subsystems/shooter/Shooter.java",
+      "src/main/java/frc/robot/subsystems/swerve/Swerve.java",
+      "src/main/java/frc/robot/subsystems/vision/Vision.java",
+      "src/main/java/frc/robot/superstructure/Superstructure.java"
+    ],
+    "src/main/java/frc/robot/Shift.java": [],
+    "src/main/java/frc/robot/subsystems/climber/Climber.java": [
+      "src/main/java/frc/lib/util/LynkMotor.java",
+      "src/main/java/frc/lib/util/LynkSubsystem.java"
+    ],
+    "src/main/java/frc/robot/subsystems/climber/ClimberConstants.java": [
+      "src/main/java/frc/robot/Ports.java"
+    ],
+    "src/main/java/frc/robot/subsystems/controls/Controls.java": [
+      "src/main/java/frc/lib/util/LoggedAlert.java",
+      "src/main/java/frc/lib/util/LoggedCommands.java",
+      "src/main/java/frc/robot/Aiming.java",
+      "src/main/java/frc/robot/autos/Autos.java",
+      "src/main/java/frc/robot/commands/pidswerve/PIDSwerve.java",
+      "src/main/java/frc/robot/commands/TeleopSwerve.java",
+      "src/main/java/frc/robot/Constants.java",
+      "src/main/java/frc/robot/subsystems/feeder/Feeder.java",
+      "src/main/java/frc/robot/subsystems/intake/Intake.java",
+      "src/main/java/frc/robot/subsystems/led/LED.java",
+      "src/main/java/frc/robot/subsystems/pose/Pose.java",
+      "src/main/java/frc/robot/subsystems/shooter/Shooter.java",
+      "src/main/java/frc/robot/subsystems/swerve/Swerve.java",
+      "src/main/java/frc/robot/superstructure/Superstructure.java"
+    ],
+    "src/main/java/frc/robot/subsystems/controls/ControlsConstants.java": [],
+    "src/main/java/frc/robot/subsystems/detection/Detection.java": [
+      "src/main/java/frc/lib/util/LoggedCommands.java",
+      "src/main/java/frc/robot/Constants.java",
+      "src/main/java/frc/robot/subsystems/swerve/Swerve.java"
+    ],
+    "src/main/java/frc/robot/subsystems/detection/DetectionConstants.java": [],
+    "src/main/java/frc/robot/subsystems/feeder/Feeder.java": [
+      "src/main/java/frc/lib/util/LoggedCommands.java",
+      "src/main/java/frc/lib/util/LynkMotor.java",
+      "src/main/java/frc/lib/util/LynkSubsystem.java",
+      "src/main/java/frc/robot/Ports.java"
+    ],
+    "src/main/java/frc/robot/subsystems/feeder/FeederConstants.java": [
+      "src/main/java/frc/robot/Ports.java"
+    ],
+    "src/main/java/frc/robot/subsystems/intake/Intake.java": [
+      "src/main/java/frc/lib/util/LoggedAlert.java",
+      "src/main/java/frc/lib/util/LoggedCommands.java",
+      "src/main/java/frc/lib/util/LynkMotor.java",
+      "src/main/java/frc/lib/util/LynkSubsystem.java",
+      "src/main/java/frc/robot/Ports.java",
+      "src/main/java/frc/robot/subsystems/swerve/Swerve.java"
+    ],
+    "src/main/java/frc/robot/subsystems/intake/IntakeConstants.java": [
+      "src/main/java/frc/robot/Ports.java"
+    ],
+    "src/main/java/frc/robot/subsystems/led/LED.java": [
+      "src/main/java/frc/lib/util/CANdleGroup.java",
+      "src/main/java/frc/lib/util/LoggedCommands.java",
+      "src/main/java/frc/robot/Constants.java",
+      "src/main/java/frc/robot/Ports.java",
+      "src/main/java/frc/robot/Shift.java",
+      "src/main/java/frc/robot/subsystems/intake/Intake.java",
+      "src/main/java/frc/robot/subsystems/shooter/Shooter.java"
+    ],
+    "src/main/java/frc/robot/subsystems/led/LEDConstants.java": [
+      "src/main/java/frc/robot/Constants.java"
+    ],
+    "src/main/java/frc/robot/subsystems/pose/Pose.java": [
+      "src/main/java/frc/lib/math/Hysteresis.java",
+      "src/main/java/frc/lib/util/LoggedCommands.java",
+      "src/main/java/frc/robot/Aiming.java",
+      "src/main/java/frc/robot/autos/AutoConstants.java",
+      "src/main/java/frc/robot/FieldConstants.java",
+      "src/main/java/frc/robot/Ports.java",
+      "src/main/java/frc/robot/Robot.java",
+      "src/main/java/frc/robot/subsystems/swerve/Swerve.java",
+      "src/main/java/frc/robot/subsystems/swerve/SwerveConstants.java",
+      "src/main/java/frc/robot/subsystems/vision/Vision.java"
+    ],
+    "src/main/java/frc/robot/subsystems/pose/PoseConstants.java": [
+      "src/main/java/frc/robot/FieldConstants.java"
+    ],
+    "src/main/java/frc/robot/subsystems/shooter/Shooter.java": [
+      "src/main/java/frc/lib/util/LoggedCommands.java",
+      "src/main/java/frc/lib/util/LynkMotor.java",
+      "src/main/java/frc/lib/util/LynkSubsystem.java",
+      "src/main/java/frc/robot/Aiming.java",
+      "src/main/java/frc/robot/Ports.java",
+      "src/main/java/frc/robot/subsystems/controls/ControlsConstants.java",
+      "src/main/java/frc/robot/subsystems/pose/Pose.java"
+    ],
+    "src/main/java/frc/robot/subsystems/shooter/ShooterConstants.java": [
+      "src/main/java/frc/lib/util/CalibrationTable.java",
+      "src/main/java/frc/lib/util/Interpolatable.java",
+      "src/main/java/frc/robot/Ports.java"
+    ],
+    "src/main/java/frc/robot/subsystems/swerve/Swerve.java": [
+      "src/main/java/frc/lib/util/LoggedCommands.java",
+      "src/main/java/frc/lib/util/SwerveModule.java",
+      "src/main/java/frc/robot/Constants.java",
+      "src/main/java/frc/robot/subsystems/pose/Pose.java"
+    ],
+    "src/main/java/frc/robot/subsystems/swerve/SwerveAlign.java": [
+      "src/main/java/frc/robot/subsystems/pose/Pose.java"
+    ],
+    "src/main/java/frc/robot/subsystems/swerve/SwerveConstants.java": [
+      "src/main/java/frc/lib/util/COTSTalonFXSwerveConstants.java",
+      "src/main/java/frc/lib/util/SwerveModuleConstants.java",
+      "src/main/java/frc/robot/Ports.java"
+    ],
+    "src/main/java/frc/robot/subsystems/vision/Vision.java": [
+      "src/main/java/frc/lib/util/LoggedAlert.java",
+      "src/main/java/frc/lib/util/LoggedCommands.java",
+      "src/main/java/frc/robot/Constants.java",
+      "src/main/java/frc/robot/Field.java",
+      "src/main/java/frc/robot/Robot.java",
+      "src/main/java/frc/robot/subsystems/pose/Pose.java"
+    ],
+    "src/main/java/frc/robot/subsystems/vision/VisionConstants.java": [],
+    "src/main/java/frc/robot/superstructure/Superstructure.java": [
+      "src/main/java/frc/lib/util/LoggedCommands.java",
+      "src/main/java/frc/robot/Aiming.java",
+      "src/main/java/frc/robot/Constants.java",
+      "src/main/java/frc/robot/Shift.java",
+      "src/main/java/frc/robot/subsystems/controls/Controls.java",
+      "src/main/java/frc/robot/subsystems/feeder/Feeder.java",
+      "src/main/java/frc/robot/subsystems/intake/Intake.java",
+      "src/main/java/frc/robot/subsystems/led/LED.java",
+      "src/main/java/frc/robot/subsystems/pose/Pose.java",
+      "src/main/java/frc/robot/subsystems/shooter/Shooter.java",
+      "src/main/java/frc/robot/subsystems/swerve/Swerve.java",
+      "src/main/java/frc/robot/subsystems/vision/Vision.java"
+    ],
+    "src/test/java/frc/lib/util/CalibrationTableTest.java": [],
+    "vendordeps/DogLog.json": [],
+    "vendordeps/PathplannerLib.json": [],
+    "vendordeps/Phoenix6-frc2026-latest.json": [],
+    "vendordeps/photonlib.json": [],
+    "vendordeps/WPILibNewCommands.json": [],
+    "WPILib-License.md": []
+  }
+}
