@@ -56,6 +56,8 @@ public class ShooterIOReal implements ShooterIO {
                 .withStatorCurrentLimitEnable(true))
         .withSlot0(
             new Slot0Configs()
+                // kA is extreme relative to kV by design, not a tuning error: a single Kraken X60
+                // drives all 4 flywheels (high reflected inertia) on an underhand shot trajectory.
                 .withKP(13)
                 .withKA(50)
                 .withKV(0.215));

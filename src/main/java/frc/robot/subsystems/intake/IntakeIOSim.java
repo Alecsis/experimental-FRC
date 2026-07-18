@@ -26,7 +26,7 @@ import frc.robot.RobotContainer;
  * dependencies -- suitable for desktop/sim-only testing and replay.
  */
 public class IntakeIOSim implements IntakeIO {
-  // TODO: confirm actual motors on the robot -- assumed Kraken X60 for both mechanisms
+  // Confirmed real hardware: both pivot and roller are Kraken X60 (TalonFX), full CTRE drivetrain.
   private static final DCMotor pivotGearbox = DCMotor.getKrakenX60(1);
   private static final DCMotor rollerGearbox = DCMotor.getKrakenX60(1);
 

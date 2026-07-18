@@ -74,14 +74,14 @@ public class TunerConstants {
     // All swerve devices must share the same CAN bus
     public static final CANBus kCANBus = new CANBus("Swerve", "./logs/example.hoot");
 
-    // Theoretical free speed (m/s) at 12 V applied output;
-    // This needs to be tuned to your individual robot
-    public static final LinearVelocity kSpeedAt12Volts = MetersPerSecond.of(5.5);
+    // Confirmed real hardware: WCP SwerveX2S modules, X3 (max speed) gearing tier, Kraken X60
+    // drive/steer. Theoretical free speed at 12 V for the 3.71:1 drive ratio -- 24.67 ft/s.
+    public static final LinearVelocity kSpeedAt12Volts = MetersPerSecond.of(7.52);
 
-    // Every 1 rotation of the azimuth results in kCoupleRatio drive motor turns;
-    // This may need to be tuned to your individual robot
+    // Every 1 rotation of the azimuth results in kCoupleRatio drive motor turns.
     private static final double kCoupleRatio = 3.57;
 
+    // Confirmed real hardware: WCP SwerveX2S, X3 (max speed) gearing tier -- 3.71:1 drive ratio.
     private static final double kDriveGearRatio = 3.7142857142857144;
     private static final double kSteerGearRatio = 25.9;
     private static final Distance kWheelRadius = Inches.of(2);
