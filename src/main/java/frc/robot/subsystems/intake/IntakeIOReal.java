@@ -21,30 +21,28 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
-import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import frc.robot.Constants;
+import frc.robot.utility.RobotMotor;
 
 /** IntakeIO implementation for real TalonFX hardware. The only file allowed to touch CTRE APIs. */
 public class IntakeIOReal implements IntakeIO {
-  private final TalonFX intakePivot = new TalonFX(Constants.intakePivot);
-  private final TalonFX roller = new TalonFX(Constants.roller);
+  private final RobotMotor intakePivot = new RobotMotor(pivotConfig());
+  private final RobotMotor roller = new RobotMotor(rollerConfig());
 
   private final VoltageOut pivotVoltageOut = new VoltageOut(0);
   private final MotionMagicVoltage pivotPositionOut = new MotionMagicVoltage(0);
   private final VoltageOut rollerVoltageOut = new VoltageOut(0);
   private final VelocityVoltage rollerVelocityOut = new VelocityVoltage(0);
 
-  public IntakeIOReal() {
-    configurePivot();
-    configureRoller();
-  }
-
-  private void configurePivot() {
-    TalonFXConfiguration cfg = new TalonFXConfiguration()
+  private static RobotMotor.MotorConfig pivotConfig() {
+    RobotMotor.MotorConfig cfg = new RobotMotor.MotorConfig();
+    cfg.name = "Intake/Pivot";
+    cfg.canId = Constants.intakePivot;
+    cfg.talonConfig = new TalonFXConfiguration()
         .withMotorOutput(
             new MotorOutputConfigs()
                 .withNeutralMode(NeutralModeValue.Brake)
@@ -69,12 +67,15 @@ public class IntakeIOReal implements IntakeIO {
                 .withKP(70.0)
                 .withKD(0.0)
                 .withKV(12 / RPM.of(6000).in(RotationsPerSecond)));
-
-    intakePivot.getConfigurator().apply(cfg);
+    cfg.safetyTrip = RobotMotor.SafetyTripConfig.of(Amps.of(100), Second.of(0.25));
+    return cfg;
   }
 
-  private void configureRoller() {
-    TalonFXConfiguration conf = new TalonFXConfiguration()
+  private static RobotMotor.MotorConfig rollerConfig() {
+    RobotMotor.MotorConfig cfg = new RobotMotor.MotorConfig();
+    cfg.name = "Intake/Roller";
+    cfg.canId = Constants.roller;
+    cfg.talonConfig = new TalonFXConfiguration()
         .withMotorOutput(
             new MotorOutputConfigs()
                 .withNeutralMode(NeutralModeValue.Coast)
@@ -89,12 +90,16 @@ public class IntakeIOReal implements IntakeIO {
                 .withSupplyCurrentLimitEnable(true)
                 .withStatorCurrentLimit(Amps.of(120))
                 .withStatorCurrentLimitEnable(true));
-
-    roller.getConfigurator().apply(conf);
+    // safetyTrip deliberately left null -- Intake.isJammed() already owns tuned jam-recovery on
+    // this exact signal (kJamStatorCurrentAmps); a second independent detector risks the "two
+    // writers, same tick" failure class documented in docs/claudex/architecture.md.
+    return cfg;
   }
 
   @Override
   public void updateInputs(IntakeIOInputs inputs) {
+    intakePivot.pollSafetyTrip();
+
     inputs.pivotConnected = intakePivot.isConnected();
     inputs.pivotPositionRads = intakePivot.getPosition().getValue().in(Radians);
     inputs.pivotVelocityRadsPerSec = intakePivot.getVelocity().getValue().in(RadiansPerSecond);
