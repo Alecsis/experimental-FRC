@@ -26,6 +26,8 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
@@ -47,6 +49,7 @@ import frc.robot.POI;
 import frc.robot.generated.TunerConstants;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
 import frc.robot.subsystems.vision.Vision;
+import frc.robot.utility.LoggingHolonomicDriveController;
 import frc.robot.utility.TrajectoryErrorTracker;
 import frc.robot.utility.simulation.MapleSimSwerveDrivetrain;
 
@@ -312,6 +315,39 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         }
     }
 
+    /**
+     * Bounds a raw PathPlanner chassis-speed command to what the drivetrain can actually achieve
+     * before it reaches CTRE's {@code ApplyRobotSpeeds} request. {@code LoggingHolonomicDriveController}
+     * (a {@code PPHolonomicDriveController} subclass) sums feedforward and feedback with no clamp
+     * anywhere -- translation feedback alone (kP=5) can command tens of m/s after a large position
+     * error. CTRE's {@code m_pathApplyRobotSpeeds} already desaturates wheel speeds downstream
+     * ({@code DesaturateWheelSpeeds=true} by default), so this is not a hardware-safety fix; it
+     * exists so the controller's own commanded signal -- and its telemetry -- stays physically
+     * sane. Reuses this drivetrain's own kinematics rather than clamping vx/vy/omega independently,
+     * since independent per-axis clamps don't bound combined translation+rotation demand at a
+     * corner module.
+     */
+    ChassisSpeeds sanitizeAutoSpeeds(ChassisSpeeds speeds) {
+        double rawSpeed = Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
+
+        SwerveModuleState[] states = getKinematics().toSwerveModuleStates(speeds);
+        SwerveDriveKinematics.desaturateWheelSpeeds(
+                states, TunerConstants.kSpeedAt12Volts.in(MetersPerSecond));
+        ChassisSpeeds bounded = getKinematics().toChassisSpeeds(states);
+
+        double boundedSpeed = Math.hypot(bounded.vxMetersPerSecond, bounded.vyMetersPerSecond);
+        Logger.recordOutput("Trajectory/RawCommandedSpeed", rawSpeed);
+        Logger.recordOutput("Trajectory/BoundedCommandedSpeed", boundedSpeed);
+        Logger.recordOutput("Trajectory/CommandedSpeedSaturated", boundedSpeed < rawSpeed - 1e-6);
+        Logger.recordOutput(
+                "Trajectory/BoundedCommandedSpeeds",
+                new double[] {
+                    bounded.vxMetersPerSecond, bounded.vyMetersPerSecond, bounded.omegaRadiansPerSecond
+                });
+
+        return bounded;
+    }
+
     private void configureAutoBuilder() {
         try {
             var config = RobotConfig.fromGUISettings();
@@ -322,10 +358,10 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                     // Consumer of ChassisSpeeds and feedforwards to drive the robot
                     (speeds, feedforwards) -> setControl(
                             m_pathApplyRobotSpeeds
-                                    .withSpeeds(speeds)
+                                    .withSpeeds(sanitizeAutoSpeeds(speeds))
                                     .withWheelForceFeedforwardsX(feedforwards.robotRelativeForcesXNewtons())
                                     .withWheelForceFeedforwardsY(feedforwards.robotRelativeForcesYNewtons())),
-                    new PPHolonomicDriveController(
+                    new LoggingHolonomicDriveController(
                             // PID constants for translation
                             new PIDConstants(5, 0, 0),
                             // PID constants for rotation
@@ -568,7 +604,26 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         if (DriverStation.isDisabled()) {
             Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
         }
+        logDriveMotorVoltages();
 
+    }
+
+    /**
+     * Per-module applied (output) drive motor voltage, FL/FR/BL/BR -- distinguishes "the controller
+     * isn't commanding enough voltage" from "the motors are voltage-saturated and still can't reach
+     * the requested velocity" during tracking-error investigations. Logged on the main 20ms loop
+     * (not the CTRE odometry thread's ~250Hz cadence that Telemetry.java's SwerveStates/Measured and
+     * SwerveStates/Setpoints run on), so compare by timestamp rather than assuming sample alignment.
+     */
+    private void logDriveMotorVoltages() {
+        double[] appliedVolts = new double[4];
+        double[] statorCurrent = new double[4];
+        for (int i = 0; i < 4; i++) {
+            appliedVolts[i] = getModule(i).getDriveMotor().getMotorVoltage().getValueAsDouble();
+            statorCurrent[i] = getModule(i).getDriveMotor().getStatorCurrent().getValueAsDouble();
+        }
+        Logger.recordOutput("Drive/AppliedVoltsPerModule", appliedVolts);
+        Logger.recordOutput("Drive/StatorCurrentAmpsPerModule", statorCurrent);
     }
 
     /**
