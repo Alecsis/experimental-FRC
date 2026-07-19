@@ -43,7 +43,7 @@ public class OperatorControls {
 
     // Reset the field-centric heading on left bumper press.
     joystick.leftBumper().onTrue(Commands.runOnce(() -> {
-      drivetrain.runOnce(drivetrain::seedFieldCentric);
+      drivetrain.seedFieldCentric();
       vision.getPoseResetEstimate().ifPresent(drivetrain::resetPose);
     }));
 
@@ -78,7 +78,7 @@ public class OperatorControls {
 
       // 3. Reset Gyro & Heading (Left Bumper)
       simController.leftBumper().onTrue(Commands.runOnce(() -> {
-        drivetrain.runOnce(drivetrain::seedFieldCentric);
+        drivetrain.seedFieldCentric();
         vision.getPoseResetEstimate().ifPresent(drivetrain::resetPose);
       }));
 
