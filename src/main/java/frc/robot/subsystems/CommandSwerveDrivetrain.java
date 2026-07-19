@@ -65,6 +65,10 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     // installs (kP=70) go numerically unstable at 20 ms, diverging at gain ~= -2 and flinging the pose.
     // Matches Team 254's reference integration; maple-sim's own default is 250 Hz.
     private static final double kSimLoopPeriod = 0.005;
+    // Sim-only signal-frequency mitigation (see startSimThread()): matches this drivetrain's own
+    // configured CAN-FD odometry rate (TunerConstants' default of 250 Hz -- see
+    // createDrivetrain()'s javadoc), not an arbitrary maximum.
+    private static final double kSimOdometrySignalHz = 250.0;
     private Notifier m_simNotifier = null;
     private SwerveModuleConstants<?, ?, ?>[] moduleConstantsForSim;
     private MapleSimSwerveDrivetrain mapleSim;
@@ -82,6 +86,12 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private static final Rotation2d kRedAlliancePerspectiveRotation = Rotation2d.k180deg;
     /* Keep track if we've ever applied the operator perspective before or not */
     private boolean m_hasAppliedOperatorPerspective = false;
+    /*
+     * Sim-only practice spawn, tracked separately from m_hasAppliedOperatorPerspective on purpose.
+     * Sharing that flag previously coupled two unrelated responsibilities and let the spawn reset
+     * fire while enabled -- see maybeApplySimPracticeSpawn().
+     */
+    private boolean m_hasAppliedSimPracticeSpawn = false;
     private final SwerveRequest.ApplyRobotSpeeds m_pathApplyRobotSpeeds = new SwerveRequest.ApplyRobotSpeeds();
 
     /* Swerve requests to apply during SysId characterization */
@@ -546,22 +556,11 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                                     ? kRedAlliancePerspectiveRotation
                                     : kBlueAlliancePerspectiveRotation);
                     m_lastAppliedAlliance = allianceColor;
-
-                    // Sim-only auto-spawn. This is the earliest point the alliance is actually
-                    // knowable -- getAlliance() is empty during construction (the DS hasn't
-                    // connected yet), so spawning in startSimThread() would always get the fallback.
-                    // resetPose() seeds both the odometry and the maple-sim physics world. The
-                    // enclosing block only runs while disabled (or before the first apply), so this
-                    // can never yank the robot mid-drive.
-                    if (mapleSim != null) {
-                        Pose2d spawnPose = FieldConstants.middleStartFor(allianceColor);
-                        resetPose(spawnPose);
-                        Logger.recordOutput("Drivetrain/SimSpawnPose", spawnPose);
-                    }
                 }
                 m_hasAppliedOperatorPerspective = true;
             });
         }
+        maybeApplySimPracticeSpawn();
         // Logged every cycle (not just on a flip) so the topic exists in the log browser from tick 1 --
         // "None" until the alliance first resolves, then steps to "Red"/"Blue" exactly at a flip.
         Logger.recordOutput("Vision/PerspectiveFlip",
@@ -570,6 +569,40 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
         }
 
+    }
+
+    /**
+     * Sim-only convenience spawn that drops the robot in an open patch of field so manual practice
+     * driving doesn't start wedged in the center structure. Never a match-legal start pose.
+     *
+     * <p>Deliberately NOT folded into the operator-perspective block above. That block's guard is
+     * {@code !m_hasAppliedOperatorPerspective || isDisabled()}, and the left half stays true until
+     * the alliance first resolves -- which, when the DS attaches at the same instant it enables into
+     * autonomous, is the first enabled tick. The spawn reset then landed one loop after
+     * {@code AutoBuilder}'s path-start seed and stomped it, teleporting both the odometry and the
+     * maple-sim world mid-path (evidence: logs/akit_26-07-19_00-52-32.wpilog, pose steps
+     * (12.887, 0.570) -> (8.259, 4.022) across t=3.88s -> 3.90s, while Enabled and Autonomous are
+     * both true). Three independent conditions now have to hold, so no future edit to the
+     * perspective guard can resurrect this:
+     *
+     * <ul>
+     *   <li>simulation only ({@code mapleSim != null}),
+     *   <li>strictly while disabled -- pose ownership belongs to whatever is driving once enabled,
+     *   <li>exactly once per robot-code lifetime.
+     * </ul>
+     */
+    private void maybeApplySimPracticeSpawn() {
+        if (mapleSim == null || m_hasAppliedSimPracticeSpawn || !DriverStation.isDisabled()) {
+            return;
+        }
+        // Needs the alliance, which is empty until the DS connects -- so this cannot move to
+        // startSimThread()/simulationInit(), it has to poll until the alliance resolves.
+        DriverStation.getAlliance().ifPresent(allianceColor -> {
+            Pose2d spawnPose = FieldConstants.simPracticeSpawn(allianceColor);
+            resetPose(spawnPose);
+            m_hasAppliedSimPracticeSpawn = true;
+            Logger.recordOutput("Drivetrain/SimSpawnPose", spawnPose);
+        });
     }
 
     private void startSimThread() {
@@ -590,6 +623,29 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         /* Run simulation at a faster rate so PID gains behave more reasonably */
         m_simNotifier = new Notifier(mapleSim::update);
         m_simNotifier.startPeriodic(kSimLoopPeriod);
+
+        // Sim-only, CTRE-recommended mitigation (Phoenix 6 docs, "High Fidelity CAN Bus
+        // Simulation"): the simulated CAN bus models real signal latency, which can leave stale
+        // data sitting between a maple-sim physics update and the next time the odometry/control
+        // signals below are polled. Raising their update rate narrows that window. This does NOT
+        // touch CTRE's native SwerveDrivetrain.OdometryThread itself (no public API exposes that),
+        // so it reduces -- it does not eliminate -- run-to-run timing variance. Explicitly
+        // re-guarded here (not just relying on this method only being called in sim) so this
+        // block's safety doesn't depend on tracing call sites.
+        if (Utils.isSimulation()) {
+            BaseStatusSignal[] odometrySignals = new BaseStatusSignal[22];
+            int i = 0;
+            for (int m = 0; m < 4; m++) {
+                odometrySignals[i++] = getModule(m).getDriveMotor().getPosition();
+                odometrySignals[i++] = getModule(m).getDriveMotor().getVelocity();
+                odometrySignals[i++] = getModule(m).getSteerMotor().getPosition();
+                odometrySignals[i++] = getModule(m).getSteerMotor().getVelocity();
+                odometrySignals[i++] = getModule(m).getEncoder().getAbsolutePosition();
+            }
+            odometrySignals[i++] = getPigeon2().getYaw();
+            odometrySignals[i++] = getPigeon2().getAngularVelocityZWorld();
+            BaseStatusSignal.setUpdateFrequencyForAll(kSimOdometrySignalHz, odometrySignals);
+        }
     }
 
     @Override
