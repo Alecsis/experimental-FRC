@@ -590,6 +590,24 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
      *   <li>strictly while disabled -- pose ownership belongs to whatever is driving once enabled,
      *   <li>exactly once per robot-code lifetime.
      * </ul>
+     *
+     * <p><b>Pose ownership.</b> Exactly one authority may write the pose in any given robot state:
+     *
+     * <ul>
+     *   <li>This method (MapleSim practice spawn) owns the initial <i>disabled</i> simulation pose.
+     *   <li>{@code AutoBuilder}/PathPlanner owns autonomous pose initialization.
+     *   <li>{@link Vision} owns vision-based pose corrections.
+     * </ul>
+     *
+     * <p>The simulation spawn must never overwrite an enabled robot's pose. That is the invariant
+     * this method exists to enforce, and it is pinned by
+     * {@code SimSpawnPoseOwnershipTest}.
+     *
+     * <p>Note the one-shot latch is set <i>inside</i> {@code getAlliance().ifPresent(...)} on
+     * purpose: it is deferred, not consumed. If the alliance first resolves while enabled the spawn
+     * is skipped, but the latch stays unset so the practice spawn still applies on the next disabled
+     * tick. Hoisting the assignment out of the lambda would silently cost a cold-DS session its
+     * practice spawn for the rest of the robot-code lifetime.
      */
     private void maybeApplySimPracticeSpawn() {
         if (mapleSim == null || m_hasAppliedSimPracticeSpawn || !DriverStation.isDisabled()) {

@@ -90,6 +90,59 @@ class SimSpawnPoseOwnershipTest {
                 + " trusting it.");
   }
 
+  /**
+   * The one-shot is deferred, not consumed. When the alliance first resolves on an ENABLED tick the
+   * spawn is correctly skipped (that is the bug fix), but the latch must stay unset so the practice
+   * spawn still arrives on the next disabled tick. If the flag were set outside
+   * {@code getAlliance().ifPresent(...)}, a cold-DS session would silently lose its practice spawn
+   * for the rest of the robot-code lifetime.
+   */
+  @Test
+  @Timeout(30)
+  void spawnIsDeferredNotConsumedWhenAllianceFirstResolvesWhileEnabled() {
+    // Alliance resolves for the first time while ENABLED -- spawn must be skipped here.
+    DriverStationSim.setDsAttached(true);
+    DriverStationSim.setAllianceStationId(AllianceStationID.Blue1);
+    DriverStationSim.setEnabled(true);
+    DriverStationSim.setAutonomous(false);
+    DriverStationSim.notifyNewData();
+    DriverStation.refreshData();
+
+    drivetrain.resetPose(PATH_START);
+    for (int i = 0; i < 5; i++) {
+      drivetrain.periodic();
+    }
+
+    Pose2d spawn = FieldConstants.simPracticeSpawn(Alliance.Blue);
+    Pose2d whileEnabled = drivetrain.getState().Pose;
+    assertTrue(
+        whileEnabled.getTranslation().getDistance(spawn.getTranslation())
+            > SPAWN_MATCH_TOLERANCE_METERS,
+        () -> "spawn must not fire while enabled, but pose moved to " + whileEnabled);
+
+    // Now disable. The latch was never consumed, so the practice spawn should finally apply.
+    DriverStationSim.setEnabled(false);
+    DriverStationSim.notifyNewData();
+    DriverStation.refreshData();
+
+    for (int i = 0; i < 5; i++) {
+      drivetrain.periodic();
+    }
+
+    Pose2d whileDisabled = drivetrain.getState().Pose;
+    assertTrue(
+        whileDisabled.getTranslation().getDistance(spawn.getTranslation())
+            < SPAWN_MATCH_TOLERANCE_METERS,
+        () ->
+            "practice spawn should apply on the first disabled tick after the alliance is known,"
+                + " but pose is "
+                + whileDisabled
+                + " (expected near "
+                + spawn
+                + "). The one-shot latch must be set inside getAlliance().ifPresent(), not outside"
+                + " it, or a cold-DS session loses its practice spawn permanently.");
+  }
+
   @Test
   @Timeout(30)
   void spawnDoesNotStompPathStartPoseWhenDsAttachesAtAutoEnable() {
