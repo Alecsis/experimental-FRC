@@ -30,6 +30,7 @@ import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.RobotBase;
 
 import org.ironmaple.simulation.SimulatedArena;
+import org.ironmaple.simulation.seasonspecific.rebuilt2026.Arena2026Rebuilt;
 import org.ironmaple.simulation.drivesims.COTS;
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
 import org.ironmaple.simulation.drivesims.SwerveModuleSimulation;
@@ -87,6 +88,11 @@ public class MapleSimSwerveDrivetrain {
               modules[i].getSteerMotor(), modules[i].getEncoder()));
     }
 
+    // Sim-only: the default Arena2026Rebuilt() treats the hub+ramp/bump region as a solid,
+    // impassable 2D collider (dyn4j has no height axis, so it can't model a drivable ramp).
+    // AddRampCollider=false drops that collider so PathPlanner autos crossing the Bump can be
+    // developed/tested in sim.
+    SimulatedArena.overrideInstance(new Arena2026Rebuilt(false));
     SimulatedArena.overrideSimulationTimings(simPeriod, 1);
     SimulatedArena.getInstance().addDriveTrainSimulation(mapleSimDrive);
   }

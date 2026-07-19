@@ -158,6 +158,17 @@ public class Superstructure extends SubsystemBase {
         Commands.waitUntil(() -> !mShotInProgress));
   }
 
+  /**
+   * Bridges the state machine into a bounded, self-finishing Command for autonomous/NamedCommands.
+   * {@link #intakeCmd()} is a hold-forever startEnd built for a teleop button binding -- inside a
+   * PathPlanner "parallel" block (which compiles to a plain ParallelCommandGroup, requiring every
+   * branch to finish) it never releases the group, silently stalling the auto after its first path
+   * segment. This wraps it with a timeout so it always finishes on its own.
+   */
+  public Command intakeSequence(double timeoutSeconds) {
+    return intakeCmd().withTimeout(timeoutSeconds);
+  }
+
   @Override
   public void periodic() {
     if (mSystemState != SuperstructureState.ALIGNING && mSystemState != SuperstructureState.SHOOTING) {

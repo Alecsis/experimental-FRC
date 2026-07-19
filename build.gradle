@@ -103,6 +103,12 @@ test {
     // only run inside that loop. A direct-call test would pass while proving nothing. See
     // docs/superpowers/plans/2026-07-17-phase3-imu-mode-junit-test.md for how this was found.
     forkEvery = 1
+
+    // Forwarded so the auto-regression golden-update gate (-DupdateAutoGolden=true
+    // -DconfirmGoldenUpdate=true) reaches the forked test JVM -- Gradle does not do this for -D
+    // flags by default, only for OS environment variables (verified empirically, not assumed).
+    systemProperty 'updateAutoGolden', System.getProperty('updateAutoGolden', 'false')
+    systemProperty 'confirmGoldenUpdate', System.getProperty('confirmGoldenUpdate', 'false')
 }
 
 // Simulation configuration (e.g. environment variables).

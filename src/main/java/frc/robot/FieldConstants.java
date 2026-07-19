@@ -42,5 +42,19 @@ public final class FieldConstants {
     return alliance == Alliance.Red ? redMiddleStart : blueMiddleStart;
   }
 
+  /**
+   * Open patch near the field's center, used only to give MapleSim practice/teleop sessions a
+   * clear spot to drive from -- it does NOT represent a legal match starting position (that's
+   * {@link #middleStartFor}). {@code blueMiddleStart}/{@code redMiddleStart} sit against the
+   * alliance wall on the field's width centerline, which in the MapleSim collision model overlaps
+   * the center tower/stage structure, making manual practice driving difficult right at spawn.
+   */
+  public static Pose2d simPracticeSpawn(Alliance alliance) {
+    return new Pose2d(
+        fieldLengthMeters / 2.0,
+        fieldWidthMeters / 2.0,
+        alliance == Alliance.Red ? Rotation2d.k180deg : Rotation2d.kZero);
+  }
+
   private FieldConstants() {}
 }

@@ -83,8 +83,13 @@ public class RobotContainer {
                 // Jam recovery now lives inside Intake.setRoller() itself (mechanism-level), so
                 // Superstructure.INTAKING gets it automatically -- routing through the state machine no
                 // longer drops stall protection from autos.
+                //
+                // intakeSequence(5.0), not the raw hold-forever intakeCmd(): every .auto file runs this
+                // inside a PathPlanner "parallel" block (ParallelCommandGroup, waits for every branch),
+                // and intakeCmd() never self-finishes -- discovered via the auto-regression-suite work
+                // stalling every in-scope auto dead after its first path segment.
                 NamedCommands.registerCommand(
-                                "Intake Start Sequence", superstructure.intakeCmd());
+                                "Intake Start Sequence", superstructure.intakeSequence(5.0));
                 NamedCommands.registerCommand(
                                 "Intake Stop", superstructure.stowCmd());
                 autoChooser = AutoBuilder.buildAutoChooser();
