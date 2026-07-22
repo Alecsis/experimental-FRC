@@ -25,7 +25,19 @@ public final class AutoTriggers {
         <= toleranceMeters;
   }
 
-  /** True once PathPlanner reports no active path (path complete or none running). */
+  /**
+   * True once PathPlanner reports no active path (path complete or none running).
+   *
+   * <p><b>Caveat:</b> {@link CommandSwerveDrivetrain#isFollowingAutoPath()} defaults to {@code
+   * false} until PathPlanner's first {@code setLogActivePathCallback} fires with a non-empty path
+   * list -- so this supplier reads {@code true} <i>before any path has ever started</i>, not just
+   * after one finishes. If this is wired into a {@code parallel(path, sequence)} block (e.g. {@code
+   * intakeSequence(pathFollowingComplete(drivetrain), 5.0)}), it can read {@code true} on the very
+   * first tick(s), before the path callback fires, exiting the sequence immediately instead of
+   * waiting for the path to actually complete. No latching/state-tracking exists to guard against
+   * this -- verify the callback has fired at least once before relying on this for "path is done"
+   * semantics.
+   */
   public static BooleanSupplier pathFollowingComplete(CommandSwerveDrivetrain drivetrain) {
     return () -> !drivetrain.isFollowingAutoPath();
   }
