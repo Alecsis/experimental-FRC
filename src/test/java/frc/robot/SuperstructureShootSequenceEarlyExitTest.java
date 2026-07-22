@@ -19,11 +19,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 /**
- * Second test class in this package deliberately -- build.gradle's forkEvery = 1 forks a fresh
- * JVM per test CLASS, matching SuperstructureEjectingTest's own stated reasoning for why its
- * Superstructure/Intake/Shooter singletons must not be shared with another class's test bodies.
+ * Separate test class from SuperstructureIntakeSequenceEarlyExitTest and
+ * SuperstructureIntakeSequenceTimeoutFallbackTest deliberately -- build.gradle's forkEvery = 1
+ * forks a fresh JVM per test CLASS, not per method. Superstructure/Intake/Shooter singletons have
+ * no reset hook, so a second @Test method sharing this class (or JVM) would silently observe
+ * state left behind by the first; keeping each conditional-sequence scenario in its own class is
+ * what gives it its own JVM.
  */
-class SuperstructureConditionalSequenceTest {
+class SuperstructureShootSequenceEarlyExitTest {
   private Robot robot;
   private Thread robotThread;
 
@@ -34,7 +37,7 @@ class SuperstructureConditionalSequenceTest {
     SimHooks.pauseTiming();
 
     robot = new Robot();
-    robotThread = new Thread(robot::startCompetition, "SuperstructureConditionalSequenceTest-competition");
+    robotThread = new Thread(robot::startCompetition, "SuperstructureShootSequenceEarlyExitTest-competition");
     robotThread.setDaemon(true);
     robotThread.start();
     SimHooks.waitForProgramStart();
@@ -51,54 +54,6 @@ class SuperstructureConditionalSequenceTest {
     } finally {
       SimHooks.resumeTiming();
     }
-  }
-
-  @Test
-  @Timeout(30)
-  void intakeSequenceFinishesEarlyWhenConditionMetBeforeTimeout() {
-    DriverStationSim.setEnabled(true);
-    DriverStationSim.setAutonomous(true);
-    DriverStationSim.notifyNewData();
-    SimHooks.stepTiming(0.1);
-
-    Superstructure superstructure = Superstructure.getInstance(null);
-    boolean[] conditionMet = {false};
-
-    Command sequence = superstructure.intakeSequence(() -> conditionMet[0], 5.0);
-    CommandScheduler.getInstance().schedule(sequence);
-    SimHooks.stepTiming(0.1); // let it start
-
-    assertTrue(CommandScheduler.getInstance().isScheduled(sequence),
-        "sequence should still be running before the condition flips");
-
-    conditionMet[0] = true;
-    SimHooks.stepTiming(0.1); // one tick for the scheduler to observe the flipped condition
-
-    assertFalse(CommandScheduler.getInstance().isScheduled(sequence),
-        "sequence should finish as soon as the condition is met, well before the 5.0s timeout");
-  }
-
-  @Test
-  @Timeout(30)
-  void intakeSequenceFallsBackToTimeoutWhenConditionNeverMet() {
-    DriverStationSim.setEnabled(true);
-    DriverStationSim.setAutonomous(true);
-    DriverStationSim.notifyNewData();
-    SimHooks.stepTiming(0.1);
-
-    Superstructure superstructure = Superstructure.getInstance(null);
-
-    Command sequence = superstructure.intakeSequence(() -> false, 0.2);
-    CommandScheduler.getInstance().schedule(sequence);
-    SimHooks.stepTiming(0.1);
-
-    assertTrue(CommandScheduler.getInstance().isScheduled(sequence),
-        "sequence should still be running before the 0.2s timeout elapses");
-
-    SimHooks.stepTiming(0.3); // past the 0.2s timeout
-
-    assertFalse(CommandScheduler.getInstance().isScheduled(sequence),
-        "sequence should finish via the timeout fallback when the condition never fires");
   }
 
   @Test
