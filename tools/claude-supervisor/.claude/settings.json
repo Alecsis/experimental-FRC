@@ -1,0 +1,64 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"C:\\Users\\xdm\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe\" \"C:\\Users\\xdm\\Claude\\experimental-FRC\\tools\\claude-supervisor\\hook_forward.py\""
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"C:\\Users\\xdm\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe\" \"C:\\Users\\xdm\\Claude\\experimental-FRC\\tools\\claude-supervisor\\hook_forward.py\""
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"C:\\Users\\xdm\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe\" \"C:\\Users\\xdm\\Claude\\experimental-FRC\\tools\\claude-supervisor\\hook_forward.py\""
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"C:\\Users\\xdm\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe\" \"C:\\Users\\xdm\\Claude\\experimental-FRC\\tools\\claude-supervisor\\hook_forward.py\""
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"C:\\Users\\xdm\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe\" \"C:\\Users\\xdm\\Claude\\experimental-FRC\\tools\\claude-supervisor\\hook_forward.py\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"C:\\Users\\xdm\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe\" \"C:\\Users\\xdm\\Claude\\experimental-FRC\\tools\\claude-supervisor\\hook_forward.py\""
+          }
+        ]
+      }
+    ]
+  }
+}

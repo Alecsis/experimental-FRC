@@ -1,0 +1,5 @@
+# Python 3.11+ (tested against 3.14). Install: python -m pip install -r requirements.txt
+pywinpty>=2.0        # ConPTY wrapper -- owns Claude's stdin for injection
+discord.py>=2.4      # bot: alerts, buttons, commands
+PyYAML>=6.0          # config.yaml
+# aiohttp is pulled in by discord.py and is reused for the local event sink.
