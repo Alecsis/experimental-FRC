@@ -11,6 +11,7 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import java.util.jar.Attributes.Name;
+import java.util.Set;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.SignalLogger;
@@ -67,6 +68,17 @@ public class RobotContainer {
         private final TrajectoryErrorTracker trajectoryErrorTracker =
                         new TrajectoryErrorTracker(() -> drivetrain.getState().Pose);
         private SendableChooser<Command> autoChooser;
+
+        /**
+         * NamedCommand names that are provably self-finishing (bounded timeout or a
+         * finishOnAlign-style condition) and therefore safe to use inside a PathPlanner "parallel"
+         * block (which compiles to ParallelCommandGroup, requiring every branch to finish).
+         * AutoCommandSafetyTest asserts every parallel-block NamedCommand across all .auto files is
+         * in this set -- add a new name here the moment you register a NamedCommand that will be
+         * used inside a "parallel" block, or the test will fail and tell you why.
+         */
+        public static final Set<String> BOUNDED_NAMED_COMMANDS = Set.of(
+                        "Intake Start Sequence", "Orbit", "Shooting Sequence", "Quick Shooting");
 
         public RobotContainer() {
                 drivetrain.setTrajectoryErrorTracker(trajectoryErrorTracker);
