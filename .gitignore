@@ -189,3 +189,4 @@ src/main/java/frc/robot/BuildConstants.java
 .factorypath
 
 tools/claude-supervisor/config.yaml
+.worktrees/
