@@ -11,6 +11,7 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import java.util.jar.Attributes.Name;
+import java.util.Set;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.SignalLogger;
@@ -67,6 +68,26 @@ public class RobotContainer {
         private final TrajectoryErrorTracker trajectoryErrorTracker =
                         new TrajectoryErrorTracker(() -> drivetrain.getState().Pose);
         private SendableChooser<Command> autoChooser;
+
+        /**
+         * NamedCommand names allowed inside a PathPlanner "parallel" block (which compiles to
+         * ParallelCommandGroup, requiring every branch to finish). AutoCommandSafetyTest asserts
+         * every parallel-block NamedCommand across all .auto files is in this set -- add a new name
+         * here the moment you register a NamedCommand that will be used inside a "parallel" block,
+         * or the test will fail and tell you why.
+         *
+         * <p>Most entries ("Intake Start Sequence", "Shooting Sequence", "Quick Shooting") are
+         * provably bounded -- each wraps a hard {@code .withTimeout(...)}, so they are guaranteed to
+         * finish. "Orbit" is different: it maps to {@code drivetrain.trackHub(vision, 0, () -> 0, ()
+         * -> 0, true)}, a {@code finishOnAlign}-style condition with no timeout backstop. It is
+         * trusted to converge (vision acquires a target and heading settles within tolerance), not
+         * proven to terminate -- if vision never acquires a target or heading never converges,
+         * {@code isFinished()} can return false forever and hang the auto, the exact failure mode
+         * this allowlist/test exists to catch. Do not treat "Orbit" as bounded the way the
+         * timeout-based entries are.
+         */
+        public static final Set<String> BOUNDED_NAMED_COMMANDS = Set.of(
+                        "Intake Start Sequence", "Orbit", "Shooting Sequence", "Quick Shooting");
 
         public RobotContainer() {
                 drivetrain.setTrajectoryErrorTracker(trajectoryErrorTracker);

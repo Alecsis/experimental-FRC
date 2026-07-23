@@ -4,6 +4,7 @@
 
 package frc.robot.subsystems.superstructure;
 
+import java.util.function.BooleanSupplier;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.wpilibj.Timer;
@@ -30,6 +31,13 @@ public class Superstructure extends SubsystemBase {
 
   public enum SuperstructureState {
     OFF, INTAKING, EJECTING, STOWED, ALIGNING, SHOOTING
+  }
+
+  /** Why a bounded sequence Command finished -- CONDITION_MET requires an explicit early-exit
+   * BooleanSupplier to have been supplied and to have fired; the single-argument overloads always
+   * resolve to TIMED_OUT, matching their pre-existing behavior. */
+  public enum EndReason {
+    CONDITION_MET, TIMED_OUT
   }
 
   private static Superstructure instance;
@@ -153,9 +161,28 @@ public class Superstructure extends SubsystemBase {
 
   /** Bridges the state machine into a bounded, self-finishing Command for autonomous/NamedCommands. */
   public Command shootingSequence(double timeoutSeconds) {
+    return shootingSequence(() -> false, timeoutSeconds);
+  }
+
+  /**
+   * Same as {@link #shootingSequence(double)}, but also finishes early the moment {@code
+   * doneEarly} becomes true. {@code shootingSequence} is not built on {@link #shootCmd()}'s
+   * startEnd shape -- it drives {@link #requestShoot(double)} directly and waits on {@code
+   * mShotInProgress} -- so the early-exit condition is folded into the same {@code waitUntil}
+   * rather than composed via an external {@code .until()}, and {@link #requestStow()} is called
+   * explicitly in {@code finallyDo} so a condition-triggered exit cleans up the state machine
+   * exactly like the internal {@code mFeedTimeoutSeconds} path already does.
+   */
+  public Command shootingSequence(BooleanSupplier doneEarly, double timeoutSeconds) {
     return Commands.sequence(
-        Commands.runOnce(() -> requestShoot(timeoutSeconds)),
-        Commands.waitUntil(() -> !mShotInProgress));
+            Commands.runOnce(() -> requestShoot(timeoutSeconds)),
+            Commands.waitUntil(() -> !mShotInProgress || doneEarly.getAsBoolean()))
+        .finallyDo(interrupted -> {
+          boolean earlyExit = doneEarly.getAsBoolean();
+          requestStow();
+          Logger.recordOutput("Superstructure/ShootSequenceEndReason",
+              (earlyExit ? EndReason.CONDITION_MET : EndReason.TIMED_OUT).name());
+        });
   }
 
   /**
@@ -166,7 +193,19 @@ public class Superstructure extends SubsystemBase {
    * segment. This wraps it with a timeout so it always finishes on its own.
    */
   public Command intakeSequence(double timeoutSeconds) {
-    return intakeCmd().withTimeout(timeoutSeconds);
+    return intakeSequence(() -> false, timeoutSeconds);
+  }
+
+  /**
+   * Same as {@link #intakeSequence(double)}, but also finishes early the moment {@code doneEarly}
+   * becomes true. Safe to compose via {@code .until()} because {@link #intakeCmd()} is a plain
+   * startEnd command -- its {@code end()} calls {@link #requestStow()} regardless of which race
+   * participant (the condition or the timeout) ends it.
+   */
+  public Command intakeSequence(BooleanSupplier doneEarly, double timeoutSeconds) {
+    return intakeCmd().until(doneEarly).withTimeout(timeoutSeconds)
+        .finallyDo(interrupted -> Logger.recordOutput("Superstructure/IntakeSequenceEndReason",
+            (doneEarly.getAsBoolean() ? EndReason.CONDITION_MET : EndReason.TIMED_OUT).name()));
   }
 
   @Override

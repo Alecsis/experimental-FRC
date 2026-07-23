@@ -224,6 +224,14 @@ abstract class AutoRegressionTestBase {
                 () -> autoName() + ": maxLongitudinalErrorMeters " + actual.maxLongitudinalErrorMeters
                         + " exceeds golden " + golden.maxLongitudinalErrorMeters + " + "
                         + AutoRegressionTolerances.kLongitudinalErrorHeadroomMeters + "m headroom");
+
+        // Every in-scope auto runs "Intake Start Sequence" (Superstructure.intakeSequence(5.0))
+        // inside a "parallel" block -- this asserts the new end-reason telemetry from Task 1
+        // actually reaches the wpilog in a real run, not just that it compiles.
+        assertTrue(
+                WpilogEndReasonReader.wasLogged(wpilog, "/RealOutputs/Superstructure/IntakeSequenceEndReason"),
+                () -> autoName() + ": expected Superstructure/IntakeSequenceEndReason to be logged "
+                        + "at least once -- is intakeSequence() still wired into this auto?");
     }
 
     private Path goldenPath() {

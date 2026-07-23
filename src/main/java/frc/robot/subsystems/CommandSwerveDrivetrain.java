@@ -95,6 +95,10 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
      * fire while enabled -- see maybeApplySimPracticeSpawn().
      */
     private boolean m_hasAppliedSimPracticeSpawn = false;
+    // Driven by configureAutoBuilder()'s existing PathPlannerLogging.setLogActivePathCallback
+    // registration below -- true whenever PathPlanner has an active path (non-empty list),
+    // false once it reports the path complete (empty list). Read-only outside this class.
+    private boolean m_isFollowingAutoPath = false;
     private final SwerveRequest.ApplyRobotSpeeds m_pathApplyRobotSpeeds = new SwerveRequest.ApplyRobotSpeeds();
 
     /* Swerve requests to apply during SysId characterization */
@@ -380,6 +384,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         // Logs poses from auto
         PathPlannerLogging.setLogActivePathCallback(
                 (activePath) -> {
+                    m_isFollowingAutoPath = !activePath.isEmpty();
+                    Logger.recordOutput("Drive/IsFollowingAutoPath", m_isFollowingAutoPath);
                     Logger.recordOutput(
                             "Odometry/Trajectory", activePath.toArray(new Pose2d[activePath.size()]));
                     if (trajectoryErrorTracker != null) {
@@ -403,6 +409,13 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
      */
     public void setTrajectoryErrorTracker(TrajectoryErrorTracker trajectoryErrorTracker) {
         this.trajectoryErrorTracker = trajectoryErrorTracker;
+    }
+
+    /** True whenever PathPlanner currently has an active autonomous path; false once it reports
+     * the path list empty (path complete or no auto running). Sourced from the same
+     * PathPlannerLogging push callback configureAutoBuilder() already registers for logging. */
+    public boolean isFollowingAutoPath() {
+        return m_isFollowingAutoPath;
     }
 
     /**
