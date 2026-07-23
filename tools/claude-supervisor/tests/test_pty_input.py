@@ -56,14 +56,37 @@ def _feed(*chars):
     return lambda: next(it)
 
 
-def test_console_plan_never_enables_vt_input_on_stdin():
-    """THE regression guard: re-enabling VT-input on stdin is the exact bug."""
-    print("test_console_plan_never_enables_vt_input_on_stdin")
-    plan = _console_vt_plan()
+def test_legacy_console_plan_never_enables_vt_input_on_stdin():
+    """THE regression guard: re-enabling VT-input on stdin under the legacy
+    backend is the exact original bug. Must keep passing forever -- the vt
+    backend (see below) is an explicit opt-in, additive path, not a change to
+    this default."""
+    print("test_legacy_console_plan_never_enables_vt_input_on_stdin")
+    plan = _console_vt_plan("legacy")
     check(all(handle_id != STDIN_HANDLE for handle_id, _ in plan),
-          "plan touches no stdin handle")
+          "legacy plan touches no stdin handle")
     check(all(not (flag & ENABLE_VIRTUAL_TERMINAL_INPUT) for _, flag in plan),
-          "VT-input bit (0x0200) appears in no plan entry")
+          "VT-input bit (0x0200) appears in no legacy plan entry")
+
+
+def test_vt_console_plan_enables_vt_input_on_stdin():
+    """Phase 2 target -- NOT YET IMPLEMENTED, deliberately RED.
+
+    The whole point of the "vt" backend is to let Windows Terminal deliver
+    keys/mouse/paste to Claude as native VT escape sequences instead of the
+    legacy classic-console translation, which requires ENABLE_VIRTUAL_TERMINAL_
+    INPUT on stdin. Task 1 (this commit) only adds the backend-selection
+    plumbing; the actual mode-setting change is Phase 2, dispatched separately.
+    This assertion is expected to fail until Phase 2 lands -- that is the
+    intended TDD handoff, not a bug in this test.
+    """
+    print("test_vt_console_plan_enables_vt_input_on_stdin")
+    plan = _console_vt_plan("vt")
+    check(
+        any(handle_id == STDIN_HANDLE and (flag & ENABLE_VIRTUAL_TERMINAL_INPUT)
+            for handle_id, flag in plan),
+        "vt plan enables VT-input (0x0200) on stdin [Phase 2, expected RED for now]",
+    )
 
 
 def test_printable_and_control_chars_forward_verbatim():
@@ -139,7 +162,8 @@ def test_input_backend_constructor_argument_is_stored():
 
 
 def main():
-    test_console_plan_never_enables_vt_input_on_stdin()
+    test_legacy_console_plan_never_enables_vt_input_on_stdin()
+    test_vt_console_plan_enables_vt_input_on_stdin()
     test_printable_and_control_chars_forward_verbatim()
     test_extended_keys_translate_to_vt_sequences()
     test_unknown_extended_key_consumes_lead_and_yields_nothing()
