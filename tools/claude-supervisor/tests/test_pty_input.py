@@ -29,6 +29,7 @@ from claude_supervisor.pty_session import (
     BRACKETED_PASTE_START,
     ENABLE_VIRTUAL_TERMINAL_INPUT,
     STDIN_HANDLE,
+    PtySession,
     _console_vt_plan,
     is_paste_burst,
     translate_keystroke,
@@ -121,6 +122,22 @@ def test_wrap_bracketed_paste_preserves_content_and_newlines():
     check(inner.count("\r") == body.count("\r"), "every newline preserved (none dropped)")
 
 
+def test_default_construction_is_unchanged_by_input_backend_plumbing():
+    """Task 1.3 regression guard: adding input_backend must not alter any
+    existing construction-time default -- forward_local_input still True,
+    and the new switch defaults to the untouched legacy path."""
+    print("test_default_construction_is_unchanged_by_input_backend_plumbing")
+    session = PtySession(["python", "-c", "pass"])
+    check(session._forward_local_input is True, "forward_local_input still defaults True")
+    check(session._input_backend == "legacy", "input_backend defaults to 'legacy'")
+
+
+def test_input_backend_constructor_argument_is_stored():
+    print("test_input_backend_constructor_argument_is_stored")
+    session = PtySession(["python", "-c", "pass"], input_backend="vt")
+    check(session._input_backend == "vt", "explicit input_backend='vt' is stored verbatim")
+
+
 def main():
     test_console_plan_never_enables_vt_input_on_stdin()
     test_printable_and_control_chars_forward_verbatim()
@@ -129,6 +146,8 @@ def main():
     test_typing_and_lone_enter_are_not_pastes()
     test_multiline_burst_is_a_paste()
     test_wrap_bracketed_paste_preserves_content_and_newlines()
+    test_default_construction_is_unchanged_by_input_backend_plumbing()
+    test_input_backend_constructor_argument_is_stored()
     print(f"\n{PASS} passed, {FAIL} failed")
     return 1 if FAIL else 0
 

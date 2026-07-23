@@ -55,6 +55,7 @@ async def amain() -> int:
         env=child_env,
         log_buffer_lines=cfg.supervisor.log_buffer_lines,
         on_exit=on_child_exit,
+        input_backend=cfg.behavior.local_input_backend,
     )
     sup = Supervisor(cfg, pty, loop)
     bot = SupervisorBot(cfg, sup)
