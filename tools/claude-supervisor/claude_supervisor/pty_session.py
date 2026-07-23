@@ -325,6 +325,7 @@ class PtySession:
         self._input: Optional[threading.Thread] = None
         self._resizer: Optional[threading.Thread] = None
         self._mouser: Optional[threading.Thread] = None
+        self._vt_relay: Optional[threading.Thread] = None
         self._last_size: Optional[tuple[int, int]] = None
 
     # ---- lifecycle -------------------------------------------------------
@@ -351,11 +352,17 @@ class PtySession:
         self._reader = threading.Thread(target=self._read_loop, name="pty-reader", daemon=True)
         self._reader.start()
         if self._forward_local_input:
-            self._input = threading.Thread(target=self._input_loop, name="pty-input", daemon=True)
-            self._input.start()
-            _enable_mouse_console()
-            self._mouser = threading.Thread(target=self._mouse_loop, name="pty-mouse", daemon=True)
-            self._mouser.start()
+            if self._input_backend == "vt":
+                self._vt_relay = threading.Thread(
+                    target=self._vt_relay_loop, name="pty-vt-relay", daemon=True
+                )
+                self._vt_relay.start()
+            else:
+                self._input = threading.Thread(target=self._input_loop, name="pty-input", daemon=True)
+                self._input.start()
+                _enable_mouse_console()
+                self._mouser = threading.Thread(target=self._mouse_loop, name="pty-mouse", daemon=True)
+                self._mouser.start()
         self._resizer = threading.Thread(target=self._resize_loop, name="pty-resize", daemon=True)
         self._resizer.start()
 
@@ -523,6 +530,19 @@ class PtySession:
             sequence = translate_wheel_event(delta, col, row)
             if sequence:
                 self.send_keys(sequence)
+
+    def _vt_relay_loop(self) -> None:
+        """Placeholder for the VT-input relay backend (Plan Phase 2).
+
+        Task 1 (this method) only wires the "vt" backend into the same
+        start()/stop() lifecycle as the legacy _input/_mouser threads -- it
+        does no real relay work yet. It exists so the thread-routing switch
+        in start() has something real to launch and join cleanly. The actual
+        transparent byte relay (reading real VT input off stdin and writing
+        it straight through to the child, replacing the legacy
+        msvcrt/console-API translation entirely) is out of scope here.
+        """
+        self._stop.wait()
 
     def _resize_loop(self) -> None:
         """Forward the local console's size into the inner ConPTY on change.
