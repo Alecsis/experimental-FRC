@@ -1,60 +1,45 @@
 ---
-description: Session start — discover the tree state, read the persistent brain in priority order, and report engineering readiness before touching code
+description: Rebuild context after a compaction or new session — read-only, no recap, no implementation.
 ---
 
 # /bootstrap — Session Initialization
 
-Establish an accurate mental model of *this* repo at *this* moment before doing any work. Read the persistent state, verify it against the live tree, and surface anything stale. Do **not** start editing until this is done.
+Rebuild Claude's context after a compaction or a new session. That is the *only* job — this is not a recap, it does not reconstruct months of history, and it does not touch any files.
 
 Extra context from the user (may be empty): $ARGUMENTS
 
-## Step 0 — Dynamic discovery (never assume the tree matches memory)
-
-The persistent notes describe the tree as it was *last* session. Discover what it is *now* — do not trust the recorded commit/date until you've checked:
+## Step 0 — Where is the tree right now
 
 ```bash
-git -C "C:/Users/xdm/Claude/experimental-FRC" log --oneline -10
+git -C "C:/Users/xdm/Claude/experimental-FRC" log --oneline -5
 git -C "C:/Users/xdm/Claude/experimental-FRC" status --short
 git -C "C:/Users/xdm/Claude/experimental-FRC" branch --show-current
 ```
 
-Note the HEAD SHA and whether the tree is clean. You will compare this against the `*Verified against the tree on <date> at commit <sha>*` line in `CLAUDE.md` — if they disagree, uncommitted work or a new commit landed since the last recap, and the recorded task state may be stale.
+Note the HEAD SHA and clean/dirty state. Compare against what the latest session note claims — if they disagree, something changed since the last `/recap`.
 
-## Step 1 — Read the persistent brain, in priority order
+## Step 1 — Read, in this order, and stop as soon as you have enough
 
-Read top-down; earlier files set the frame for later ones. Stop reading a branch once it stops being relevant to what the user is here to do.
+1. **`CLAUDE.md`** — read it fully, including the `## Session Handoff` pointer to the latest session note.
+2. **The latest session note** at the path `CLAUDE.md` just pointed to (`docs/claudex/sessions/YYYY-MM-DD.md`).
+3. **That note's `## Handoff` section specifically** — this is the source of truth for "where things stand," not the narrative above it.
+4. **`docs/claudex/architecture.md`** — only if the handoff or the task references an architecture decision.
+5. **`docs/claudex/verification-loop.md`** — only if the task involves claiming something is verified/passing.
+6. **`docs/claudex/history.md`** — only if the handoff is insufficient and you genuinely need older context. This is the exception, not the default step — do not read it top-to-bottom every session.
 
-1. **`CLAUDE.md`** — the current-state snapshot. The `## 🕒 Current Task State` section (`Next up` / `Backlog`) is where the *actionable* present lives. Read the architecture rules and Karpathy guidelines every time.
-2. **`docs/claudex/architecture.md`** — the standing decisions: sanctioned exceptions, closed/open vendor leaks, the Superstructure rule. Read before assuming any boundary is or isn't a violation.
-3. **`docs/claudex/history.md`** — the changelog. Skim the most recent session entries for evidence behind the current `Next up`. Don't re-read the whole thing; jump to the tail.
-4. **`docs/claudex/`** design notes (`sim-timing-determinism.md`, `robotmotor-refactor.md`, `trajectory-error-instrumentation.md`) and **`verification-loop.md`** — read on demand when the task touches their subject.
-5. **Vault entry point** `C:\Users\xdm\6767 frc bible\00 Index.md`, then the topic note that owns today's subject (e.g. `Control Loops & Math/PID Gains Registry.md`, `Auto & Pathing/PathPlanner.md`). The vault is the durable brain; `docs/claudex/` is the code-local mirror.
-
-## Step 2 — Construct the mental model
-
-Reconcile what you read with what you discovered in Step 0. Hold these explicitly:
-
-- **Where we are:** branch, HEAD SHA, clean/dirty, and whether that matches `CLAUDE.md`'s verified line.
-- **What's in flight:** the top 1–3 `Next up` items and what's blocking each.
-- **What's load-bearing but fragile:** open hypotheses, stale goldens, deferred fixes — anything the notes flag as "do not simplify / do not act on the obsolete instruction."
-- **The rails:** Strict Hardware Isolation, Singleton subsystems, centralized Superstructure states, "never copy numbers from reference dirs," and the Trust Boundary. These bind every task.
-
-If a note references a file/flag/method, treat it as *last-known* — verify it still exists in `src/` before recommending action on it.
-
-## Step 3 — Engineering readiness output
+## Step 2 — Summarize
 
 Report to the user, concisely:
 
-- **Position:** branch @ SHA, tree clean/dirty, and whether that agrees with `CLAUDE.md`'s verified-tree line (call out drift).
-- **Ready to resume:** the top `Next up` item(s), stated as a concrete next action.
-- **Watch-outs:** any stale golden, deferred fix, open hypothesis, or uncommitted carry-over that would trip up the obvious next step.
-- **Build state is unknown** until a gate runs — do not claim the tree compiles from memory. Offer to run gate 1 (`./gradlew compileJava` with `JAVA_HOME=/c/Users/Public/wpilib/2026/jdk`) if the task needs it.
-
-Then stop and wait for direction, unless the user's `$ARGUMENTS` already named the task — in which case proceed into it with the model you just built.
+- **Current objective** — what the latest handoff says is in flight.
+- **Current branch / state** — SHA, clean/dirty, and whether it agrees with the session note (call out drift).
+- **Verified facts** — what the handoff marked as confirmed/tested.
+- **Remaining unknowns** — what the handoff marked unverified.
+- **Next safe action** — the handoff's stated next step, plus anything it flagged as "avoid" / "don't change."
 
 ## Rules
 
-- **Discover before you trust.** The recorded SHA/date is a claim to verify, not a fact.
-- **Read, don't rewrite.** `/bootstrap` is read-only. It never edits `CLAUDE.md`, the vault, or code.
-- **Surface staleness, don't paper over it.** A drifted verified-line or a superseded instruction is the most useful thing you can report.
+- **Do not modify any files.** Not `CLAUDE.md`, not the vault, not code.
+- **Do not begin implementation.** Stop after the summary and wait for the next instruction — unless `$ARGUMENTS` already named the task, in which case proceed into it with the model you just built.
+- **Don't re-derive `/recap`'s job.** If the handoff is missing or looks stale, say so — don't fall back to reconstructing state from `history.md` by default.
 - Team is **4935**. The `6767` in the vault path is a naming meme, not a team number.

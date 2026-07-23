@@ -107,7 +107,18 @@ class SupervisorBot(commands.Bot):
             files = "\n".join(snapshot.changed_files[:12])
             embed.add_field(name="Files", value=_clip(files), inline=False)
 
-        await channel.send(embed=embed, view=ActionButtons(self))
+        # Ping the authorized user in the message *content* (mentions inside an
+        # embed never trigger a Discord notification). ID-based mention so it
+        # survives username changes; allowed_mentions restricts the ping to that
+        # single ID so nothing in the embed text can ever mention anyone else.
+        await channel.send(
+            content=f"<@{self.authorized_id}>",
+            embed=embed,
+            view=ActionButtons(self),
+            allowed_mentions=discord.AllowedMentions(
+                everyone=False, roles=False, users=[discord.Object(id=self.authorized_id)]
+            ),
+        )
 
     # ---- text commands ---------------------------------------------------
 
