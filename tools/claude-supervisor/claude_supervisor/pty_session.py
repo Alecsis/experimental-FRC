@@ -134,6 +134,108 @@ def wrap_bracketed_paste(s: str) -> str:
     return BRACKETED_PASTE_START + s + BRACKETED_PASTE_END
 
 
+# Win32 console INPUT_RECORD.EventType values (wincon.h).
+KEY_EVENT_TYPE = 0x0001
+MOUSE_EVENT_TYPE = 0x0002
+
+# Win32 MOUSE_EVENT_RECORD.dwEventFlags bits relevant here (wincon.h).
+MOUSE_WHEELED = 0x0004
+MOUSE_HWHEELED = 0x0008
+
+_WHEEL_DELTA = 120  # Win32's notch unit; MOUSE_EVENT_RECORD.dwButtonState's high word.
+
+# xterm SGR mouse-report button codes for the vertical wheel.
+_SGR_WHEEL_UP = 64
+_SGR_WHEEL_DOWN = 65
+
+
+def extract_wheel_delta(dw_button_state: int) -> int:
+    """Extract the signed 16-bit wheel delta from a raw MOUSE_EVENT_RECORD.dwButtonState.
+
+    Win32 packs the wheel delta into the high word of this otherwise-unsigned DWORD;
+    positive means rotated away from the user ("up"), negative means toward the user
+    ("down"). The low word (button press state) is irrelevant for wheel events and
+    ignored here.
+    """
+    high_word = (dw_button_state >> 16) & 0xFFFF
+    return high_word - 0x10000 if high_word >= 0x8000 else high_word
+
+
+def translate_wheel_event(delta: int, col: int, row: int) -> str:
+    """Translate a raw wheel delta into SGR xterm mouse-wheel sequence(s).
+
+    ``delta`` is signed (positive = up, negative = down), typically a multiple of 120
+    (one Win32 "notch"). ``col``/``row`` are passed straight through into the SGR
+    event's reported position. Emits one SGR sequence per notch -- a fast scroll
+    producing a larger delta emits multiple stacked sequences, since the SGR wheel
+    protocol has no magnitude field of its own.
+    """
+    if delta == 0:
+        return ""
+    notches = max(1, round(abs(delta) / _WHEEL_DELTA))
+    button = _SGR_WHEEL_UP if delta > 0 else _SGR_WHEEL_DOWN
+    return f"\x1b[<{button};{col};{row}M" * notches
+
+
+def classify_record(event_type: int, event_flags: int) -> str:
+    """Classify a peeked console INPUT_RECORD for the mouse loop's dequeue decision.
+
+    Returns ``"not_mouse"`` (leave queued for the keyboard loop), ``"wheel"``
+    (dequeue and forward), or ``"other_mouse"`` (dequeue and discard -- clicks,
+    drags, moves, horizontal wheel; mouse-selection support is a separate,
+    deferred item).
+    """
+    if event_type != MOUSE_EVENT_TYPE:
+        return "not_mouse"
+    return "wheel" if event_flags & MOUSE_WHEELED else "other_mouse"
+
+
+# ctypes.wintypes raises at import time on non-Windows systems, so it -- and the
+# Win32 console-record structures built from it -- are only defined when actually
+# on Windows. This preserves the property (see the module docstring) that the pure
+# functions in this file stay importable/testable without the native dependency
+# present; INPUT_RECORD and friends simply don't exist off-Windows, same as
+# PtyProcess itself not existing until start()'s lazy pywinpty import.
+if os.name == "nt":
+    from ctypes import wintypes
+
+    class _COORD(ctypes.Structure):
+        _fields_ = [("X", wintypes.SHORT), ("Y", wintypes.SHORT)]
+
+    class MOUSE_EVENT_RECORD(ctypes.Structure):
+        _fields_ = [
+            ("dwMousePosition", _COORD),
+            ("dwButtonState", wintypes.DWORD),
+            ("dwControlKeyState", wintypes.DWORD),
+            ("dwEventFlags", wintypes.DWORD),
+        ]
+
+    class _CHAR_UNION(ctypes.Union):
+        _fields_ = [("UnicodeChar", wintypes.WCHAR), ("AsciiChar", wintypes.CHAR)]
+
+    class KEY_EVENT_RECORD(ctypes.Structure):
+        _fields_ = [
+            ("bKeyDown", wintypes.BOOL),
+            ("wRepeatCount", wintypes.WORD),
+            ("wVirtualKeyCode", wintypes.WORD),
+            ("wVirtualScanCode", wintypes.WORD),
+            ("uChar", _CHAR_UNION),
+            ("dwControlKeyState", wintypes.DWORD),
+        ]
+
+    class INPUT_RECORD_EVENT(ctypes.Union):
+        _fields_ = [
+            ("KeyEvent", KEY_EVENT_RECORD),
+            ("MouseEvent", MOUSE_EVENT_RECORD),
+        ]
+
+    class INPUT_RECORD(ctypes.Structure):
+        _fields_ = [
+            ("EventType", wintypes.WORD),
+            ("Event", INPUT_RECORD_EVENT),
+        ]
+
+
 # Windows console std-handle ids (GetStdHandle).
 STDOUT_HANDLE = -11
 STDIN_HANDLE = -10
