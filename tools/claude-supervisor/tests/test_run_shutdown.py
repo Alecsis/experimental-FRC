@@ -38,7 +38,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from run import _run_until_stopped  # noqa: E402
+from run import _run_until_stopped, _start_and_supervise  # noqa: E402
 
 PASS = 0
 FAIL = 0
@@ -54,9 +54,19 @@ def check(cond, label):
         print(f"  FAIL: {label}")
 
 
+class _FakeMeta:
+    def __init__(self):
+        self.pid = None
+
+
 class _FakePty:
     def __init__(self):
+        self.start_calls = 0
         self.stop_calls = 0
+        self.pid = 4242
+
+    def start(self):
+        self.start_calls += 1
 
     def stop(self):
         self.stop_calls += 1
@@ -65,6 +75,7 @@ class _FakePty:
 class _FakeSup:
     def __init__(self):
         self.stop_sink_calls = 0
+        self.meta = _FakeMeta()
 
     async def stop_sink(self):
         self.stop_sink_calls += 1
@@ -74,8 +85,24 @@ class _FakeBot:
     def __init__(self):
         self.close_calls = 0
 
+    async def start(self, token):
+        await asyncio.sleep(0)
+
     async def close(self):
         self.close_calls += 1
+
+
+class _FakeLog:
+    """Duck-types logging.Logger's .info() but raises instead -- stands in
+    for a KeyboardInterrupt landing somewhere between pty.start() succeeding
+    and _run_until_stopped's own try/finally being entered."""
+
+    def __init__(self, raise_on_info=None):
+        self._raise_on_info = raise_on_info
+
+    def info(self, *args, **kwargs):
+        if self._raise_on_info is not None:
+            raise self._raise_on_info
 
 
 class _RaisingStopEvent:
@@ -195,11 +222,128 @@ def test_unfinished_bot_task_is_cancelled_during_teardown():
           "a still-running bot_task is cancelled during teardown")
 
 
+# ---- _start_and_supervise -- the code-review-fixed second window ---------
+# Covers the window between pty.start() succeeding and _run_until_stopped
+# being entered (sup.meta.pid assignment / bot_task creation / log.info).
+
+def test_start_and_supervise_normal_path_starts_pty_and_tears_down_once():
+    print("test_start_and_supervise_normal_path_starts_pty_and_tears_down_once")
+
+    async def scenario():
+        pty = _FakePty()
+        sup = _FakeSup()
+        bot = _FakeBot()
+        stop_event = asyncio.Event()
+        stop_event.set()
+        loop = asyncio.get_event_loop()
+        log = _FakeLog()
+        await _start_and_supervise(pty, sup, bot, stop_event, loop, log, "fake-token")
+        return pty, sup, bot
+
+    pty, sup, bot = _run(scenario())
+    check(pty.start_calls == 1, "pty.start() called exactly once")
+    check(sup.meta.pid == pty.pid, "sup.meta.pid gets set from the started pty")
+    check(pty.stop_calls == 1, "pty.stop() still called exactly once via _run_until_stopped's finally")
+    check(bot.close_calls == 1, "bot.close() called exactly once")
+    check(sup.stop_sink_calls == 1, "sup.stop_sink() called exactly once")
+
+
+def test_keyboardinterrupt_between_pty_start_and_run_until_stopped_still_restores():
+    """The literal window the reviewer identified: pty.start() has already
+    succeeded (mode mutated + saved for real, inside PtySession), but the
+    KeyboardInterrupt lands in the synchronous span after that -- here,
+    log.info(...) -- before _run_until_stopped (and therefore its own
+    try/finally) is ever entered. Without the code-review fix, this would
+    propagate straight out of _start_and_supervise/amain with pty.stop()
+    never called at all."""
+    print("test_keyboardinterrupt_between_pty_start_and_run_until_stopped_still_restores")
+
+    async def scenario():
+        pty = _FakePty()
+        sup = _FakeSup()
+        bot = _FakeBot()
+        stop_event = asyncio.Event()
+        loop = asyncio.get_event_loop()
+        log = _FakeLog(raise_on_info=KeyboardInterrupt())
+        raised = None
+        try:
+            await _start_and_supervise(pty, sup, bot, stop_event, loop, log, "fake-token")
+        except KeyboardInterrupt as exc:
+            raised = exc
+        return pty, raised
+
+    pty, raised = _run(scenario())
+    check(raised is not None, "the KeyboardInterrupt propagates out")
+    check(pty.start_calls == 1, "pty.start() still ran before the interrupt landed")
+    check(pty.stop_calls == 1,
+          "pty.stop() still called exactly once even though the interrupt landed "
+          "before _run_until_stopped was ever entered")
+
+
+def test_generic_exception_between_pty_start_and_run_until_stopped_still_restores():
+    """Same window, ordinary exception -- not special-cased to KeyboardInterrupt."""
+    print("test_generic_exception_between_pty_start_and_run_until_stopped_still_restores")
+
+    async def scenario():
+        pty = _FakePty()
+        sup = _FakeSup()
+        bot = _FakeBot()
+        stop_event = asyncio.Event()
+        loop = asyncio.get_event_loop()
+        log = _FakeLog(raise_on_info=RuntimeError("boom"))
+        raised = None
+        try:
+            await _start_and_supervise(pty, sup, bot, stop_event, loop, log, "fake-token")
+        except RuntimeError as exc:
+            raised = exc
+        return pty, raised
+
+    pty, raised = _run(scenario())
+    check(raised is not None, "the RuntimeError propagates out")
+    check(pty.stop_calls == 1, "pty.stop() still called exactly once")
+
+
+def test_keyboardinterrupt_inside_run_until_stopped_does_not_double_teardown_badly():
+    """When the interrupt instead lands *inside* _run_until_stopped (the
+    already-covered first window), _start_and_supervise's own except also
+    fires and calls pty.stop() a second time -- confirmed harmless/idempotent
+    per Task 3.3, not a new bug introduced by stacking the two guards."""
+    print("test_keyboardinterrupt_inside_run_until_stopped_does_not_double_teardown_badly")
+
+    async def scenario():
+        pty = _FakePty()
+        sup = _FakeSup()
+        bot = _FakeBot()
+        stop_event = _RaisingStopEvent(KeyboardInterrupt())
+        loop = asyncio.get_event_loop()
+        log = _FakeLog()
+        raised = None
+        try:
+            await _start_and_supervise(pty, sup, bot, stop_event, loop, log, "fake-token")
+        except KeyboardInterrupt as exc:
+            raised = exc
+        return pty, bot, raised
+
+    pty, bot, raised = _run(scenario())
+    check(raised is not None, "the KeyboardInterrupt propagates out")
+    check(pty.stop_calls == 2,
+          "pty.stop() fires twice (once from _run_until_stopped's finally, "
+          "once from _start_and_supervise's own except) -- confirmed harmless, "
+          "not asserting this is ideal, just that it doesn't break anything")
+    check(bot.close_calls == 1, "bot.close() still only fired once (from "
+          "_run_until_stopped's own finally, which _start_and_supervise's "
+          "except does not duplicate)")
+
+
 def main():
     test_normal_stop_event_triggers_full_teardown_exactly_once()
     test_keyboard_interrupt_while_waiting_still_tears_down()
     test_generic_exception_while_waiting_still_tears_down_and_propagates()
     test_unfinished_bot_task_is_cancelled_during_teardown()
+    test_start_and_supervise_normal_path_starts_pty_and_tears_down_once()
+    test_keyboardinterrupt_between_pty_start_and_run_until_stopped_still_restores()
+    test_generic_exception_between_pty_start_and_run_until_stopped_still_restores()
+    test_keyboardinterrupt_inside_run_until_stopped_does_not_double_teardown_badly()
     print(f"\n{PASS} passed, {FAIL} failed")
     return 1 if FAIL else 0
 

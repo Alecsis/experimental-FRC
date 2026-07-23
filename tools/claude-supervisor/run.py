@@ -68,6 +68,46 @@ async def _run_until_stopped(
             bot_task.cancel()
 
 
+async def _start_and_supervise(
+    pty: PtySession,
+    sup: Supervisor,
+    bot: SupervisorBot,
+    stop_event: asyncio.Event,
+    loop: "asyncio.AbstractEventLoop",
+    log: logging.Logger,
+    bot_token: str,
+) -> None:
+    """Start Claude under the PTY and the Discord bot, then run until stopped.
+
+    Code-review fix (Task 3.5): ``pty.start()`` succeeding, then
+    ``sup.meta.pid``/``bot_task`` creation/``log.info(...)`` all used to run
+    directly in ``amain()``, BEFORE ``_run_until_stopped``'s own try/finally
+    was ever entered -- none of that span was covered by Task 3.4's guard
+    (internal to ``pty.start()``, already returned by that point) or by
+    ``_run_until_stopped``'s own finally (not entered yet). A
+    KeyboardInterrupt landing anywhere in that span would bypass both and
+    leave the vt backend's console mode mutated with nothing to restore it.
+
+    Wrapping this whole region -- from ``pty.start()`` through
+    ``_run_until_stopped`` -- in ``try/except BaseException: pty.stop(); raise``
+    closes that window. A double ``pty.stop()`` call (this guard's, plus
+    ``_run_until_stopped``'s own finally, if the interrupt instead lands
+    *inside* ``_run_until_stopped``) is safe: ``PtySession.stop()`` and
+    ``_restore_stdin_mode()`` are both idempotent (Task 3.3).
+    """
+    try:
+        pty.start()
+        sup.meta.pid = pty.pid
+
+        bot_task = loop.create_task(bot.start(bot_token))
+        log.info("Supervisor up. Claude pid=%s", pty.pid)
+
+        await _run_until_stopped(pty, sup, bot, stop_event, bot_task)
+    except BaseException:
+        pty.stop()
+        raise
+
+
 async def amain() -> int:
     cfg = load_config(CONFIG_PATH)
     logging.basicConfig(
@@ -101,13 +141,7 @@ async def amain() -> int:
     sup.set_alerter(bot)
 
     await sup.start_sink()
-    pty.start()
-    sup.meta.pid = pty.pid
-
-    bot_task = loop.create_task(bot.start(cfg.discord.bot_token))
-    log.info("Supervisor up. Claude pid=%s", pty.pid)
-
-    await _run_until_stopped(pty, sup, bot, stop_event, bot_task)
+    await _start_and_supervise(pty, sup, bot, stop_event, loop, log, cfg.discord.bot_token)
     return 0
 
 

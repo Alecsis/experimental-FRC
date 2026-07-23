@@ -29,6 +29,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import claude_supervisor.pty_session as pty_session_module
 from claude_supervisor.pty_session import (
     ENABLE_ECHO_INPUT,
     ENABLE_LINE_INPUT,
@@ -282,6 +283,102 @@ def test_start_restores_mode_when_setup_raises_keyboardinterrupt():
     check(session._saved_stdin_mode is None, "the mode was actually restored")
 
 
+def test_start_restores_mode_when_interrupt_lands_between_mutation_and_save():
+    """Code-review fix: _enable_vt_console(...) and the
+    resolve_saved_mode(...) save-assignment used to run BEFORE start()'s
+    try block, so an interrupt landing between them (mutation already
+    happened, save not yet recorded) would previously escape the guard
+    entirely -- neither triggering a restore attempt nor being caught at
+    all. Both lines are now inside the try. Simulated deterministically
+    (independent of whether this environment's stdin is a real console,
+    see the earlier tests' docstrings) by patching _enable_vt_console to
+    return a fake captured mode, and resolve_saved_mode to raise right
+    where the save would happen.
+    """
+    print("test_start_restores_mode_when_interrupt_lands_between_mutation_and_save")
+    session = PtySession(_TRIVIAL_ARGV, forward_local_input=True, input_backend="vt")
+
+    calls = []
+    original_restore = session._restore_stdin_mode
+
+    def spy_restore():
+        calls.append(True)
+        return original_restore()
+
+    session._restore_stdin_mode = spy_restore
+
+    real_enable = pty_session_module._enable_vt_console
+    real_resolve = pty_session_module.resolve_saved_mode
+
+    def fake_enable(backend):
+        # Simulate: the real SetConsoleMode mutation already happened, and
+        # this is the original mode it captured.
+        return 0xFACE
+
+    def raising_resolve(existing, candidate):
+        raise KeyboardInterrupt()
+
+    pty_session_module._enable_vt_console = fake_enable
+    pty_session_module.resolve_saved_mode = raising_resolve
+    try:
+        raised = None
+        try:
+            session.start(spawn=lambda *a, **kw: None)
+        except KeyboardInterrupt as exc:
+            raised = exc
+        check(raised is not None,
+              "the KeyboardInterrupt (simulated between mutation and save) propagates")
+        check(calls == [True],
+              "restore fired exactly once even though the interrupt landed "
+              "between _enable_vt_console returning and the save assignment")
+    finally:
+        pty_session_module._enable_vt_console = real_enable
+        pty_session_module.resolve_saved_mode = real_resolve
+
+
+def test_start_propagates_and_still_attempts_restore_when_mutation_itself_raises():
+    """Narrower sub-case of the same window: an interrupt landing literally
+    inside _enable_vt_console's own call (before it can even return a
+    mode). Since that whole call is now inside start()'s try block, the
+    exception still reaches the except BaseException guard -- there is
+    nothing to restore (the mutation never completed), but the propagation
+    and the restore-attempt wiring must still behave correctly, not skip
+    the guard silently."""
+    print("test_start_propagates_and_still_attempts_restore_when_mutation_itself_raises")
+    session = PtySession(_TRIVIAL_ARGV, forward_local_input=True, input_backend="vt")
+
+    calls = []
+    original_restore = session._restore_stdin_mode
+
+    def spy_restore():
+        calls.append(True)
+        return original_restore()
+
+    session._restore_stdin_mode = spy_restore
+
+    real_enable = pty_session_module._enable_vt_console
+
+    def raising_enable(backend):
+        raise KeyboardInterrupt()
+
+    pty_session_module._enable_vt_console = raising_enable
+    try:
+        raised = None
+        try:
+            session.start(spawn=lambda *a, **kw: None)
+        except KeyboardInterrupt as exc:
+            raised = exc
+        check(raised is not None,
+              "the KeyboardInterrupt (simulated inside the mutation call itself) propagates")
+        check(calls == [True],
+              "the except guard still ran and attempted a restore, even though "
+              "the mutation never completed far enough to have anything saved")
+        check(session._saved_stdin_mode is None,
+              "correctly nothing was saved -- the mutation call never returned")
+    finally:
+        pty_session_module._enable_vt_console = real_enable
+
+
 def test_start_success_path_still_works_with_injectable_spawn():
     """Regression guard: the new `spawn` parameter must not change production
     behavior when a real spawn function is supplied (mirrors what start()'s
@@ -329,6 +426,8 @@ def main():
     test_legacy_backend_stop_never_calls_restore()
     test_start_restores_mode_when_relay_setup_raises()
     test_start_restores_mode_when_setup_raises_keyboardinterrupt()
+    test_start_restores_mode_when_interrupt_lands_between_mutation_and_save()
+    test_start_propagates_and_still_attempts_restore_when_mutation_itself_raises()
     test_start_success_path_still_works_with_injectable_spawn()
     print(f"\n{PASS} passed, {FAIL} failed")
     return 1 if FAIL else 0
