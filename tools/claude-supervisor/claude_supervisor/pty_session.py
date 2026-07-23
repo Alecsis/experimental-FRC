@@ -239,6 +239,13 @@ if os.name == "nt":
 # Windows console std-handle ids (GetStdHandle).
 STDOUT_HANDLE = -11
 STDIN_HANDLE = -10
+ENABLE_PROCESSED_INPUT = 0x0001
+ENABLE_LINE_INPUT = 0x0002
+ENABLE_ECHO_INPUT = 0x0004  # input-mode bit; numerically coincides with
+                            # ENABLE_VIRTUAL_TERMINAL_PROCESSING below (an
+                            # unrelated *output*-mode bit on a different
+                            # handle) -- not a conflict, just a coincidence of
+                            # Win32's separate input/output bit namespaces.
 ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004
 ENABLE_VIRTUAL_TERMINAL_INPUT = 0x0200
 ENABLE_MOUSE_INPUT = 0x0010
@@ -257,27 +264,64 @@ def _console_vt_plan(backend: str = "legacy") -> "list[tuple[int, int]]":
     0x00/0xe0 model, see ``translate_keystroke``) cannot parse -- it corrupts
     Enter, Ctrl+C and the arrow keys while letting bare printables leak through.
 
-    The "vt" backend is eventually meant to enable ENABLE_VIRTUAL_TERMINAL_INPUT
-    on stdin too, so Windows Terminal delivers keys/mouse/paste as native escape
-    sequences relayed straight through instead of hand-translated. That mode-
-    setting change is Phase 2 (a later task) -- this still returns the
-    stdout-only plan for both backends today; the ``backend`` parameter exists
-    so callers (and tests) can already select per-backend without a signature
-    change once Phase 2 lands.
+    The "vt" backend (Plan Phase 2) also enables ENABLE_VIRTUAL_TERMINAL_INPUT
+    on stdin, so Windows Terminal delivers keys/mouse/Shift+Tab/bracketed-paste
+    as native VT escape sequences that ``PtySession._vt_relay_loop`` forwards
+    straight through instead of hand-translating. ``_enable_vt_console``
+    additionally clears a few conflicting input bits (ENABLE_LINE_INPUT,
+    ENABLE_ECHO_INPUT, ENABLE_PROCESSED_INPUT) on stdin, specifically for the
+    "vt" backend, in the same SetConsoleMode call -- see that function's
+    docstring for why each is required, not just this OR-only set of bits;
+    this plan format only expresses bits to set, not bits to clear.
     """
-    return [(STDOUT_HANDLE, ENABLE_VIRTUAL_TERMINAL_PROCESSING)]
+    plan = [(STDOUT_HANDLE, ENABLE_VIRTUAL_TERMINAL_PROCESSING)]
+    if backend == "vt":
+        plan.append((STDIN_HANDLE, ENABLE_VIRTUAL_TERMINAL_INPUT))
+    return plan
 
 
 def _enable_vt_console(backend: str = "legacy") -> None:
-    """Turn on virtual-terminal console mode per ``_console_vt_plan(backend)``."""
+    """Turn on virtual-terminal console mode per ``_console_vt_plan(backend)``.
+
+    For the "vt" backend's stdin entry specifically, also clears three input
+    bits in that same SetConsoleMode call -- these are *clears*, not *sets*,
+    so they don't fit ``_console_vt_plan``'s OR-only (handle_id, flag) tuple
+    format and are applied here instead. All three are verified requirements
+    (Microsoft's SetConsoleMode docs), not speculative additions:
+
+      * ENABLE_LINE_INPUT -- with this set, ReadFile/ReadConsole "returns only
+        when a carriage return character is read"; a raw byte relay needs
+        individual keystrokes/escape sequences the instant they're available,
+        not buffered behind Enter. Disabling it means those functions instead
+        "return when one or more characters are available" (docs, verbatim).
+      * ENABLE_ECHO_INPUT -- documented as usable "only if ENABLE_LINE_INPUT
+        is also enabled"; cleared alongside it. Also avoids the outer console
+        double-echoing what Claude's own PTY already echoes back through
+        _read_loop's passthrough.
+      * ENABLE_PROCESSED_INPUT -- with this set, "CTRL+C is processed by the
+        system and is not placed in the input buffer" at all (docs, verbatim)
+        -- it would never reach the relay as a byte, and would instead raise
+        this *process's own* control-handler signal. Clearing it lets \\x03
+        flow through the input stream like any other byte, for the relay to
+        forward to Claude.
+
+    Task 3 (Phase 3) owns save/restore of console mode on exit -- these bits
+    are set unconditionally here because Task 2's relay needs them to
+    function at all, but nothing in this function restores the original mode
+    later. Flagged explicitly for the Task 3 implementer.
+    """
     if os.name != "nt":
         return
     kernel32 = ctypes.windll.kernel32
     for handle_id, flag in _console_vt_plan(backend):
         handle = kernel32.GetStdHandle(handle_id)
         mode = ctypes.c_uint32()
-        if kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
-            kernel32.SetConsoleMode(handle, mode.value | flag)
+        if not kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
+            continue
+        new_mode = mode.value | flag
+        if backend == "vt" and handle_id == STDIN_HANDLE:
+            new_mode &= ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT)
+        kernel32.SetConsoleMode(handle, new_mode)
 
 
 def _enable_mouse_console() -> None:

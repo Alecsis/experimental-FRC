@@ -28,7 +28,9 @@ from claude_supervisor.pty_session import (
     BRACKETED_PASTE_END,
     BRACKETED_PASTE_START,
     ENABLE_VIRTUAL_TERMINAL_INPUT,
+    ENABLE_VIRTUAL_TERMINAL_PROCESSING,
     STDIN_HANDLE,
+    STDOUT_HANDLE,
     PtySession,
     _console_vt_plan,
     is_paste_burst,
@@ -70,22 +72,33 @@ def test_legacy_console_plan_never_enables_vt_input_on_stdin():
 
 
 def test_vt_console_plan_enables_vt_input_on_stdin():
-    """Phase 2 target -- NOT YET IMPLEMENTED, deliberately RED.
+    """Phase 2 target -- was deliberately RED after Task 1, now GREEN.
 
     The whole point of the "vt" backend is to let Windows Terminal deliver
     keys/mouse/paste to Claude as native VT escape sequences instead of the
     legacy classic-console translation, which requires ENABLE_VIRTUAL_TERMINAL_
-    INPUT on stdin. Task 1 (this commit) only adds the backend-selection
-    plumbing; the actual mode-setting change is Phase 2, dispatched separately.
-    This assertion is expected to fail until Phase 2 lands -- that is the
-    intended TDD handoff, not a bug in this test.
+    INPUT on stdin. Task 1 added only the backend-selection plumbing; this
+    mode-setting change is Task 2.1 (Phase 2), which is what turns this green.
     """
     print("test_vt_console_plan_enables_vt_input_on_stdin")
     plan = _console_vt_plan("vt")
     check(
         any(handle_id == STDIN_HANDLE and (flag & ENABLE_VIRTUAL_TERMINAL_INPUT)
             for handle_id, flag in plan),
-        "vt plan enables VT-input (0x0200) on stdin [Phase 2, expected RED for now]",
+        "vt plan enables VT-input (0x0200) on stdin",
+    )
+
+
+def test_vt_console_plan_still_includes_stdout_vt_processing():
+    """Regression guard (Task 2.1): adding the stdin entry to the vt plan must
+    not drop or alter the pre-existing stdout ENABLE_VIRTUAL_TERMINAL_PROCESSING
+    entry both backends share -- both live in the same extended plan function."""
+    print("test_vt_console_plan_still_includes_stdout_vt_processing")
+    plan = _console_vt_plan("vt")
+    check(
+        any(handle_id == STDOUT_HANDLE and (flag & ENABLE_VIRTUAL_TERMINAL_PROCESSING)
+            for handle_id, flag in plan),
+        "vt plan still enables VT-processing (0x0004) on stdout",
     )
 
 
@@ -164,6 +177,7 @@ def test_input_backend_constructor_argument_is_stored():
 def main():
     test_legacy_console_plan_never_enables_vt_input_on_stdin()
     test_vt_console_plan_enables_vt_input_on_stdin()
+    test_vt_console_plan_still_includes_stdout_vt_processing()
     test_printable_and_control_chars_forward_verbatim()
     test_extended_keys_translate_to_vt_sequences()
     test_unknown_extended_key_consumes_lead_and_yields_nothing()
