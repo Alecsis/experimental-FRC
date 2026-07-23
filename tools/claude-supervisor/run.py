@@ -29,6 +29,45 @@ from claude_supervisor.bot import SupervisorBot  # noqa: E402
 CONFIG_PATH = os.environ.get("CLAUDE_SUPERVISOR_CONFIG", str(_HERE / "config.yaml"))
 
 
+async def _run_until_stopped(
+    pty: PtySession,
+    sup: Supervisor,
+    bot: SupervisorBot,
+    stop_event: asyncio.Event,
+    bot_task: "asyncio.Task",
+) -> None:
+    """Block until ``stop_event`` fires, then tear everything down.
+
+    Task 3.5: wrapped in try/finally so the teardown -- in particular
+    ``pty.stop()``, which restores the vt backend's console mode (Tasks
+    3.3/3.4) -- still runs on ANY exit from this coroutine's ``await``, not
+    just ``stop_event`` firing normally via ``on_child_exit``/``!stop``. This
+    is what closes the "process teardown" gap for a KeyboardInterrupt
+    delivered while suspended here: ``asyncio.run()`` delivers a Ctrl+C at
+    this console as a real ``KeyboardInterrupt`` raised into whichever
+    ``await`` is currently active, and Python unwinds through this
+    function's own ``finally`` exactly like it would for any other
+    exception -- confirmed by test_run_shutdown.py's
+    ``test_keyboard_interrupt_while_waiting_still_tears_down``.
+
+    Documented, not testable, residual gap (per this task's explicit
+    instruction not to imply coverage that doesn't exist): a *hard* external
+    termination of this process -- Windows task-kill, ``os._exit``, a power
+    loss -- runs no Python cleanup at all. There is no OS hook available on
+    Windows this function (or anything else in-process) could register to
+    close that gap; it is accepted as unavoidable, not something this task
+    can fix.
+    """
+    try:
+        await stop_event.wait()
+    finally:
+        pty.stop()
+        await bot.close()
+        await sup.stop_sink()
+        if not bot_task.done():
+            bot_task.cancel()
+
+
 async def amain() -> int:
     cfg = load_config(CONFIG_PATH)
     logging.basicConfig(
@@ -68,13 +107,7 @@ async def amain() -> int:
     bot_task = loop.create_task(bot.start(cfg.discord.bot_token))
     log.info("Supervisor up. Claude pid=%s", pty.pid)
 
-    await stop_event.wait()
-
-    pty.stop()
-    await bot.close()
-    await sup.stop_sink()
-    if not bot_task.done():
-        bot_task.cancel()
+    await _run_until_stopped(pty, sup, bot, stop_event, bot_task)
     return 0
 
 
