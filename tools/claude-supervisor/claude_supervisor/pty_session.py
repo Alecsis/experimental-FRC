@@ -252,6 +252,16 @@ ENABLE_MOUSE_INPUT = 0x0010
 ENABLE_QUICK_EDIT_MODE = 0x0040
 ENABLE_EXTENDED_FLAGS = 0x0080
 
+# WaitForSingleObject return value meaning "the handle is signaled" (wait
+# succeeded because input is ready, as opposed to WAIT_TIMEOUT).
+WAIT_OBJECT_0 = 0x00000000
+
+# How long PtySession._read_vt_input waits on stdin per poll before giving the
+# relay loop a chance to recheck self._stop -- the vt-backend equivalent of
+# the legacy loops' self._stop.wait(0.02)/_RESIZE_POLL_SECONDS poll cadence.
+_VT_RELAY_WAIT_MS = 50
+_VT_RELAY_BUFFER_CHARS = 4096
+
 
 def _console_vt_plan(backend: str = "legacy") -> "list[tuple[int, int]]":
     """(handle_id, mode_flag) pairs to OR into the console mode for ``backend``.
@@ -585,18 +595,76 @@ class PtySession:
             if sequence:
                 self.send_keys(sequence)
 
-    def _vt_relay_loop(self) -> None:
-        """Placeholder for the VT-input relay backend (Plan Phase 2).
+    def _read_vt_input(self) -> str:
+        """Block on stdin's console handle for up to _VT_RELAY_WAIT_MS, then
+        read whatever VT-translated characters are currently available.
 
-        Task 1 (this method) only wires the "vt" backend into the same
-        start()/stop() lifecycle as the legacy _input/_mouser threads -- it
-        does no real relay work yet. It exists so the thread-routing switch
-        in start() has something real to launch and join cleanly. The actual
-        transparent byte relay (reading real VT input off stdin and writing
-        it straight through to the child, replacing the legacy
-        msvcrt/console-API translation entirely) is out of scope here.
+        This is the "real" read _vt_relay_loop uses in production (tests
+        inject a fake standing in for it -- see test_pty_vt_relay.py).
+
+        Design choice (Task 2's interruptible-blocking-read question):
+        WaitForSingleObject on a console *input* handle is documented to
+        signal exactly when the input buffer holds unread records, and reset
+        to non-signaled once it's drained -- so waiting on it with a short
+        timeout is the real "pollable, interruptible blocking read" primitive
+        for a console handle, the same role self._stop.wait(...) plays
+        elsewhere in this file (_resize_loop, legacy _input_loop). An
+        unconditional blocking ReadConsoleW/ReadFile call, with no timeout
+        parameter at all, would have no way to unblock on stop() short of a
+        much bigger lift (overlapped I/O + CancelSynchronousIo) -- rejected
+        for that reason.
+
+        Residual gap, flagged rather than silently shipped: once
+        WaitForSingleObject reports the handle signaled, the follow-up
+        ReadConsoleW call can still internally keep waiting a little longer
+        if the record that triggered the signal turned out to be a bare
+        modifier keypress (or similar) that produces no character output --
+        ReadConsole (per Microsoft's docs) only returns once "one or more
+        characters are available", not merely once *a* record exists. With
+        ENABLE_LINE_INPUT off (see _enable_vt_console) this is bounded to
+        "until the very next real keystroke", not a full line, so in practice
+        it's a sub-second edge case, not a real hang -- but it means this
+        read is "interruptible within one poll window in the common case",
+        not unconditionally so in a provable worst case.
         """
-        self._stop.wait()
+        if os.name != "nt":
+            return ""
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.GetStdHandle(STDIN_HANDLE)
+        if kernel32.WaitForSingleObject(handle, _VT_RELAY_WAIT_MS) != WAIT_OBJECT_0:
+            return ""
+        buffer = ctypes.create_unicode_buffer(_VT_RELAY_BUFFER_CHARS)
+        chars_read = wintypes.DWORD()
+        if not kernel32.ReadConsoleW(
+            handle, buffer, _VT_RELAY_BUFFER_CHARS, ctypes.byref(chars_read), None
+        ):
+            return ""
+        if not chars_read.value:
+            return ""
+        return ctypes.wstring_at(buffer, chars_read.value)
+
+    def _vt_relay_loop(self, read_available: Optional[Callable[[], str]] = None) -> None:
+        """Transparent VT-input relay for the "vt" backend (Plan Phase 2).
+
+        With ENABLE_VIRTUAL_TERMINAL_INPUT on stdin (see _console_vt_plan /
+        _enable_vt_console), Windows Terminal already delivers keyboard,
+        mouse, Shift+Tab and bracketed-paste as one plain VT byte/escape-
+        sequence stream -- there is nothing left here to interpret. Every
+        read is forwarded to the child unchanged via send_keys(), the exact
+        same write path (and _write_lock) Discord injection already uses --
+        no new write path, no per-byte/per-sequence branching of any kind.
+
+        ``read_available`` is an injectable stand-in for the real blocking
+        read (mirrors how _drain_input takes injectable getwch/kbhit for the
+        legacy backend); production callers (start()) leave it as None and
+        get _read_vt_input -- see that method's docstring for the bounded-
+        wait design and its one documented residual gap.
+        """
+        read = read_available if read_available is not None else self._read_vt_input
+        while not self._stop.is_set():
+            data = read()
+            if data:
+                self.send_keys(data)
 
     def _resize_loop(self) -> None:
         """Forward the local console's size into the inner ConPTY on change.
