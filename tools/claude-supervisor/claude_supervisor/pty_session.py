@@ -26,42 +26,11 @@ from typing import Any, Callable, Optional
 # Matches CSI / OSC / other ANSI escape sequences for stripping before logging.
 _ANSI_RE = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b\][^\x07]*(?:\x07|\x1b\\)|\x1b[@-Z\\-_]")
 
-# Matches DECSET/DECRST xterm mouse-tracking mode sequences (X10/normal/
-# button-event/any-event/focus/SGR). Claude Code's TUI enables these for its
-# own controlling terminal; confirmed live (mouse_debug.log) that the raw byte
-# passthrough was forwarding them to the *outer* console too, which made
-# Windows Terminal route mouse-wheel/click events to the supervisor process
-# (which never reads mouse input) instead of doing native scrollback. Stripped
-# out of the passthrough in _read_loop -- see strip_mouse_tracking.
-_MOUSE_MODE_RE = re.compile(r"\x1b\[\?(100[0-6]|1015)[hl]")
-
 CTRL_C = "\x03"
-
-# msvcrt extended-key (prefix 0x00 / 0xe0) second-byte -> ANSI escape sequence.
-_SPECIAL_KEYS = {
-    "H": "\x1b[A",  # Up
-    "P": "\x1b[B",  # Down
-    "M": "\x1b[C",  # Right
-    "K": "\x1b[D",  # Left
-    "G": "\x1b[H",  # Home
-    "O": "\x1b[F",  # End
-    "I": "\x1b[5~", # PageUp
-    "Q": "\x1b[6~", # PageDown
-    "S": "\x1b[3~", # Delete
-}
 
 
 def strip_ansi(text: str) -> str:
     return _ANSI_RE.sub("", text)
-
-
-def strip_mouse_tracking(text: str) -> str:
-    """Remove xterm mouse-tracking DECSET/DECRST sequences before passthrough.
-
-    Leaves everything else -- including bracketed-paste (?2004), an unrelated
-    mechanism -- untouched.
-    """
-    return _MOUSE_MODE_RE.sub("", text)
 
 
 # How often to poll the local console for a size change and forward it into the
@@ -87,153 +56,14 @@ def poll_resize(last: "Optional[tuple[int, int]]", get_size: Callable[[], Any]) 
     return None if current == last else current
 
 
-def translate_keystroke(ch: str, get_next: Callable[[], str]) -> str:
-    """Map one ``msvcrt.getwch()`` character to the bytes to forward to the child.
-
-    This is the *classic* Win32 console-input model (which is why the console
-    stdin must NOT be put in ENABLE_VIRTUAL_TERMINAL_INPUT mode -- see
-    ``_console_vt_plan``): a 0x00 / 0xe0 lead byte introduces a two-byte extended
-    key whose scan-code second byte we translate to a VT sequence via
-    ``get_next``. Everything else -- printables, ``\\r`` (Enter), ``\\x03``
-    (Ctrl+C, which msvcrt surfaces as raw input) -- forwards verbatim.
-    """
-    if ch in ("\x00", "\xe0"):
-        return _SPECIAL_KEYS.get(get_next(), "")
-    return ch
-
-
-# Bracketed-paste markers. Claude Code (like any modern TUI) enables bracketed
-# paste, so wrapping pasted text in these tells it "this is one paste" -- newlines
-# are inserted literally instead of each one firing an Enter/submit.
-BRACKETED_PASTE_START = "\x1b[200~"
-BRACKETED_PASTE_END = "\x1b[201~"
-# How long to keep draining after a newline-bearing burst, to reassemble a paste
-# that the console delivered in several back-to-back chunks. Short enough that a
-# separately-typed keystroke (>50ms human gap) never merges into it.
-_PASTE_COALESCE_SECONDS = 0.01
-
-
-def is_paste_burst(s: str) -> bool:
-    """True if a drained input burst is a multi-line *paste*.
-
-    The distinguishing mark of a paste (vs. typing or a lone trailing Enter) is a
-    newline with at least one more character after it -- a human cannot type
-    Enter-then-more-text inside a single console drain, but a paste delivers it
-    atomically. A bare ``"\\r"`` (typed Enter) or a newline-free burst is not a
-    paste.
-    """
-    for i, c in enumerate(s):
-        if c in ("\r", "\n") and i != len(s) - 1:
-            return True
-    return False
-
-
-def wrap_bracketed_paste(s: str) -> str:
-    """Wrap ``s`` so the child treats it as one paste (newlines preserved, no
-    per-line submit) instead of a sequence of typed Enters."""
-    return BRACKETED_PASTE_START + s + BRACKETED_PASTE_END
-
-
-# Win32 console INPUT_RECORD.EventType values (wincon.h).
-KEY_EVENT_TYPE = 0x0001
-MOUSE_EVENT_TYPE = 0x0002
-
-# Win32 MOUSE_EVENT_RECORD.dwEventFlags bits relevant here (wincon.h).
-MOUSE_WHEELED = 0x0004
-MOUSE_HWHEELED = 0x0008
-
-_WHEEL_DELTA = 120  # Win32's notch unit; MOUSE_EVENT_RECORD.dwButtonState's high word.
-
-# xterm SGR mouse-report button codes for the vertical wheel.
-_SGR_WHEEL_UP = 64
-_SGR_WHEEL_DOWN = 65
-
-
-def extract_wheel_delta(dw_button_state: int) -> int:
-    """Extract the signed 16-bit wheel delta from a raw MOUSE_EVENT_RECORD.dwButtonState.
-
-    Win32 packs the wheel delta into the high word of this otherwise-unsigned DWORD;
-    positive means rotated away from the user ("up"), negative means toward the user
-    ("down"). The low word (button press state) is irrelevant for wheel events and
-    ignored here.
-    """
-    high_word = (dw_button_state >> 16) & 0xFFFF
-    return high_word - 0x10000 if high_word >= 0x8000 else high_word
-
-
-def translate_wheel_event(delta: int, col: int, row: int) -> str:
-    """Translate a raw wheel delta into SGR xterm mouse-wheel sequence(s).
-
-    ``delta`` is signed (positive = up, negative = down), typically a multiple of 120
-    (one Win32 "notch"). ``col``/``row`` are passed straight through into the SGR
-    event's reported position. Emits one SGR sequence per notch -- a fast scroll
-    producing a larger delta emits multiple stacked sequences, since the SGR wheel
-    protocol has no magnitude field of its own.
-    """
-    if delta == 0:
-        return ""
-    notches = max(1, round(abs(delta) / _WHEEL_DELTA))
-    button = _SGR_WHEEL_UP if delta > 0 else _SGR_WHEEL_DOWN
-    return f"\x1b[<{button};{col};{row}M" * notches
-
-
-def classify_record(event_type: int, event_flags: int) -> str:
-    """Classify a peeked console INPUT_RECORD for the mouse loop's dequeue decision.
-
-    Returns ``"not_mouse"`` (leave queued for the keyboard loop), ``"wheel"``
-    (dequeue and forward), or ``"other_mouse"`` (dequeue and discard -- clicks,
-    drags, moves, horizontal wheel; mouse-selection support is a separate,
-    deferred item).
-    """
-    if event_type != MOUSE_EVENT_TYPE:
-        return "not_mouse"
-    return "wheel" if event_flags & MOUSE_WHEELED else "other_mouse"
-
-
-# ctypes.wintypes raises at import time on non-Windows systems, so it -- and the
-# Win32 console-record structures built from it -- are only defined when actually
-# on Windows. This preserves the property (see the module docstring) that the pure
-# functions in this file stay importable/testable without the native dependency
-# present; INPUT_RECORD and friends simply don't exist off-Windows, same as
-# PtyProcess itself not existing until start()'s lazy pywinpty import.
+# ctypes.wintypes raises at import time on non-Windows systems, so it is only
+# imported when actually on Windows. This preserves the property (see the
+# module docstring) that the pure functions in this file stay importable/
+# testable without the native dependency present; _read_vt_input's use of
+# wintypes.DWORD simply isn't reachable off-Windows, same as PtyProcess itself
+# not existing until start()'s lazy pywinpty import.
 if os.name == "nt":
     from ctypes import wintypes
-
-    class _COORD(ctypes.Structure):
-        _fields_ = [("X", wintypes.SHORT), ("Y", wintypes.SHORT)]
-
-    class MOUSE_EVENT_RECORD(ctypes.Structure):
-        _fields_ = [
-            ("dwMousePosition", _COORD),
-            ("dwButtonState", wintypes.DWORD),
-            ("dwControlKeyState", wintypes.DWORD),
-            ("dwEventFlags", wintypes.DWORD),
-        ]
-
-    class _CHAR_UNION(ctypes.Union):
-        _fields_ = [("UnicodeChar", wintypes.WCHAR), ("AsciiChar", wintypes.CHAR)]
-
-    class KEY_EVENT_RECORD(ctypes.Structure):
-        _fields_ = [
-            ("bKeyDown", wintypes.BOOL),
-            ("wRepeatCount", wintypes.WORD),
-            ("wVirtualKeyCode", wintypes.WORD),
-            ("wVirtualScanCode", wintypes.WORD),
-            ("uChar", _CHAR_UNION),
-            ("dwControlKeyState", wintypes.DWORD),
-        ]
-
-    class INPUT_RECORD_EVENT(ctypes.Union):
-        _fields_ = [
-            ("KeyEvent", KEY_EVENT_RECORD),
-            ("MouseEvent", MOUSE_EVENT_RECORD),
-        ]
-
-    class INPUT_RECORD(ctypes.Structure):
-        _fields_ = [
-            ("EventType", wintypes.WORD),
-            ("Event", INPUT_RECORD_EVENT),
-        ]
 
 
 # Windows console std-handle ids (GetStdHandle).
@@ -248,9 +78,6 @@ ENABLE_ECHO_INPUT = 0x0004  # input-mode bit; numerically coincides with
                             # Win32's separate input/output bit namespaces.
 ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004
 ENABLE_VIRTUAL_TERMINAL_INPUT = 0x0200
-ENABLE_MOUSE_INPUT = 0x0010
-ENABLE_QUICK_EDIT_MODE = 0x0040
-ENABLE_EXTENDED_FLAGS = 0x0080
 
 # WaitForSingleObject return value meaning "the handle is signaled" (wait
 # succeeded because input is ready, as opposed to WAIT_TIMEOUT).
@@ -301,49 +128,40 @@ def diff_console_mode_bits(before: int, after: int) -> "dict[str, int]":
     return {"gained": after & ~before, "lost": before & ~after}
 
 
-def _console_vt_plan(backend: str = "legacy") -> "list[tuple[int, int]]":
-    """(handle_id, mode_flag) pairs to OR into the console mode for ``backend``.
+def _console_vt_plan() -> "list[tuple[int, int]]":
+    """(handle_id, mode_flag) pairs to OR into the console mode.
 
-    Output is always enabled, on both backends.
-
-    Under the "legacy" backend, deliberately does not enable
-    ENABLE_VIRTUAL_TERMINAL_INPUT on stdin: that makes keys arrive as VT escape
-    sequences, which the ``msvcrt.getwch()``-based ``_input_loop`` (classic
-    0x00/0xe0 model, see ``translate_keystroke``) cannot parse -- it corrupts
-    Enter, Ctrl+C and the arrow keys while letting bare printables leak through.
-
-    The "vt" backend (Plan Phase 2) also enables ENABLE_VIRTUAL_TERMINAL_INPUT
-    on stdin, so Windows Terminal delivers keys/mouse/Shift+Tab/bracketed-paste
-    as native VT escape sequences that ``PtySession._vt_relay_loop`` forwards
+    Output is always enabled. Stdin also gains ENABLE_VIRTUAL_TERMINAL_INPUT,
+    so Windows Terminal delivers keys/mouse/Shift+Tab/bracketed-paste as
+    native VT escape sequences that ``PtySession._vt_relay_loop`` forwards
     straight through instead of hand-translating. ``_enable_vt_console``
     additionally clears a few conflicting input bits (ENABLE_LINE_INPUT,
-    ENABLE_ECHO_INPUT, ENABLE_PROCESSED_INPUT) on stdin, specifically for the
-    "vt" backend, in the same SetConsoleMode call -- see that function's
-    docstring for why each is required, not just this OR-only set of bits;
-    this plan format only expresses bits to set, not bits to clear.
+    ENABLE_ECHO_INPUT, ENABLE_PROCESSED_INPUT) on stdin in the same
+    SetConsoleMode call -- see that function's docstring for why each is
+    required, not just this OR-only set of bits; this plan format only
+    expresses bits to set, not bits to clear.
     """
-    plan = [(STDOUT_HANDLE, ENABLE_VIRTUAL_TERMINAL_PROCESSING)]
-    if backend == "vt":
-        plan.append((STDIN_HANDLE, ENABLE_VIRTUAL_TERMINAL_INPUT))
-    return plan
+    return [
+        (STDOUT_HANDLE, ENABLE_VIRTUAL_TERMINAL_PROCESSING),
+        (STDIN_HANDLE, ENABLE_VIRTUAL_TERMINAL_INPUT),
+    ]
 
 
-def _enable_vt_console(backend: str = "legacy") -> "Optional[int]":
-    """Turn on virtual-terminal console mode per ``_console_vt_plan(backend)``.
+def _enable_vt_console() -> "Optional[int]":
+    """Turn on virtual-terminal console mode per ``_console_vt_plan()``.
 
     Returns stdin's console mode exactly as read *before* any mutation in
-    this call, for the "vt" backend only (``None`` for "legacy" -- nothing is
-    cleared there -- and ``None`` off-Windows or if ``GetConsoleMode`` itself
-    fails). This is Task 3.1's save step: the caller (``PtySession.start()``)
-    is the single place that decides what to persist (via
-    ``resolve_saved_mode``), so this function has exactly one job --
-    mutate, and report what it overwrote.
+    this call (``None`` off-Windows, or if ``GetConsoleMode`` itself fails).
+    This is Task 3.1's save step: the caller (``PtySession.start()``) is the
+    single place that decides what to persist (via ``resolve_saved_mode``),
+    so this function has exactly one job -- mutate, and report what it
+    overwrote.
 
-    For the "vt" backend's stdin entry specifically, also clears three input
-    bits in that same SetConsoleMode call -- these are *clears*, not *sets*,
-    so they don't fit ``_console_vt_plan``'s OR-only (handle_id, flag) tuple
-    format and are applied here instead. All three are verified requirements
-    (Microsoft's SetConsoleMode docs), not speculative additions:
+    For stdin specifically, also clears three input bits in that same
+    SetConsoleMode call -- these are *clears*, not *sets*, so they don't fit
+    ``_console_vt_plan``'s OR-only (handle_id, flag) tuple format and are
+    applied here instead. All three are verified requirements (Microsoft's
+    SetConsoleMode docs), not speculative additions:
 
       * ENABLE_LINE_INPUT -- with this set, ReadFile/ReadConsole "returns only
         when a carriage return character is read"; a raw byte relay needs
@@ -362,18 +180,16 @@ def _enable_vt_console(backend: str = "legacy") -> "Optional[int]":
         forward to Claude.
 
         **Task 3.6 -- deliberate, user-facing behavior change, not a bug:**
-        clearing this bit means local Ctrl+C stops killing the *supervisor*
-        process the way it does today under the "legacy" backend -- under
-        "vt" it becomes a literal 0x03 byte forwarded to Claude instead (the
-        same as typing it inside a normal, unsupervised `claude` session).
-        There is no code-level bug to fix here; this is carried forward as a
-        named item in the plan's Phase 5 mandatory live-validation list, not
-        something a unit test can or should wave through on its own.
+        clearing this bit means local Ctrl+C no longer kills the *supervisor*
+        process; it becomes a literal 0x03 byte forwarded to Claude instead
+        (the same as typing it inside a normal, unsupervised `claude`
+        session). Confirmed acceptable via the plan's Phase 5 mandatory
+        live-validation checklist.
 
-    Task 3 (Phase 3) now saves the pre-mutation stdin mode (see
-    resolve_saved_mode) and returns it to the caller, so PtySession.start()
-    can persist it in self._saved_stdin_mode for stop()/exception-path
-    restoration (PtySession._restore_stdin_mode) -- these bits are still set
+    Task 3 (Phase 3) saves the pre-mutation stdin mode (see resolve_saved_mode)
+    and returns it to the caller, so PtySession.start() can persist it in
+    self._saved_stdin_mode for stop()/exception-path restoration
+    (PtySession._restore_stdin_mode) -- these bits are still set
     unconditionally here, since Task 2's relay needs them to function at all,
     but the mode they overwrite is no longer lost.
     """
@@ -381,41 +197,18 @@ def _enable_vt_console(backend: str = "legacy") -> "Optional[int]":
         return None
     kernel32 = ctypes.windll.kernel32
     original_stdin_mode = None
-    for handle_id, flag in _console_vt_plan(backend):
+    for handle_id, flag in _console_vt_plan():
         handle = kernel32.GetStdHandle(handle_id)
         mode = ctypes.c_uint32()
         if not kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
             continue
-        if backend == "vt" and handle_id == STDIN_HANDLE:
+        if handle_id == STDIN_HANDLE:
             original_stdin_mode = mode.value
         new_mode = mode.value | flag
-        if backend == "vt" and handle_id == STDIN_HANDLE:
+        if handle_id == STDIN_HANDLE:
             new_mode &= ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT)
         kernel32.SetConsoleMode(handle, new_mode)
     return original_stdin_mode
-
-
-def _enable_mouse_console() -> None:
-    """Enable mouse-event reporting on this process's own stdin console handle.
-
-    Windows Terminal's default QuickEdit mode claims wheel/click events for its own
-    text-selection and scrollback UI, which is why the wheel showed the outer
-    console's raw scrollback instead of reaching Claude (see strip_mouse_tracking's
-    docstring for the other half of that story). Turning ENABLE_QUICK_EDIT_MODE off
-    hands mouse events to this process instead, via ReadConsoleInputW/
-    PeekConsoleInputW (see PtySession._mouse_loop) -- ENABLE_EXTENDED_FLAGS must be
-    set in the same call for ENABLE_QUICK_EDIT_MODE to take effect at all (an
-    undocumented-but-well-known SetConsoleMode quirk).
-    """
-    if os.name != "nt":
-        return
-    kernel32 = ctypes.windll.kernel32
-    handle = kernel32.GetStdHandle(STDIN_HANDLE)
-    mode = ctypes.c_uint32()
-    if not kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
-        return
-    new_mode = (mode.value & ~ENABLE_QUICK_EDIT_MODE) | ENABLE_EXTENDED_FLAGS | ENABLE_MOUSE_INPUT
-    kernel32.SetConsoleMode(handle, new_mode)
 
 
 class PtySession:
@@ -428,17 +221,12 @@ class PtySession:
         log_buffer_lines: int = 500,
         on_exit: Optional[Callable[[int], None]] = None,
         forward_local_input: bool = True,
-        input_backend: str = "legacy",
     ) -> None:
         self._argv = argv
         self._cwd = cwd
         self._env = env
         self._on_exit = on_exit
         self._forward_local_input = forward_local_input
-        # "legacy" = today's msvcrt/console-API translation path; "vt" = the new
-        # VT-input relay backend (see start()'s thread routing). Selected via
-        # BehaviorConfig.local_input_backend, plumbed through by run.py.
-        self._input_backend = input_backend
 
         self._proc: Optional[Any] = None  # winpty.PtyProcess once started
         self._write_lock = threading.Lock()
@@ -447,15 +235,12 @@ class PtySession:
         self._buf_lock = threading.Lock()
         self._stop = threading.Event()
         self._reader: Optional[threading.Thread] = None
-        self._input: Optional[threading.Thread] = None
         self._resizer: Optional[threading.Thread] = None
-        self._mouser: Optional[threading.Thread] = None
         self._vt_relay: Optional[threading.Thread] = None
         self._last_size: Optional[tuple[int, int]] = None
         # Task 3.1: the stdin console mode as it was *before* the vt backend's
         # mutation, so it can be written back later (see _restore_stdin_mode).
-        # Stays None for the legacy backend (which never mutates stdin's mode
-        # at all) and, transiently, for "vt" before start() has run.
+        # Stays None, transiently, before start() has run.
         self._saved_stdin_mode: Optional[int] = None
 
     # ---- lifecycle -------------------------------------------------------
@@ -504,7 +289,7 @@ class PtySession:
             # entirely: any exception raised by either line now propagates
             # straight into the except block below, same as a spawn/thread
             # failure already did.
-            original_stdin_mode = _enable_vt_console(self._input_backend)
+            original_stdin_mode = _enable_vt_console()
             if original_stdin_mode is not None:
                 self._saved_stdin_mode = resolve_saved_mode(self._saved_stdin_mode, original_stdin_mode)
             self._proc = spawn(self._argv, cwd=self._cwd, env=self._env, dimensions=(rows, cols))
@@ -512,17 +297,10 @@ class PtySession:
             self._reader = threading.Thread(target=self._read_loop, name="pty-reader", daemon=True)
             self._reader.start()
             if self._forward_local_input:
-                if self._input_backend == "vt":
-                    self._vt_relay = threading.Thread(
-                        target=self._vt_relay_loop, name="pty-vt-relay", daemon=True
-                    )
-                    self._vt_relay.start()
-                else:
-                    self._input = threading.Thread(target=self._input_loop, name="pty-input", daemon=True)
-                    self._input.start()
-                    _enable_mouse_console()
-                    self._mouser = threading.Thread(target=self._mouse_loop, name="pty-mouse", daemon=True)
-                    self._mouser.start()
+                self._vt_relay = threading.Thread(
+                    target=self._vt_relay_loop, name="pty-vt-relay", daemon=True
+                )
+                self._vt_relay.start()
             self._resizer = threading.Thread(target=self._resize_loop, name="pty-resize", daemon=True)
             self._resizer.start()
         except BaseException:
@@ -545,7 +323,7 @@ class PtySession:
 
     def stop(self) -> None:
         """Signal shutdown, terminate the child, and restore stdin's console
-        mode (Task 3.3) for the vt backend.
+        mode (Task 3.3).
 
         Race note (Task 3, corrected per Task 2's review): ``_vt_relay`` is a
         daemon thread never ``.join()``-ed elsewhere in this file, so
@@ -609,10 +387,10 @@ class PtySession:
         """Write the console mode Task 3.1 saved (``self._saved_stdin_mode``)
         back onto stdin, exactly once.
 
-        No-op when there's nothing to restore: the legacy backend never
-        mutates stdin's mode at all (``self._saved_stdin_mode`` stays
-        ``None``), and a second call after a successful restore is also a
-        no-op -- the saved value is cleared the moment it's used, which is
+        No-op when there's nothing to restore: ``self._saved_stdin_mode``
+        stays ``None`` until a real mutation captures it, and a second call
+        after a successful restore is also a no-op -- the saved value is
+        cleared the moment it's used, which is
         what makes it safe to call this from both ``stop()`` (Task 3.3,
         normal exit) and ``start()``'s own ``except`` block (Task 3.4, setup
         failure) without risking a double ``SetConsoleMode`` call or
@@ -651,11 +429,12 @@ class PtySession:
                 if not self._proc.isalive():
                     break
                 continue
-            # Passthrough to the real console -- minus mouse-tracking mode
-            # sequences, which are meant for Claude's own controlling terminal
-            # and must not leak to the outer console (see strip_mouse_tracking).
+            # Passthrough to the real console, unmodified -- mouse-tracking mode
+            # sequences (DECSET/DECRST) are meant for Claude's own controlling
+            # terminal, and now that Windows Terminal itself is that terminal
+            # (via the vt-input relay), it's the intended recipient.
             try:
-                sys.stdout.write(strip_mouse_tracking(data))
+                sys.stdout.write(data)
                 sys.stdout.flush()
             except Exception:
                 pass
@@ -666,92 +445,6 @@ class PtySession:
             exit_code = 0
         if self._on_exit and not self._stop.is_set():
             self._on_exit(exit_code)
-
-    def _drain_input(self, getwch: Callable[[], str], kbhit: Callable[[], bool]) -> str:
-        """Read every character currently buffered, translating extended keys."""
-        out = []
-        while kbhit():
-            out.append(translate_keystroke(getwch(), getwch))
-        return "".join(out)
-
-    def _input_loop(self) -> None:
-        """Forward local keystrokes to the child so the user can still type here.
-
-        Reads are coalesced into bursts. A multi-line *paste* -- which the console
-        delivers as one flood of characters -- is forwarded as a single unit
-        wrapped in bracketed-paste markers, instead of letting each embedded
-        newline fire a separate Enter/submit. A typed Enter still submits, because
-        it arrives alone in its own burst (see ``is_paste_burst``).
-        """
-        try:
-            import msvcrt
-        except ImportError:
-            return
-        while not self._stop.is_set():
-            if not msvcrt.kbhit():
-                self._stop.wait(0.02)
-                continue
-            burst = self._drain_input(msvcrt.getwch, msvcrt.kbhit)
-            # A paste can arrive in several back-to-back OS chunks; briefly keep
-            # draining so a chunk boundary can't split it and mis-fire a submit.
-            if "\r" in burst or "\n" in burst:
-                while not self._stop.is_set():
-                    self._stop.wait(_PASTE_COALESCE_SECONDS)
-                    more = self._drain_input(msvcrt.getwch, msvcrt.kbhit)
-                    if not more:
-                        break
-                    burst += more
-            if not burst:
-                continue
-            if is_paste_burst(burst):
-                self.send_keys(wrap_bracketed_paste(burst))
-            else:
-                self.send_keys(burst)
-
-    def _mouse_loop(self) -> None:
-        """Forward local mouse-wheel events to the child as SGR mouse sequences.
-
-        Peeks the console input queue rather than blind-reading it: a key event left
-        in place by classify_record's "not_mouse" branch must still be there for
-        _input_loop's msvcrt calls to pick up. Only mouse-typed records are ever
-        actually dequeued here -- wheel events are translated and forwarded, other
-        mouse events (click/drag/move/horizontal-wheel) are dequeued and dropped.
-
-        Known residual risk: msvcrt.getwch()'s C-runtime implementation also reads
-        from this same Win32 console input queue internally, so peek-then-
-        conditionally-read prevents this loop from stealing key events, but can't
-        guarantee the CRT's own internal queue scan never interacts with a mouse
-        record sitting ahead of a key event. Fully eliminating that would mean a
-        single unified ReadConsoleInputW-based reader for both keyboard and mouse --
-        out of scope for this pass (see the design spec's Ctrl+Tab deferral).
-        """
-        if os.name != "nt":
-            return
-        kernel32 = ctypes.windll.kernel32
-        handle = kernel32.GetStdHandle(STDIN_HANDLE)
-        record = INPUT_RECORD()
-        num_events = ctypes.c_uint32()
-        while not self._stop.is_set():
-            if not kernel32.PeekConsoleInputW(handle, ctypes.byref(record), 1, ctypes.byref(num_events)):
-                self._stop.wait(0.02)
-                continue
-            if num_events.value == 0:
-                self._stop.wait(0.02)
-                continue
-            kind = classify_record(record.EventType, record.Event.MouseEvent.dwEventFlags)
-            if kind == "not_mouse":
-                self._stop.wait(0.02)
-                continue
-            if not kernel32.ReadConsoleInputW(handle, ctypes.byref(record), 1, ctypes.byref(num_events)):
-                continue
-            if kind != "wheel":
-                continue
-            delta = extract_wheel_delta(record.Event.MouseEvent.dwButtonState)
-            col = record.Event.MouseEvent.dwMousePosition.X + 1
-            row = record.Event.MouseEvent.dwMousePosition.Y + 1
-            sequence = translate_wheel_event(delta, col, row)
-            if sequence:
-                self.send_keys(sequence)
 
     def _read_vt_input(self) -> str:
         """Block on stdin's console handle for up to _VT_RELAY_WAIT_MS, then
@@ -766,7 +459,7 @@ class PtySession:
         to non-signaled once it's drained -- so waiting on it with a short
         timeout is the real "pollable, interruptible blocking read" primitive
         for a console handle, the same role self._stop.wait(...) plays
-        elsewhere in this file (_resize_loop, legacy _input_loop). An
+        elsewhere in this file (_resize_loop). An
         unconditional blocking ReadConsoleW/ReadFile call, with no timeout
         parameter at all, would have no way to unblock on stop() short of a
         much bigger lift (overlapped I/O + CancelSynchronousIo) -- rejected
@@ -802,7 +495,7 @@ class PtySession:
         return ctypes.wstring_at(buffer, chars_read.value)
 
     def _vt_relay_loop(self, read_available: Optional[Callable[[], str]] = None) -> None:
-        """Transparent VT-input relay for the "vt" backend (Plan Phase 2).
+        """Transparent VT-input relay (Plan Phase 2).
 
         With ENABLE_VIRTUAL_TERMINAL_INPUT on stdin (see _console_vt_plan /
         _enable_vt_console), Windows Terminal already delivers keyboard,
@@ -813,10 +506,9 @@ class PtySession:
         no new write path, no per-byte/per-sequence branching of any kind.
 
         ``read_available`` is an injectable stand-in for the real blocking
-        read (mirrors how _drain_input takes injectable getwch/kbhit for the
-        legacy backend); production callers (start()) leave it as None and
-        get _read_vt_input -- see that method's docstring for the bounded-
-        wait design and its one documented residual gap.
+        read; production callers (start()) leave it as None and get
+        _read_vt_input -- see that method's docstring for the bounded-wait
+        design and its one documented residual gap.
         """
         read = read_available if read_available is not None else self._read_vt_input
         while not self._stop.is_set():

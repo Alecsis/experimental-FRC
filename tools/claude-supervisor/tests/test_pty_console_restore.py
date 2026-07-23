@@ -1,8 +1,8 @@
-"""Regression tests for the vt backend's console-mode save/restore lifecycle
-(Plan Phase 3, Tasks 3.1-3.4).
+"""Regression tests for the vt-input relay's console-mode save/restore
+lifecycle (Plan Phase 3, Tasks 3.1-3.4).
 
-Tasks 1-2 left the "vt" backend's stdin mutation (ENABLE_VIRTUAL_TERMINAL_INPUT
-set; ENABLE_PROCESSED_INPUT/ENABLE_LINE_INPUT/ENABLE_ECHO_INPUT cleared) applied
+Tasks 1-2 left stdin's mutation (ENABLE_VIRTUAL_TERMINAL_INPUT set;
+ENABLE_PROCESSED_INPUT/ENABLE_LINE_INPUT/ENABLE_ECHO_INPUT cleared) applied
 unconditionally with nothing restoring it afterward -- a real leak risk
 (microsoft/terminal#4949) that can corrupt the outer shell's own input mode
 after this process exits. This file covers the fix: saving the pre-mutation
@@ -33,14 +33,19 @@ import claude_supervisor.pty_session as pty_session_module
 from claude_supervisor.pty_session import (
     ENABLE_ECHO_INPUT,
     ENABLE_LINE_INPUT,
-    ENABLE_MOUSE_INPUT,
     ENABLE_PROCESSED_INPUT,
-    ENABLE_QUICK_EDIT_MODE,
     ENABLE_VIRTUAL_TERMINAL_INPUT,
     PtySession,
     diff_console_mode_bits,
     resolve_saved_mode,
 )
+
+# Win32 console-mode bits the vt-input relay's mutation deliberately never
+# touches (SetConsoleMode/wincon.h) -- not imported from pty_session since
+# that module has no reason to define flags it never sets or clears; kept
+# here as literals purely to build a realistic synthetic "before" mode below.
+_ENABLE_MOUSE_INPUT = 0x0010
+_ENABLE_QUICK_EDIT_MODE = 0x0040
 
 PASS = 0
 FAIL = 0
@@ -78,17 +83,17 @@ def test_resolve_saved_mode_keeps_existing_when_already_saved():
 
 # ---- Task 3.2 -- diff_console_mode_bits (pure) -----------------------------
 
-def test_stdin_mode_diff_matches_vt_backend_contract():
-    print("test_stdin_mode_diff_matches_vt_backend_contract")
-    # A plausible pre-mutation stdin mode: everything the "vt" backend's
-    # mutation must leave untouched (quick-edit, mouse input) plus the three
-    # bits it's contractually responsible for clearing.
+def test_stdin_mode_diff_matches_vt_relay_contract():
+    print("test_stdin_mode_diff_matches_vt_relay_contract")
+    # A plausible pre-mutation stdin mode: everything the mutation must leave
+    # untouched (quick-edit, mouse input) plus the three bits it's
+    # contractually responsible for clearing.
     before = (
         ENABLE_PROCESSED_INPUT
         | ENABLE_LINE_INPUT
         | ENABLE_ECHO_INPUT
-        | ENABLE_QUICK_EDIT_MODE
-        | ENABLE_MOUSE_INPUT
+        | _ENABLE_QUICK_EDIT_MODE
+        | _ENABLE_MOUSE_INPUT
     )
     after = (before | ENABLE_VIRTUAL_TERMINAL_INPUT) & ~(
         ENABLE_PROCESSED_INPUT | ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT
@@ -98,10 +103,10 @@ def test_stdin_mode_diff_matches_vt_backend_contract():
           "stdin gains exactly ENABLE_VIRTUAL_TERMINAL_INPUT")
     check(diff["lost"] == (ENABLE_PROCESSED_INPUT | ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT),
           "stdin loses exactly ENABLE_PROCESSED_INPUT | ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT")
-    check(not (diff["gained"] & ENABLE_QUICK_EDIT_MODE) and not (diff["lost"] & ENABLE_QUICK_EDIT_MODE),
-          "no ENABLE_QUICK_EDIT_MODE entry -- the vt backend never touches it")
-    check(not (diff["gained"] & ENABLE_MOUSE_INPUT) and not (diff["lost"] & ENABLE_MOUSE_INPUT),
-          "no ENABLE_MOUSE_INPUT entry -- the vt backend never touches it")
+    check(not (diff["gained"] & _ENABLE_QUICK_EDIT_MODE) and not (diff["lost"] & _ENABLE_QUICK_EDIT_MODE),
+          "no ENABLE_QUICK_EDIT_MODE entry -- the mutation never touches it")
+    check(not (diff["gained"] & _ENABLE_MOUSE_INPUT) and not (diff["lost"] & _ENABLE_MOUSE_INPUT),
+          "no ENABLE_MOUSE_INPUT entry -- the mutation never touches it")
 
 
 def test_diff_reports_no_change_for_identical_before_after():
@@ -112,7 +117,7 @@ def test_diff_reports_no_change_for_identical_before_after():
 
 # ---- Task 3.1 (integration) -- start() actually saves ----------------------
 
-def test_vt_backend_saves_original_stdin_mode_on_start():
+def test_saves_original_stdin_mode_on_start():
     """Integration check that start() actually wires resolve_saved_mode's
     output into self._saved_stdin_mode via a real _enable_vt_console call.
 
@@ -125,8 +130,8 @@ def test_vt_backend_saves_original_stdin_mode_on_start():
     this wiring depends on (resolve_saved_mode) is fully covered above,
     independent of any real console.
     """
-    print("test_vt_backend_saves_original_stdin_mode_on_start")
-    session = PtySession(_TRIVIAL_ARGV, forward_local_input=True, input_backend="vt")
+    print("test_saves_original_stdin_mode_on_start")
+    session = PtySession(_TRIVIAL_ARGV, forward_local_input=True)
     try:
         session.start()
         time.sleep(0.1)
@@ -136,39 +141,27 @@ def test_vt_backend_saves_original_stdin_mode_on_start():
                   "_enable_vt_console to capture; not a production bug, see "
                   "docstring")
         else:
-            check(True, "start() captured a pre-mutation stdin mode under the vt backend")
-    finally:
-        session.stop()
-
-
-def test_legacy_backend_never_saves_a_mode():
-    print("test_legacy_backend_never_saves_a_mode")
-    session = PtySession(_TRIVIAL_ARGV, forward_local_input=True, input_backend="legacy")
-    try:
-        session.start()
-        time.sleep(0.1)
-        check(session._saved_stdin_mode is None,
-              "legacy backend never mutates stdin's mode, so nothing is saved")
+            check(True, "start() captured a pre-mutation stdin mode")
     finally:
         session.stop()
 
 
 # ---- Task 3.3 -- restore fires exactly once on normal stop() --------------
 
-def test_vt_backend_restores_saved_mode_exactly_once_on_stop():
-    """Task 3.3's required test: start+stop a vt-backend PtySession against a
-    trivial process, assert the restore fires exactly once with the value
-    Task 3.1 saved.
+def test_restores_saved_mode_exactly_once_on_stop():
+    """Task 3.3's required test: start+stop a PtySession against a trivial
+    process, assert the restore fires exactly once with the value Task 3.1
+    saved.
 
     If this environment's stdin isn't a real Win32 console right now (see
-    test_vt_backend_saves_original_stdin_mode_on_start's docstring),
+    test_saves_original_stdin_mode_on_start's docstring),
     self._saved_stdin_mode is forced to a known sentinel after start() so
     this test can still exercise exactly what Task 3.3 cares about -- the
     stop()-triggered *lifecycle wiring* -- independent of whether a real
     GetConsoleMode call happened to succeed in this run.
     """
-    print("test_vt_backend_restores_saved_mode_exactly_once_on_stop")
-    session = PtySession(_TRIVIAL_ARGV, forward_local_input=True, input_backend="vt")
+    print("test_restores_saved_mode_exactly_once_on_stop")
+    session = PtySession(_TRIVIAL_ARGV, forward_local_input=True)
     session.start()
     time.sleep(0.1)
     if session._saved_stdin_mode is None:
@@ -201,33 +194,11 @@ def test_vt_backend_restores_saved_mode_exactly_once_on_stop():
     check(calls == [saved], "a second stop() does not re-fire the restore")
 
 
-def test_legacy_backend_stop_never_calls_restore():
-    print("test_legacy_backend_stop_never_calls_restore")
-    session = PtySession(_TRIVIAL_ARGV, forward_local_input=True, input_backend="legacy")
-    session.start()
-    time.sleep(0.1)
-
-    calls = []
-    original_restore = session._restore_stdin_mode
-
-    def spy_restore():
-        value = session._saved_stdin_mode
-        if value is not None:
-            calls.append(value)
-        return original_restore()
-
-    session._restore_stdin_mode = spy_restore
-    session.stop()
-
-    check(calls == [], "legacy backend never has a saved mode, so stop() never "
-                        "performs a meaningful restore")
-
-
 # ---- Task 3.4 -- restore fires on a setup-time exception -------------------
 
 def test_start_restores_mode_when_relay_setup_raises():
     print("test_start_restores_mode_when_relay_setup_raises")
-    session = PtySession(_TRIVIAL_ARGV, forward_local_input=True, input_backend="vt")
+    session = PtySession(_TRIVIAL_ARGV, forward_local_input=True)
 
     calls = []
     original_restore = session._restore_stdin_mode
@@ -258,7 +229,7 @@ def test_start_restores_mode_when_setup_raises_keyboardinterrupt():
     exactly the interrupt scenario Task 3 (and Task 3.5's run.py wiring)
     cares about most. Guards against that regression directly."""
     print("test_start_restores_mode_when_setup_raises_keyboardinterrupt")
-    session = PtySession(_TRIVIAL_ARGV, forward_local_input=True, input_backend="vt")
+    session = PtySession(_TRIVIAL_ARGV, forward_local_input=True)
 
     calls = []
     original_restore = session._restore_stdin_mode
@@ -296,7 +267,7 @@ def test_start_restores_mode_when_interrupt_lands_between_mutation_and_save():
     where the save would happen.
     """
     print("test_start_restores_mode_when_interrupt_lands_between_mutation_and_save")
-    session = PtySession(_TRIVIAL_ARGV, forward_local_input=True, input_backend="vt")
+    session = PtySession(_TRIVIAL_ARGV, forward_local_input=True)
 
     calls = []
     original_restore = session._restore_stdin_mode
@@ -310,7 +281,7 @@ def test_start_restores_mode_when_interrupt_lands_between_mutation_and_save():
     real_enable = pty_session_module._enable_vt_console
     real_resolve = pty_session_module.resolve_saved_mode
 
-    def fake_enable(backend):
+    def fake_enable():
         # Simulate: the real SetConsoleMode mutation already happened, and
         # this is the original mode it captured.
         return 0xFACE
@@ -345,7 +316,7 @@ def test_start_propagates_and_still_attempts_restore_when_mutation_itself_raises
     and the restore-attempt wiring must still behave correctly, not skip
     the guard silently."""
     print("test_start_propagates_and_still_attempts_restore_when_mutation_itself_raises")
-    session = PtySession(_TRIVIAL_ARGV, forward_local_input=True, input_backend="vt")
+    session = PtySession(_TRIVIAL_ARGV, forward_local_input=True)
 
     calls = []
     original_restore = session._restore_stdin_mode
@@ -358,7 +329,7 @@ def test_start_propagates_and_still_attempts_restore_when_mutation_itself_raises
 
     real_enable = pty_session_module._enable_vt_console
 
-    def raising_enable(backend):
+    def raising_enable():
         raise KeyboardInterrupt()
 
     pty_session_module._enable_vt_console = raising_enable
@@ -380,7 +351,7 @@ def test_start_propagates_and_still_attempts_restore_when_mutation_itself_raises
 
 
 def test_start_success_path_still_works_with_injectable_spawn():
-    """Regression guard: the new `spawn` parameter must not change production
+    """Regression guard: the `spawn` parameter must not change production
     behavior when a real spawn function is supplied (mirrors what start()'s
     default winpty.PtyProcess.spawn does)."""
     print("test_start_success_path_still_works_with_injectable_spawn")
@@ -398,7 +369,7 @@ def test_start_success_path_still_works_with_injectable_spawn():
     def fake_spawn(argv, cwd=None, env=None, dimensions=None):
         return _FakeProc()
 
-    session = PtySession(_TRIVIAL_ARGV, forward_local_input=True, input_backend="vt")
+    session = PtySession(_TRIVIAL_ARGV, forward_local_input=True)
     raised = None
     try:
         session.start(spawn=fake_spawn)
@@ -408,7 +379,7 @@ def test_start_success_path_still_works_with_injectable_spawn():
     check(raised is None, "start(spawn=...) with a working fake spawn raises nothing")
     if session._saved_stdin_mode is None:
         print("  (no real console mode captured in this environment -- see "
-              "test_vt_backend_saves_original_stdin_mode_on_start's docstring; "
+              "test_saves_original_stdin_mode_on_start's docstring; "
               "forcing a sentinel to still verify stop() restores it)")
         session._saved_stdin_mode = 0xC0DE
     session.stop()
@@ -418,12 +389,10 @@ def test_start_success_path_still_works_with_injectable_spawn():
 def main():
     test_resolve_saved_mode_saves_when_nothing_saved_yet()
     test_resolve_saved_mode_keeps_existing_when_already_saved()
-    test_stdin_mode_diff_matches_vt_backend_contract()
+    test_stdin_mode_diff_matches_vt_relay_contract()
     test_diff_reports_no_change_for_identical_before_after()
-    test_vt_backend_saves_original_stdin_mode_on_start()
-    test_legacy_backend_never_saves_a_mode()
-    test_vt_backend_restores_saved_mode_exactly_once_on_stop()
-    test_legacy_backend_stop_never_calls_restore()
+    test_saves_original_stdin_mode_on_start()
+    test_restores_saved_mode_exactly_once_on_stop()
     test_start_restores_mode_when_relay_setup_raises()
     test_start_restores_mode_when_setup_raises_keyboardinterrupt()
     test_start_restores_mode_when_interrupt_lands_between_mutation_and_save()

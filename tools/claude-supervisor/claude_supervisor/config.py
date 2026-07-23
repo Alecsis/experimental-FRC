@@ -30,9 +30,6 @@ class BehaviorConfig:
     auto_strip_ansi: bool = True
     max_discord_msg_len: int = 1800
     log_level: str = "INFO"
-    # Local-input path PtySession uses ("legacy" = today's msvcrt/console-API
-    # translation, "vt" = the new VT-input relay backend). See pty_session.py.
-    local_input_backend: str = "legacy"
 
 
 @dataclass
@@ -104,10 +101,5 @@ def _validate(cfg: Config) -> None:
         problems.append("discord.authorized_user_id must be a numeric Discord user ID")
     if not cfg.discord.channel_id:
         problems.append("discord.channel_id is unset")
-    if cfg.behavior.local_input_backend not in ("legacy", "vt"):
-        problems.append(
-            "behavior.local_input_backend must be 'legacy' or 'vt', got %r"
-            % (cfg.behavior.local_input_backend,)
-        )
     if problems:
         raise ValueError("Invalid config.yaml: " + "; ".join(problems))

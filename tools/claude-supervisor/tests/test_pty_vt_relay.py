@@ -1,22 +1,20 @@
-"""Regression tests for the "vt" backend's transparent byte relay (Plan Phase 2,
-Task 2.2 + 2.3).
+"""Regression tests for the vt-input relay's transparent byte relay (Plan
+Phase 2, Task 2.2 + 2.3).
 
-Task 1 wired a placeholder ``_vt_relay_loop`` into the same start()/stop()
-lifecycle as the legacy input/mouse threads (see test_pty_vt_backend.py).
-Task 2.1 turned on ENABLE_VIRTUAL_TERMINAL_INPUT on stdin (see
-test_pty_input.py). This file covers what's left: the loop itself must read
-whatever bytes are currently available and forward them to send_keys()
-completely unchanged -- no per-byte/per-sequence interpretation of any kind,
-since Windows Terminal (with VT input mode on) has already done all necessary
-translation before the bytes ever reach this process.
+Task 1 wired a placeholder ``_vt_relay_loop`` into the start()/stop()
+lifecycle (see test_pty_vt_backend.py). Task 2.1 turned on
+ENABLE_VIRTUAL_TERMINAL_INPUT on stdin (see test_pty_input.py). This file
+covers what's left: the loop itself must read whatever bytes are currently
+available and forward them to send_keys() completely unchanged -- no
+per-byte/per-sequence interpretation of any kind, since Windows Terminal
+(with VT input mode on) has already done all necessary translation before
+the bytes ever reach this process.
 
 ``_vt_relay_loop`` takes an injectable ``read_available`` callable standing in
-for the real blocking console read (mirrors the injectable getwch/kbhit style
-``_drain_input`` uses for the legacy backend) -- production callers leave it
-as None and get the real Win32 reader (_read_vt_input), untested here since it
-needs a real console; these tests only need PtySession's plumbing (send_keys/
-_write_lock) plus a fake byte source, same rationale as test_pty_input.py's
-treatment of _input_loop.
+for the real blocking console read -- production callers leave it as None
+and get the real Win32 reader (_read_vt_input), untested here since it needs
+a real console; these tests only need PtySession's plumbing (send_keys/
+_write_lock) plus a fake byte source.
 
 Run: python tests/test_pty_vt_relay.py
 """
@@ -69,11 +67,11 @@ def _session():
 
 
 def test_relay_forwards_unknown_escape_sequence_byte_for_byte():
-    """Task 2.2's core proof: an escape sequence unmapped by any of today's
-    special-case tables (translate_keystroke's _SPECIAL_KEYS, the SGR wheel
-    translation, etc.) must pass through completely unrecognized and
-    unmodified -- proving "no translation" behaviorally, not just by
-    inspecting the diff for missing branches."""
+    """Task 2.2's core proof: an arbitrary escape sequence with no special
+    meaning to this module (Phase 4 deleted the last of the special-case
+    tables that used to interpret sequences like this one) must pass through
+    completely unrecognized and unmodified -- proving "no translation"
+    behaviorally, not just by inspecting the diff for missing branches."""
     print("test_relay_forwards_unknown_escape_sequence_byte_for_byte")
     session = _session()
     proc = _FakeProc()
