@@ -26,6 +26,15 @@ from typing import Any, Callable, Optional
 # Matches CSI / OSC / other ANSI escape sequences for stripping before logging.
 _ANSI_RE = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b\][^\x07]*(?:\x07|\x1b\\)|\x1b[@-Z\\-_]")
 
+# Matches DECSET/DECRST xterm mouse-tracking mode sequences (X10/normal/
+# button-event/any-event/focus/SGR). Claude Code's TUI enables these for its
+# own controlling terminal; confirmed live (mouse_debug.log) that the raw byte
+# passthrough was forwarding them to the *outer* console too, which made
+# Windows Terminal route mouse-wheel/click events to the supervisor process
+# (which never reads mouse input) instead of doing native scrollback. Stripped
+# out of the passthrough in _read_loop -- see strip_mouse_tracking.
+_MOUSE_MODE_RE = re.compile(r"\x1b\[\?(100[0-6]|1015)[hl]")
+
 CTRL_C = "\x03"
 
 # msvcrt extended-key (prefix 0x00 / 0xe0) second-byte -> ANSI escape sequence.
@@ -44,6 +53,38 @@ _SPECIAL_KEYS = {
 
 def strip_ansi(text: str) -> str:
     return _ANSI_RE.sub("", text)
+
+
+def strip_mouse_tracking(text: str) -> str:
+    """Remove xterm mouse-tracking DECSET/DECRST sequences before passthrough.
+
+    Leaves everything else -- including bracketed-paste (?2004), an unrelated
+    mechanism -- untouched.
+    """
+    return _MOUSE_MODE_RE.sub("", text)
+
+
+# How often to poll the local console for a size change and forward it into the
+# inner ConPTY. Windows has no SIGWINCH, so polling is the standard approach;
+# this interval is short enough to feel live but cheap enough to not matter.
+_RESIZE_POLL_SECONDS = 0.3
+
+
+def poll_resize(last: "Optional[tuple[int, int]]", get_size: Callable[[], Any]) -> "Optional[tuple[int, int]]":
+    """Return the new ``(rows, cols)`` if the terminal size changed since ``last``.
+
+    ``get_size`` mirrors ``os.get_terminal_size`` -- anything exposing
+    ``.columns``/``.lines``. Returns ``None`` (no change to report) both when the
+    size is unchanged and when ``get_size`` raises ``OSError`` (no real console
+    attached, e.g. redirected output) -- resize forwarding just goes quiet in
+    that case rather than crashing the poll loop.
+    """
+    try:
+        size = get_size()
+    except OSError:
+        return None
+    current = (size.lines, size.columns)
+    return None if current == last else current
 
 
 def translate_keystroke(ch: str, get_next: Callable[[], str]) -> str:
@@ -149,6 +190,8 @@ class PtySession:
         self._stop = threading.Event()
         self._reader: Optional[threading.Thread] = None
         self._input: Optional[threading.Thread] = None
+        self._resizer: Optional[threading.Thread] = None
+        self._last_size: Optional[tuple[int, int]] = None
 
     # ---- lifecycle -------------------------------------------------------
 
@@ -170,11 +213,14 @@ class PtySession:
         self._proc = PtyProcess.spawn(
             self._argv, cwd=self._cwd, env=self._env, dimensions=(rows, cols)
         )
+        self._last_size = (rows, cols)
         self._reader = threading.Thread(target=self._read_loop, name="pty-reader", daemon=True)
         self._reader.start()
         if self._forward_local_input:
             self._input = threading.Thread(target=self._input_loop, name="pty-input", daemon=True)
             self._input.start()
+        self._resizer = threading.Thread(target=self._resize_loop, name="pty-resize", daemon=True)
+        self._resizer.start()
 
     @property
     def pid(self) -> int:
@@ -239,9 +285,11 @@ class PtySession:
                 if not self._proc.isalive():
                     break
                 continue
-            # Passthrough to the real console.
+            # Passthrough to the real console -- minus mouse-tracking mode
+            # sequences, which are meant for Claude's own controlling terminal
+            # and must not leak to the outer console (see strip_mouse_tracking).
             try:
-                sys.stdout.write(data)
+                sys.stdout.write(strip_mouse_tracking(data))
                 sys.stdout.flush()
             except Exception:
                 pass
@@ -293,3 +341,25 @@ class PtySession:
                 self.send_keys(wrap_bracketed_paste(burst))
             else:
                 self.send_keys(burst)
+
+    def _resize_loop(self) -> None:
+        """Forward the local console's size into the inner ConPTY on change.
+
+        Windows has no SIGWINCH, so this polls. Without it the inner ConPTY stays
+        pinned at the size measured once at spawn, forever -- Claude never learns
+        the real terminal was resized, so it can't reflow, and its own
+        cursor-redraw math (computed against a stale size) can visibly corrupt
+        already-printed transcript lines.
+        """
+        while not self._stop.is_set():
+            if self._stop.wait(_RESIZE_POLL_SECONDS):
+                break
+            new_size = poll_resize(self._last_size, os.get_terminal_size)
+            if new_size is None:
+                continue
+            self._last_size = new_size
+            if self._proc and self._proc.isalive():
+                try:
+                    self._proc.setwinsize(*new_size)
+                except Exception:
+                    pass
