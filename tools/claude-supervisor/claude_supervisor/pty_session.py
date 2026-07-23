@@ -319,6 +319,7 @@ class PtySession:
         self._reader: Optional[threading.Thread] = None
         self._input: Optional[threading.Thread] = None
         self._resizer: Optional[threading.Thread] = None
+        self._mouser: Optional[threading.Thread] = None
         self._last_size: Optional[tuple[int, int]] = None
 
     # ---- lifecycle -------------------------------------------------------
@@ -347,6 +348,9 @@ class PtySession:
         if self._forward_local_input:
             self._input = threading.Thread(target=self._input_loop, name="pty-input", daemon=True)
             self._input.start()
+            _enable_mouse_console()
+            self._mouser = threading.Thread(target=self._mouse_loop, name="pty-mouse", daemon=True)
+            self._mouser.start()
         self._resizer = threading.Thread(target=self._resize_loop, name="pty-resize", daemon=True)
         self._resizer.start()
 
@@ -469,6 +473,51 @@ class PtySession:
                 self.send_keys(wrap_bracketed_paste(burst))
             else:
                 self.send_keys(burst)
+
+    def _mouse_loop(self) -> None:
+        """Forward local mouse-wheel events to the child as SGR mouse sequences.
+
+        Peeks the console input queue rather than blind-reading it: a key event left
+        in place by classify_record's "not_mouse" branch must still be there for
+        _input_loop's msvcrt calls to pick up. Only mouse-typed records are ever
+        actually dequeued here -- wheel events are translated and forwarded, other
+        mouse events (click/drag/move/horizontal-wheel) are dequeued and dropped.
+
+        Known residual risk: msvcrt.getwch()'s C-runtime implementation also reads
+        from this same Win32 console input queue internally, so peek-then-
+        conditionally-read prevents this loop from stealing key events, but can't
+        guarantee the CRT's own internal queue scan never interacts with a mouse
+        record sitting ahead of a key event. Fully eliminating that would mean a
+        single unified ReadConsoleInputW-based reader for both keyboard and mouse --
+        out of scope for this pass (see the design spec's Ctrl+Tab deferral).
+        """
+        if os.name != "nt":
+            return
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.GetStdHandle(STDIN_HANDLE)
+        record = INPUT_RECORD()
+        num_events = ctypes.c_uint32()
+        while not self._stop.is_set():
+            if not kernel32.PeekConsoleInputW(handle, ctypes.byref(record), 1, ctypes.byref(num_events)):
+                self._stop.wait(0.02)
+                continue
+            if num_events.value == 0:
+                self._stop.wait(0.02)
+                continue
+            kind = classify_record(record.EventType, record.Event.MouseEvent.dwEventFlags)
+            if kind == "not_mouse":
+                self._stop.wait(0.02)
+                continue
+            if not kernel32.ReadConsoleInputW(handle, ctypes.byref(record), 1, ctypes.byref(num_events)):
+                continue
+            if kind != "wheel":
+                continue
+            delta = extract_wheel_delta(record.Event.MouseEvent.dwButtonState)
+            col = record.Event.MouseEvent.dwMousePosition.X + 1
+            row = record.Event.MouseEvent.dwMousePosition.Y + 1
+            sequence = translate_wheel_event(delta, col, row)
+            if sequence:
+                self.send_keys(sequence)
 
     def _resize_loop(self) -> None:
         """Forward the local console's size into the inner ConPTY on change.
