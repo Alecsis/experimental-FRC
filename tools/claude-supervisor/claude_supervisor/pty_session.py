@@ -241,6 +241,9 @@ STDOUT_HANDLE = -11
 STDIN_HANDLE = -10
 ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004
 ENABLE_VIRTUAL_TERMINAL_INPUT = 0x0200
+ENABLE_MOUSE_INPUT = 0x0010
+ENABLE_QUICK_EDIT_MODE = 0x0040
+ENABLE_EXTENDED_FLAGS = 0x0080
 
 
 def _console_vt_plan() -> "list[tuple[int, int]]":
@@ -265,6 +268,29 @@ def _enable_vt_console() -> None:
         mode = ctypes.c_uint32()
         if kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
             kernel32.SetConsoleMode(handle, mode.value | flag)
+
+
+def _enable_mouse_console() -> None:
+    """Enable mouse-event reporting on this process's own stdin console handle.
+
+    Windows Terminal's default QuickEdit mode claims wheel/click events for its own
+    text-selection and scrollback UI, which is why the wheel showed the outer
+    console's raw scrollback instead of reaching Claude (see strip_mouse_tracking's
+    docstring for the other half of that story). Turning ENABLE_QUICK_EDIT_MODE off
+    hands mouse events to this process instead, via ReadConsoleInputW/
+    PeekConsoleInputW (see PtySession._mouse_loop) -- ENABLE_EXTENDED_FLAGS must be
+    set in the same call for ENABLE_QUICK_EDIT_MODE to take effect at all (an
+    undocumented-but-well-known SetConsoleMode quirk).
+    """
+    if os.name != "nt":
+        return
+    kernel32 = ctypes.windll.kernel32
+    handle = kernel32.GetStdHandle(STDIN_HANDLE)
+    mode = ctypes.c_uint32()
+    if not kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
+        return
+    new_mode = (mode.value & ~ENABLE_QUICK_EDIT_MODE) | ENABLE_EXTENDED_FLAGS | ENABLE_MOUSE_INPUT
+    kernel32.SetConsoleMode(handle, new_mode)
 
 
 class PtySession:
