@@ -303,12 +303,17 @@ class PtySession:
         log_buffer_lines: int = 500,
         on_exit: Optional[Callable[[int], None]] = None,
         forward_local_input: bool = True,
+        input_backend: str = "legacy",
     ) -> None:
         self._argv = argv
         self._cwd = cwd
         self._env = env
         self._on_exit = on_exit
         self._forward_local_input = forward_local_input
+        # "legacy" = today's msvcrt/console-API translation path; "vt" = the new
+        # VT-input relay backend (see start()'s thread routing). Selected via
+        # BehaviorConfig.local_input_backend, plumbed through by run.py.
+        self._input_backend = input_backend
 
         self._proc: Optional[Any] = None  # winpty.PtyProcess once started
         self._write_lock = threading.Lock()
