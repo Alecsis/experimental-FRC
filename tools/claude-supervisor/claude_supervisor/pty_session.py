@@ -493,10 +493,20 @@ class PtySession:
             cols, rows = size.columns, size.lines
         except OSError:
             pass
-        original_stdin_mode = _enable_vt_console(self._input_backend)
-        if original_stdin_mode is not None:
-            self._saved_stdin_mode = resolve_saved_mode(self._saved_stdin_mode, original_stdin_mode)
         try:
+            # Code-review fix: the mutation call and the save-assignment used
+            # to sit BEFORE this try block, so a KeyboardInterrupt landing
+            # anywhere in either -- including inside _enable_vt_console's own
+            # GetConsoleMode/SetConsoleMode calls -- would either leave the
+            # mode mutated with nothing recorded to restore, or leave the
+            # save recorded with nothing catching the interrupt to act on it.
+            # Moving both inside the guarded region closes that window
+            # entirely: any exception raised by either line now propagates
+            # straight into the except block below, same as a spawn/thread
+            # failure already did.
+            original_stdin_mode = _enable_vt_console(self._input_backend)
+            if original_stdin_mode is not None:
+                self._saved_stdin_mode = resolve_saved_mode(self._saved_stdin_mode, original_stdin_mode)
             self._proc = spawn(self._argv, cwd=self._cwd, env=self._env, dimensions=(rows, cols))
             self._last_size = (rows, cols)
             self._reader = threading.Thread(target=self._read_loop, name="pty-reader", daemon=True)
