@@ -246,24 +246,34 @@ ENABLE_QUICK_EDIT_MODE = 0x0040
 ENABLE_EXTENDED_FLAGS = 0x0080
 
 
-def _console_vt_plan() -> "list[tuple[int, int]]":
-    """(handle_id, mode_flag) pairs to OR into the console mode.
+def _console_vt_plan(backend: str = "legacy") -> "list[tuple[int, int]]":
+    """(handle_id, mode_flag) pairs to OR into the console mode for ``backend``.
 
-    Output ONLY. Deliberately does not enable ENABLE_VIRTUAL_TERMINAL_INPUT on
-    stdin: that makes keys arrive as VT escape sequences, which the
-    ``msvcrt.getwch()``-based ``_input_loop`` (classic 0x00/0xe0 model, see
-    ``translate_keystroke``) cannot parse -- it corrupts Enter, Ctrl+C and the
-    arrow keys while letting bare printables leak through.
+    Output is always enabled, on both backends.
+
+    Under the "legacy" backend, deliberately does not enable
+    ENABLE_VIRTUAL_TERMINAL_INPUT on stdin: that makes keys arrive as VT escape
+    sequences, which the ``msvcrt.getwch()``-based ``_input_loop`` (classic
+    0x00/0xe0 model, see ``translate_keystroke``) cannot parse -- it corrupts
+    Enter, Ctrl+C and the arrow keys while letting bare printables leak through.
+
+    The "vt" backend is eventually meant to enable ENABLE_VIRTUAL_TERMINAL_INPUT
+    on stdin too, so Windows Terminal delivers keys/mouse/paste as native escape
+    sequences relayed straight through instead of hand-translated. That mode-
+    setting change is Phase 2 (a later task) -- this still returns the
+    stdout-only plan for both backends today; the ``backend`` parameter exists
+    so callers (and tests) can already select per-backend without a signature
+    change once Phase 2 lands.
     """
     return [(STDOUT_HANDLE, ENABLE_VIRTUAL_TERMINAL_PROCESSING)]
 
 
-def _enable_vt_console() -> None:
-    """Turn on virtual-terminal *output* processing so the proxied TUI renders."""
+def _enable_vt_console(backend: str = "legacy") -> None:
+    """Turn on virtual-terminal console mode per ``_console_vt_plan(backend)``."""
     if os.name != "nt":
         return
     kernel32 = ctypes.windll.kernel32
-    for handle_id, flag in _console_vt_plan():
+    for handle_id, flag in _console_vt_plan(backend):
         handle = kernel32.GetStdHandle(handle_id)
         mode = ctypes.c_uint32()
         if kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
@@ -344,7 +354,7 @@ class PtySession:
             cols, rows = size.columns, size.lines
         except OSError:
             pass
-        _enable_vt_console()
+        _enable_vt_console(self._input_backend)
         self._proc = PtyProcess.spawn(
             self._argv, cwd=self._cwd, env=self._env, dimensions=(rows, cols)
         )
