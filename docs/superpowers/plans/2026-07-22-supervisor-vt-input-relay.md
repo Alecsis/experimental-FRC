@@ -100,6 +100,10 @@ Delete, in `tools/claude-supervisor/tests/`:
 Edit, not delete:
 - `test_pty_input.py` — remove the now-dead `translate_keystroke`/`_SPECIAL_KEYS`-targeting tests and the now-single (legacy-only, or removed entirely per the decision above) half of the Task 1.5 split; keep whatever paste tests Phase 5 determined are still needed.
 
+**Executed 2026-07-23, mentor sign-off on both decision points explicit (not defaulted):** Ctrl+C (Task 3.6) confirmed tested live and acceptable; legacy backend deleted entirely (not kept as fallback) — `local_input_backend` is gone from `BehaviorConfig`/`_validate()`/`PtySession.__init__`/`run.py`, `_console_vt_plan()`/`_enable_vt_console()` lost their now-constant backend parameter, `start()` unconditionally launches the vt relay thread. Paste's conditional deletion (§ Phase 0) resolved to "delete" — the live check confirmed multi-line/bracketed paste already works correctly through the relay's plain passthrough, and `_vt_relay_loop` never called `is_paste_burst`/`wrap_bracketed_paste` in the first place, so they were dead even before removal. `test_pty_mouse_strip.py`/`test_pty_mouse_wheel.py` retired whole; `test_config.py` also retired whole (it existed solely to cover `local_input_backend`, added in Task 1.1/1.2 — confirmed via `git log --follow` before deleting). `test_pty_input.py`/`test_pty_vt_backend.py`/`test_pty_console_restore.py` trimmed to drop every legacy-vs-vt comparison test.
+
+**Task 4.x thinner-not-smarter audit result:** `pty_session.py` 848 → 539 lines (-309, -36%). Repo-wide (Phase 4 commit alone): +175/-1013 lines across 11 files, net **-838 lines**. A net decrease, satisfying the exit criterion. Every surviving function was walked: mode save/restore (`resolve_saved_mode`/`diff_console_mode_bits`/`_restore_stdin_mode`), the resize poll loop, and `send_keys`/injection all still have a real "WT has no native opinion here" justification (documented in their own docstrings); nothing survived that should have been cut.
+
 ---
 
 ## Phase 5 — Validation
