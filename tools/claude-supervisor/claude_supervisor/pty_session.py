@@ -270,6 +270,19 @@ def _enable_vt_console() -> None:
             kernel32.SetConsoleMode(handle, mode.value | flag)
 
 
+_MOUSE_DEBUG_LOG = os.path.join(os.path.dirname(os.path.dirname(__file__)), "mouse_debug.log")
+
+
+def _debug_log(msg: str) -> None:
+    """Temporary, gitignored diagnostic trail for the still-broken wheel-forwarding
+    investigation. Not part of the shipped behavior -- remove once root-caused."""
+    try:
+        with open(_MOUSE_DEBUG_LOG, "a", encoding="utf-8") as f:
+            f.write(msg + "\n")
+    except Exception:
+        pass
+
+
 def _enable_mouse_console() -> None:
     """Enable mouse-event reporting on this process's own stdin console handle.
 
@@ -288,9 +301,21 @@ def _enable_mouse_console() -> None:
     handle = kernel32.GetStdHandle(STDIN_HANDLE)
     mode = ctypes.c_uint32()
     if not kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
+        _debug_log(f"[mouse] GetConsoleMode FAILED, handle={handle}")
         return
-    new_mode = (mode.value & ~ENABLE_QUICK_EDIT_MODE) | ENABLE_EXTENDED_FLAGS | ENABLE_MOUSE_INPUT
-    kernel32.SetConsoleMode(handle, new_mode)
+    before = mode.value
+    new_mode = (before & ~ENABLE_QUICK_EDIT_MODE) | ENABLE_EXTENDED_FLAGS | ENABLE_MOUSE_INPUT
+    ok = kernel32.SetConsoleMode(handle, new_mode)
+    # Read back rather than trusting the return code -- SetConsoleMode can report
+    # success while the driver silently ignores a bit it doesn't support.
+    verify = ctypes.c_uint32()
+    kernel32.GetConsoleMode(handle, ctypes.byref(verify))
+    _debug_log(
+        f"[mouse] handle={handle} before=0x{before:04x} requested=0x{new_mode:04x} "
+        f"SetConsoleMode_ok={bool(ok)} readback=0x{verify.value:04x} "
+        f"quickedit_off={not (verify.value & ENABLE_QUICK_EDIT_MODE)} "
+        f"mouse_on={bool(verify.value & ENABLE_MOUSE_INPUT)}"
+    )
 
 
 class PtySession:
@@ -495,6 +520,7 @@ class PtySession:
             return
         kernel32 = ctypes.windll.kernel32
         handle = kernel32.GetStdHandle(STDIN_HANDLE)
+        _debug_log(f"[mouse] _mouse_loop started, handle={handle}")
         record = INPUT_RECORD()
         num_events = ctypes.c_uint32()
         while not self._stop.is_set():
@@ -505,10 +531,16 @@ class PtySession:
                 self._stop.wait(0.02)
                 continue
             kind = classify_record(record.EventType, record.Event.MouseEvent.dwEventFlags)
+            _debug_log(
+                f"[mouse] peeked EventType=0x{record.EventType:04x} "
+                f"dwEventFlags=0x{record.Event.MouseEvent.dwEventFlags:08x} "
+                f"dwButtonState=0x{record.Event.MouseEvent.dwButtonState:08x} kind={kind}"
+            )
             if kind == "not_mouse":
                 self._stop.wait(0.02)
                 continue
             if not kernel32.ReadConsoleInputW(handle, ctypes.byref(record), 1, ctypes.byref(num_events)):
+                _debug_log("[mouse] ReadConsoleInputW FAILED after successful peek")
                 continue
             if kind != "wheel":
                 continue
@@ -516,6 +548,11 @@ class PtySession:
             col = record.Event.MouseEvent.dwMousePosition.X + 1
             row = record.Event.MouseEvent.dwMousePosition.Y + 1
             sequence = translate_wheel_event(delta, col, row)
+            proc_alive = bool(self._proc and self._proc.isalive())
+            _debug_log(
+                f"[mouse] WHEEL delta={delta} col={col} row={row} "
+                f"sequence={sequence!r} proc_alive={proc_alive}"
+            )
             if sequence:
                 self.send_keys(sequence)
 
