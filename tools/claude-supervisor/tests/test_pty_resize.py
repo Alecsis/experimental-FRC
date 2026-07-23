@@ -9,7 +9,7 @@ math (based on a stale believed size) could corrupt what looked like scrollback.
 ``get_size`` (mirroring ``os.get_terminal_size``), decide whether the size
 changed and what the new size is. The threaded polling loop itself needs a
 real console, so it is not unit-tested here -- same rationale as
-``test_pty_input.py``'s treatment of ``_input_loop``.
+``test_pty_vt_relay.py``'s treatment of ``_vt_relay_loop``'s real reader.
 
 Run: python tests/test_pty_resize.py
 """
