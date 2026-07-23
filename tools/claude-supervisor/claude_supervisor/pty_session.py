@@ -262,6 +262,44 @@ WAIT_OBJECT_0 = 0x00000000
 _VT_RELAY_WAIT_MS = 50
 _VT_RELAY_BUFFER_CHARS = 4096
 
+# Bound on how long PtySession.stop() waits for the vt relay thread to notice
+# self._stop and return, before restoring the console mode anyway (Task 3's
+# race mitigation -- see stop()'s own docstring for the full reasoning). A
+# generous multiple of _VT_RELAY_WAIT_MS: the real reader rechecks self._stop
+# roughly every 50ms, so this join succeeds well within one second in the
+# overwhelming common case.
+_VT_RELAY_STOP_JOIN_SECONDS = 0.5
+
+
+def resolve_saved_mode(existing: "Optional[int]", candidate: int) -> int:
+    """Decide what to persist as the "saved original console mode" (Task 3.1).
+
+    Save-once semantics: if nothing has been saved yet (``existing`` is
+    ``None``), persist ``candidate`` -- the mode read immediately before the
+    vt backend's mutation. If something is already saved (e.g. a second
+    ``start()`` call on the same PtySession without an intervening restore),
+    keep the existing value instead of overwriting it with ``candidate``,
+    which by that point would itself already be a *mutated* mode -- clobbering
+    the true original and permanently losing what needs to be restored later.
+    """
+    return existing if existing is not None else candidate
+
+
+def diff_console_mode_bits(before: int, after: int) -> "dict[str, int]":
+    """Return which console-mode bits changed between two raw mode integers
+    (Task 3.2), purely by bitwise comparison -- no console handle involved.
+
+    ``{"gained": bits set in after but not before, "lost": bits set in before
+    but not after}``. Exists so the vt backend's mutation contract (stdin
+    gains ENABLE_VIRTUAL_TERMINAL_INPUT; loses ENABLE_PROCESSED_INPUT,
+    ENABLE_LINE_INPUT, ENABLE_ECHO_INPUT; touches nothing else -- see
+    _enable_vt_console's docstring) is stated and tested independently of ever
+    touching a real handle: if a future edit changes what gets cleared, the
+    test built on this function fails immediately instead of only surfacing
+    as a live-console regression.
+    """
+    return {"gained": after & ~before, "lost": before & ~after}
+
 
 def _console_vt_plan(backend: str = "legacy") -> "list[tuple[int, int]]":
     """(handle_id, mode_flag) pairs to OR into the console mode for ``backend``.
@@ -290,8 +328,16 @@ def _console_vt_plan(backend: str = "legacy") -> "list[tuple[int, int]]":
     return plan
 
 
-def _enable_vt_console(backend: str = "legacy") -> None:
+def _enable_vt_console(backend: str = "legacy") -> "Optional[int]":
     """Turn on virtual-terminal console mode per ``_console_vt_plan(backend)``.
+
+    Returns stdin's console mode exactly as read *before* any mutation in
+    this call, for the "vt" backend only (``None`` for "legacy" -- nothing is
+    cleared there -- and ``None`` off-Windows or if ``GetConsoleMode`` itself
+    fails). This is Task 3.1's save step: the caller (``PtySession.start()``)
+    is the single place that decides what to persist (via
+    ``resolve_saved_mode``), so this function has exactly one job --
+    mutate, and report what it overwrote.
 
     For the "vt" backend's stdin entry specifically, also clears three input
     bits in that same SetConsoleMode call -- these are *clears*, not *sets*,
@@ -315,23 +361,38 @@ def _enable_vt_console(backend: str = "legacy") -> None:
         flow through the input stream like any other byte, for the relay to
         forward to Claude.
 
-    Task 3 (Phase 3) owns save/restore of console mode on exit -- these bits
-    are set unconditionally here because Task 2's relay needs them to
-    function at all, but nothing in this function restores the original mode
-    later. Flagged explicitly for the Task 3 implementer.
+        **Task 3.6 -- deliberate, user-facing behavior change, not a bug:**
+        clearing this bit means local Ctrl+C stops killing the *supervisor*
+        process the way it does today under the "legacy" backend -- under
+        "vt" it becomes a literal 0x03 byte forwarded to Claude instead (the
+        same as typing it inside a normal, unsupervised `claude` session).
+        There is no code-level bug to fix here; this is carried forward as a
+        named item in the plan's Phase 5 mandatory live-validation list, not
+        something a unit test can or should wave through on its own.
+
+    Task 3 (Phase 3) now saves the pre-mutation stdin mode (see
+    resolve_saved_mode) and returns it to the caller, so PtySession.start()
+    can persist it in self._saved_stdin_mode for stop()/exception-path
+    restoration (PtySession._restore_stdin_mode) -- these bits are still set
+    unconditionally here, since Task 2's relay needs them to function at all,
+    but the mode they overwrite is no longer lost.
     """
     if os.name != "nt":
-        return
+        return None
     kernel32 = ctypes.windll.kernel32
+    original_stdin_mode = None
     for handle_id, flag in _console_vt_plan(backend):
         handle = kernel32.GetStdHandle(handle_id)
         mode = ctypes.c_uint32()
         if not kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
             continue
+        if backend == "vt" and handle_id == STDIN_HANDLE:
+            original_stdin_mode = mode.value
         new_mode = mode.value | flag
         if backend == "vt" and handle_id == STDIN_HANDLE:
             new_mode &= ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT)
         kernel32.SetConsoleMode(handle, new_mode)
+    return original_stdin_mode
 
 
 def _enable_mouse_console() -> None:
@@ -391,44 +452,79 @@ class PtySession:
         self._mouser: Optional[threading.Thread] = None
         self._vt_relay: Optional[threading.Thread] = None
         self._last_size: Optional[tuple[int, int]] = None
+        # Task 3.1: the stdin console mode as it was *before* the vt backend's
+        # mutation, so it can be written back later (see _restore_stdin_mode).
+        # Stays None for the legacy backend (which never mutates stdin's mode
+        # at all) and, transiently, for "vt" before start() has run.
+        self._saved_stdin_mode: Optional[int] = None
 
     # ---- lifecycle -------------------------------------------------------
 
-    def start(self) -> None:
-        try:
-            from winpty import PtyProcess  # pywinpty (native, Windows only)
-        except Exception as exc:
-            raise RuntimeError(
-                "pywinpty is required to launch Claude (pip install pywinpty). "
-                "Import failed: %r" % (exc,)
-            ) from exc
+    def start(self, *, spawn: Optional[Callable[..., Any]] = None) -> None:
+        """Launch Claude in a PTY and start this session's background threads.
+
+        ``spawn`` is an injectable stand-in for ``winpty.PtyProcess.spawn``
+        (mirrors this file's other injectable-callable pattern -- e.g.
+        ``_vt_relay_loop``'s ``read_available``); production leaves it as
+        ``None`` and gets the real pywinpty import + spawn. Tests use it to
+        simulate a setup failure without needing pywinpty to actually fail
+        (Task 3.4).
+
+        Task 3.1/3.4: the vt backend's console-mode mutation (via
+        ``_enable_vt_console``) and everything that can fail afterward --
+        spawning the child, starting the relay/reader/resize threads -- are
+        wrapped in try/except so a failure anywhere in that region still
+        restores the mode (``_restore_stdin_mode``) before the exception
+        propagates, instead of leaving stdin's mode mutated with the session
+        never actually starting.
+        """
+        if spawn is None:
+            try:
+                from winpty import PtyProcess  # pywinpty (native, Windows only)
+            except Exception as exc:
+                raise RuntimeError(
+                    "pywinpty is required to launch Claude (pip install pywinpty). "
+                    "Import failed: %r" % (exc,)
+                ) from exc
+            spawn = PtyProcess.spawn
         cols, rows = 120, 30
         try:
             size = os.get_terminal_size()
             cols, rows = size.columns, size.lines
         except OSError:
             pass
-        _enable_vt_console(self._input_backend)
-        self._proc = PtyProcess.spawn(
-            self._argv, cwd=self._cwd, env=self._env, dimensions=(rows, cols)
-        )
-        self._last_size = (rows, cols)
-        self._reader = threading.Thread(target=self._read_loop, name="pty-reader", daemon=True)
-        self._reader.start()
-        if self._forward_local_input:
-            if self._input_backend == "vt":
-                self._vt_relay = threading.Thread(
-                    target=self._vt_relay_loop, name="pty-vt-relay", daemon=True
-                )
-                self._vt_relay.start()
-            else:
-                self._input = threading.Thread(target=self._input_loop, name="pty-input", daemon=True)
-                self._input.start()
-                _enable_mouse_console()
-                self._mouser = threading.Thread(target=self._mouse_loop, name="pty-mouse", daemon=True)
-                self._mouser.start()
-        self._resizer = threading.Thread(target=self._resize_loop, name="pty-resize", daemon=True)
-        self._resizer.start()
+        original_stdin_mode = _enable_vt_console(self._input_backend)
+        if original_stdin_mode is not None:
+            self._saved_stdin_mode = resolve_saved_mode(self._saved_stdin_mode, original_stdin_mode)
+        try:
+            self._proc = spawn(self._argv, cwd=self._cwd, env=self._env, dimensions=(rows, cols))
+            self._last_size = (rows, cols)
+            self._reader = threading.Thread(target=self._read_loop, name="pty-reader", daemon=True)
+            self._reader.start()
+            if self._forward_local_input:
+                if self._input_backend == "vt":
+                    self._vt_relay = threading.Thread(
+                        target=self._vt_relay_loop, name="pty-vt-relay", daemon=True
+                    )
+                    self._vt_relay.start()
+                else:
+                    self._input = threading.Thread(target=self._input_loop, name="pty-input", daemon=True)
+                    self._input.start()
+                    _enable_mouse_console()
+                    self._mouser = threading.Thread(target=self._mouse_loop, name="pty-mouse", daemon=True)
+                    self._mouser.start()
+            self._resizer = threading.Thread(target=self._resize_loop, name="pty-resize", daemon=True)
+            self._resizer.start()
+        except BaseException:
+            # BaseException, not Exception: a KeyboardInterrupt landing in
+            # this window (Ctrl+C during setup, before _run_until_stopped in
+            # run.py is even entered -- Task 3.5) is a real possibility this
+            # region must also restore on. KeyboardInterrupt/SystemExit are
+            # BaseException, not Exception, so `except Exception` would have
+            # silently skipped the restore for exactly the interrupt case
+            # Task 3 exists to handle.
+            self._restore_stdin_mode()
+            raise
 
     @property
     def pid(self) -> int:
@@ -438,12 +534,41 @@ class PtySession:
         return bool(self._proc and self._proc.isalive())
 
     def stop(self) -> None:
+        """Signal shutdown, terminate the child, and restore stdin's console
+        mode (Task 3.3) for the vt backend.
+
+        Race note (Task 3, corrected per Task 2's review): ``_vt_relay`` is a
+        daemon thread never ``.join()``-ed elsewhere in this file, so
+        ``self._stop.set()`` alone does not guarantee ``_vt_relay_loop``'s
+        in-flight ``_read_vt_input`` call has actually returned by the time
+        this method would otherwise restore the console mode -- that read
+        could still be mid-flight against the mode that's about to change.
+        This is a real race in the relay thread's teardown, not "stop() isn't
+        interruptible" (``stop()`` itself never blocks on anything by
+        default -- nothing in this file calls ``.join()`` without an explicit
+        timeout, including the one added immediately below).
+
+        Chosen mitigation: signal-then-best-effort-wait. A short, *bounded*
+        join on the relay thread (``_VT_RELAY_STOP_JOIN_SECONDS``) before
+        restoring -- this eliminates the race in the overwhelming common case
+        (the real reader rechecks ``self._stop`` roughly every
+        ``_VT_RELAY_WAIT_MS``), without turning ``stop()`` into a call that
+        can hang indefinitely: the join has a timeout, and restoring anyway
+        after it expires is judged better than never restoring while waiting
+        on a read that, per ``_read_vt_input``'s own documented residual gap,
+        is not provably bounded in the worst case. The relay thread is a
+        daemon, so one still running past the timeout is harmless to leave
+        behind at process exit.
+        """
         self._stop.set()
         if self._proc and self._proc.isalive():
             try:
                 self._proc.terminate(force=True)
             except Exception:
                 pass
+        if self._vt_relay is not None:
+            self._vt_relay.join(timeout=_VT_RELAY_STOP_JOIN_SECONDS)
+        self._restore_stdin_mode()
 
     # ---- injection (the reason the PTY exists) ---------------------------
 
@@ -469,6 +594,29 @@ class PtySession:
         return "\n".join(lines[-n:])
 
     # ---- internals -------------------------------------------------------
+
+    def _restore_stdin_mode(self) -> None:
+        """Write the console mode Task 3.1 saved (``self._saved_stdin_mode``)
+        back onto stdin, exactly once.
+
+        No-op when there's nothing to restore: the legacy backend never
+        mutates stdin's mode at all (``self._saved_stdin_mode`` stays
+        ``None``), and a second call after a successful restore is also a
+        no-op -- the saved value is cleared the moment it's used, which is
+        what makes it safe to call this from both ``stop()`` (Task 3.3,
+        normal exit) and ``start()``'s own ``except`` block (Task 3.4, setup
+        failure) without risking a double ``SetConsoleMode`` call or
+        restoring a stale value after a later ``start()`` re-mutated it.
+        """
+        if self._saved_stdin_mode is None:
+            return
+        mode = self._saved_stdin_mode
+        self._saved_stdin_mode = None
+        if os.name != "nt":
+            return
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.GetStdHandle(STDIN_HANDLE)
+        kernel32.SetConsoleMode(handle, mode)
 
     def _record(self, chunk: str) -> None:
         clean = strip_ansi(chunk).replace("\r", "")
