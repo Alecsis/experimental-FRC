@@ -289,14 +289,34 @@ routines remain dormant otherwise, unchanged from today.
 
 ### Task 1.1: Exercise the SysId command lifecycle in sim, verify logging/telemetry/integration
 
-Not yet implemented — planning only, per this session's explicit instruction. When implemented, this task should:
-- Boot the robot in sim (matching `AutoRegressionTestBase`'s proven `Robot()`-thread pattern).
-- Select the Translation routine (`useTranslationSysId()`), schedule `sysIdQuasistatic(kForward)` for a bounded sim
-  window (not the full open-ended timeout), confirm it runs without exception, then repeat for `dynamic(kForward)`.
-- After the run, locate the produced wpilog and confirm `Drive/AppliedVoltsPerModule` (and ideally
-  `SwerveStates/Measured`) show real, changing samples specifically during the SysId window — proving telemetry
-  integration, not just that the robot booted.
-- Keep assertions scoped to "the pipeline ran and produced data" — no gain-value assertion belongs in this test.
+- [x] **Implemented** — `src/test/java/frc/robot/subsystems/CommandSwerveDrivetrainSysIdSimWorkflowTest.java`
+  (new file). Boots the robot in sim (`AutoRegressionTestBase`'s proven `Robot()`-thread pattern), selects the
+  Translation routine (`useTranslationSysId()`), schedules `sysIdQuasistatic(kForward)` for a bounded 3s window
+  (not the full 10s default timeout), confirms it's still scheduled (not errored out) mid-window, cancels it, then
+  repeats with `sysIdDynamic(kForward)` for a bounded 1.5s window. No `CommandSwerveDrivetrain.java` production
+  code was touched — every method this test calls (`useTranslationSysId`, `sysIdQuasistatic`, `sysIdDynamic`)
+  already existed and was already wired (per `docs/SysId_Characterization_Checklist.md`'s "ready now" finding).
+- [x] **Telemetry/analysis-pipeline check** — after the run, reads the produced wpilog via WPILib's
+  `DataLogReader`/`DataLogRecord` (the same library `frc.robot.auto.WpilogTrajectoryErrorReader` uses), and
+  asserts `Drive/AppliedVoltsPerModule` shows >10 samples, a max-abs value >0.5V, and >3 distinct rounded values —
+  proving the signal actually ramped/stepped during the SysId window rather than sitting at a constant (e.g. 0).
+- [x] **SignalLogger/hoot-log check — ran, and produced a real (negative) finding, not assumed either way.**
+  Phoenix's `SignalLogger` writes a separate `.hoot` file (`docs/SysId_Characterization_Checklist.md` §3), distinct
+  from the AdvantageKit wpilog. Confirmed empirically, 3/3 consistent runs: **no `.hoot` file appears in `logs/`
+  during this headless JUnit sim harness** — `SignalLogger.start()` still runs without error (per
+  `Telemetry.java:37`, unconditional at boot) and the `SysIdTranslation_State` callback's `SignalLogger.writeString`
+  calls never throw, but no file is written under this harness (no real CAN bus/CANivore present). This is scoped
+  as an *observation*, not a test failure: Task 1.1's own success criteria never claimed hoot-log file production
+  would work in sim, and the checklist's §6 already flags real hoot capture as physical-robot-only. Recorded here so
+  a future session doesn't waste time trying to make the sim JUnit harness produce an analyzable `.hoot` file — it
+  structurally can't without real CAN hardware.
+- [x] **Kept assertions scoped to "the pipeline ran and produced data"** — no `kS`/`kV`/`kA` value is computed or
+  asserted anywhere in this test, per this task's own success criteria. That computation is Task 1.2's job, not
+  started this session per explicit instruction.
+
+**Verification:** `CommandSwerveDrivetrainSysIdSimWorkflowTest` passed 3/3 consecutive runs. `./gradlew compileJava`
+BUILD SUCCESSFUL. `python SKILLS/run_headless_sim.py --run-seconds 12` PASS. Full `./gradlew test` gate: see the
+session note for the result recorded there.
 
 ### Task 1.2: Compute placeholder gains from the sim run, prove the analysis leg works
 
