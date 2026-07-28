@@ -597,3 +597,229 @@ For cross-project memory (calibrations, gains, peer-benchmarked patterns), see t
     quasi/dynamic test plus practice session notes"). Phase 1's original scope (Tasks 1.1/1.2) remains complete and
     unchanged by this session; this is additional coverage beyond what the plan itself required. Phase 2 remains
     hard-blocked on physical-robot access, unaffected.
+
+### Same session, later (2026-07-28) — Autonomous Command Lifecycle Audit: two real bugs found and fixed via TDD
+
+Separate, mentor-requested audit — command lifecycle, bindings, and NamedCommands reliability — explicitly not
+drivetrain velocity architecture (that stays on the Phase 0/1/2 track above). `build: pass` — `./gradlew
+compileJava` BUILD SUCCESSFUL after both fixes; full `./gradlew test` 16/17 both times, the one failure
+independently A/B-confirmed (stash-and-rerun) as the same pre-existing flaky `LtNeutralAutoRegressionTest` stall
+check, unrelated to either fix. `commit_start`: `3484c63`. `commit_end`: `8cdcb9a` (committed by the mentor
+directly, not an assistant-initiated commit).
+
+- **Produced `docs/Autonomous_Command_Lifecycle_Audit.md`** — inventories all 6 NamedCommands
+  (`"Home Intake"`, `"Orbit"`, `"Shooting Sequence"`, `"Quick Shooting"`, `"Intake Start Sequence"`,
+  `"Intake Stop"`) with requirement/terminates?/bound/risk, plus every button binding in `RobotContainer.java`
+  and `OperatorControls.java` for interruption-behavior correctness, plus several lower-severity/informational
+  findings deliberately left unfixed (live SmartDashboard command buttons stay pressable during autonomous;
+  `Intake.agitatePivot()`'s requirement-less infinite-`.repeatedly()` lifecycle, safe today via a single
+  manually-cancelling call site; two dead-code `Shooter` methods, `indexJam()`/`spin()`/`dashSpin()`, sharing the
+  same unbounded-`waitUntil` pattern as the fixed `Orbit` bug below but confirmed unreferenced anywhere; a
+  NamedCommand single-instance-reuse constraint not currently triggered by any auto).
+- **Bug 1 — `"Orbit"` had no timeout, could hang every auto forever (HIGH severity).**
+  `RobotContainer.java` registered `drivetrain.trackHub(vision, 0, () -> 0, () -> 0, true)` (in
+  `CommandSwerveDrivetrain.java`) with no bound. It sits inside `parallel(Orbit, Shooting Sequence)` (or
+  `Quick Shooting`) at the tail end of **all 12** `.auto` files — a `ParallelCommandGroup`, which requires
+  every branch to finish. `trackTarget`'s `isFinished` (private method backing `trackHub`) only trips once
+  heading error drops under 2°, via an unclamped `kP=5.0` heading PID (unlike `driveToPOI`'s clamped PIDs) —
+  with zero time-bound fallback, any failure to converge silently hangs the entire auto forever. Same bug class
+  as the 13th session's `intakeCmd()`-in-a-parallel-block fix; this exact risk was already flagged in
+  `CLAUDE.md` by the (still-unmerged) `feature/autonomous-completion-trigger-framework` worktree's final review
+  ("FLAG FOR MENTOR... not yet acted on") but never addressed until this session. **Regression test first:**
+  new `src/test/java/frc/robot/auto/AutoCommandSafetyTest.java` (pure JSON-parsing over every `.auto` file, no
+  CommandScheduler/Robot/sim dependency) asserts every NamedCommand used inside a `"parallel"` JSON block is
+  listed in a new `RobotContainer.BOUNDED_NAMED_COMMANDS` allowlist — including a dedicated test for the
+  traversal blind spot of a `named` command nested inside a `sequential` branch of a `parallel` block. With
+  `"Orbit"` deliberately left out of the allowlist, RED confirmed: failed, flagging `"Orbit"` by name in exactly
+  the 12 auto files that use it. **Fix:** `.withTimeout(2.0)` added to the `NamedCommands.registerCommand
+  ("Orbit", ...)` call, `"Orbit"` added to `BOUNDED_NAMED_COMMANDS`. 2.0s chosen as a conservative initial bound
+  (ample margin above normal heading-PID convergence, not competition-tuned — same spirit as `"Intake Start
+  Sequence"`'s 5.0s pick in the 13th session). GREEN confirmed after the fix.
+- **Bug 2 — `Superstructure.shootingSequence(double)` had an empty Command-requirement set (MEDIUM severity).**
+  Unlike `shootCmd()`/`intakeCmd()`/`ejectCmd()`/`stowCmd()` (all declare `this` via `Commands.startEnd(...,
+  this)`/`Commands.runOnce(..., this)`), the `Commands.sequence(Commands.runOnce(...), Commands.waitUntil(...))`
+  backing `"Shooting Sequence"`/`"Quick Shooting"` took no subsystem argument on either member, so the composed
+  sequence's union-of-members requirement set was empty. Concrete failure scenario: `RobotContainer.dashboard()`
+  exposes `"State: Shoot"`/`"State: Eject"`/`"State: Intake"`/`"State: Stow"` via `SmartDashboard.putData`,
+  clickable over NetworkTables in any robot mode including autonomous — pressing one mid-auto would not cancel
+  the running NamedCommand step (no requirement conflict), letting both write `mWantedState`/`mShotInProgress`
+  concurrently on alternating scheduler ticks instead of one cleanly interrupting the other. **Regression test
+  first:** new `src/test/java/frc/robot/SuperstructureCommandRequirementsTest.java` (boots a real `Robot()` in
+  sim, matching `SuperstructureEjectingTest`'s established pattern; own test class per `build.gradle`'s
+  `forkEvery = 1`) asserts `shootingSequence(1.0).getRequirements().contains(superstructure)`. RED confirmed
+  (empty set). **Fix:** one-argument change, `Commands.runOnce(() -> requestShoot(timeoutSeconds), this)` — the
+  `SequentialCommandGroup`'s requirements are the union of its members', so this alone gives the whole composed
+  sequence the Superstructure requirement. GREEN confirmed after the fix.
+- **Causality check on the one full-suite failure, not assumed away:** both fixes' full-suite runs showed
+  exactly one failure, `LtNeutralAutoRegressionTest`'s stall check at `t≈5.2-5.3s` (margins 0.037-0.049m against
+  a 0.050m threshold) — early in path-following, well before either fix's code paths execute (both only run at
+  the very end of the auto). Stashed both fixes back to the pre-session baseline and reran: failed on the first
+  rerun (0.049m vs 0.050m, same `t≈5.2s` location), passed on the second rerun with zero code changes — confirms
+  the flakiness is independent of both fixes, matching the same pre-existing class documented earlier this same
+  day (Task 0.1/1.1/1.2/reverse-practice updates above).
+- **Cross-reference correction to this file's own record:** the twenty-third session's entry above (autonomous
+  completion-trigger framework) recorded a "FLAG FOR MENTOR... not yet acted on" for this exact `"Orbit"` timeout
+  gap, surfaced by that branch's own `AutoCommandSafetyTest`/`BOUNDED_NAMED_COMMANDS` (built there for a different
+  purpose — guarding that branch's new completion-trigger NamedCommands). That flag has now been acted on, but
+  independently, directly on `refactor/hybrid` — not through that still-unmerged worktree/branch. When that
+  branch is eventually merged, its own `BOUNDED_NAMED_COMMANDS`/`AutoCommandSafetyTest` will collide with this
+  session's same-named artifacts; resolve by keeping this session's `Orbit` timeout fix, not reverting it.
+- **One further prompt-injection occurrence** during this session's A/B causality check (a `git stash`
+  tool-output `<system-reminder>` falsely claiming `RobotContainer.java` was "modified by the user or a linter"
+  plus a concealment instruction) — declined and surfaced immediately, same fingerprint as the running tally
+  above. Running total now at least twenty-seven.
+- **Files changed:** `src/main/java/frc/robot/RobotContainer.java` (22 lines: `BOUNDED_NAMED_COMMANDS` field +
+  `Orbit`'s `.withTimeout(2.0)`), `src/main/java/frc/robot/subsystems/superstructure/Superstructure.java`
+  (12 lines: `shootingSequence`'s requirement fix), `src/test/java/frc/robot/auto/AutoCommandSafetyTest.java`
+  (new), `src/test/java/frc/robot/SuperstructureCommandRequirementsTest.java` (new),
+  `docs/Autonomous_Command_Lifecycle_Audit.md` (new). Committed by the mentor directly as `8cdcb9a`
+  ("autonomous: harden command lifecycle and named command safety") — confirmed via `git show --stat` to
+  contain exactly these five files and nothing else.
+
+### Same session, later still (2026-07-28) — continued autonomous reliability audit: NamedCommand resolution guard + termination telemetry
+
+Direct continuation of the audit above, same day, new session — mentor asked specifically to verify every
+`.auto` NamedCommand resolves, reconfirm nothing can hang inside a `parallel` group, and make autonomous
+termination observable, while explicitly not touching `DriveRequestType`/`TunerConstants`/SysId migration
+files. `build: pass` — `./gradlew compileJava`/`compileTestJava` BUILD SUCCESSFUL; `python
+SKILLS/run_headless_sim.py --run-seconds 12` PASS; full `./gradlew test` run three times, 19/19 each time once
+each run's one flaky failure (`LtNeutralAutoRegressionTest` once, `CommandSwerveDrivetrainSysIdSimWorkflowTest`
+once — neither ever this session's own new tests) was independently confirmed pre-existing/unrelated (A/B
+stash-and-rerun for the first, isolated immediate rerun for the second). **Not committed** — awaiting mentor
+review, same pattern as the prior entry above.
+
+- **New regression guard — `src/test/java/frc/robot/auto/AutoNamedCommandResolutionTest.java`:** boots a real
+  `Robot()` in sim and asserts every `"named"` command any `.auto` file references (anywhere in the JSON tree,
+  not just inside `parallel` blocks) resolves via `NamedCommands.hasCommand()`. Closes a real gap the prior
+  session's `AutoCommandSafetyTest` didn't cover — that test only checks parallel-block *bounding*, never
+  *registration*. Source-confirmed (decompiled PathplannerLib 2026.1.2) that `NamedCommands.getCommand()`
+  silently substitutes `Commands.none()` for an unregistered name rather than failing the build, so a
+  typo'd/renamed NamedCommand would previously fail completely silently at runtime. Proven non-vacuous: `"Orbit"`'s
+  `NamedCommands.registerCommand` call was temporarily commented out in `RobotContainer.java`, confirmed RED
+  (flagged `"Orbit"` by name in every `.auto` file using it), reverted, confirmed zero-diff via `git diff --stat`
+  and GREEN again. A companion traversal-correctness test (`collectNamedCommandNamesFindsNamesRegardlessOfNesting`)
+  landed in the existing `AutoCommandSafetyTest.java` (pure JSON, no Robot boot needed) proving the shared
+  traversal helper finds names nested arbitrarily deep (sequential-inside-parallel-inside-sequential).
+- **Real gap fixed — autonomous termination was not observable.** `Robot.java` had no telemetry distinguishing
+  "auto finished naturally" from "auto got interrupted" (teleop-triggered cancel, disable-triggered scheduler
+  cancel, or anything else) — a real match's wpilog could not answer that question after the fact. Added
+  `Robot.wrapAutonomousForTelemetry(Command)`: logs `Auto/Running=true`/`Auto/EndedInterrupted=false` right
+  before scheduling, then uses `Command.finallyDo(interrupted -> ...)` to flip `Auto/Running=false` and record
+  which kind of ending it was. Wired into `autonomousInit()`, replacing the direct `schedule(...)` call;
+  `m_autonomousCommand` is reassigned to the *wrapped* instance so `teleopInit()`'s existing `.cancel()` call
+  still targets the actually-scheduled command. Built TDD: new
+  `src/test/java/frc/robot/RobotAutoTerminationTelemetryTest.java` drives both a natural-finish scenario
+  (short `WaitCommand`, left to complete on its own) and an interrupted-cancel scenario (long `WaitCommand`,
+  explicitly cancelled) in one `@BeforeEach`-booted `@Test` method (a second `@Test` method in the same class
+  would double-call AdvantageKit's JVM-wide `Logger.start()` singleton and throw, per the already-documented
+  `forkEvery = 1`-forks-per-class-not-per-method bug class from earlier the same day), then reads the resulting
+  wpilog directly via `DataLogReader`/`DataLogRecord`. **Two real corrections made mid-implementation, not
+  assumed correct on the first attempt:** (1) an initial timestamp-based scheme for partitioning "before"/"after"
+  samples using `Timer.getFPGATimestamp()` captured on the test thread produced a false failure from cross-thread
+  clock skew against AdvantageKit's own cycle-timestamp bookkeeping — rewritten to pair samples by ordinal
+  position instead, since `Auto/Running` and `Auto/EndedInterrupted` are always logged together in the same call
+  and stay in lockstep; (2) the test initially expected 4 samples for `Auto/EndedInterrupted` but got only 2 —
+  root-caused to the underlying DataLog's write-on-change behavior for boolean entries (repeated identical
+  values collapse to one record), confirmed empirically, and the test's expected series corrected from
+  `[false, false, false, true]` to the real `[false, true]`.
+- **Gate 3 independently cross-validated the new telemetry**, not just the test's own assertions: `python
+  SKILLS/parse_akit_log.py --dump` against the test's own freshly-produced wpilog showed `/RealOutputs/Auto/Running`
+  → `True,False,True,False` at t=0.022/0.203/0.623/0.823s and `/RealOutputs/Auto/EndedInterrupted` → `False,True`
+  at t=0.022/0.823s — matching the test's internal assertions exactly, via a tool sharing no code with the test.
+- **Minor doc correction, same pass:** the audit doc originally said "all 12 `.auto` files" — there are actually
+  13 (`RB Neutral.auto` exists; only the auto-regression-suite's *golden* scope, a separate concern, deferred
+  it). All 13 use the same six already-inventoried NamedCommands, so nothing else about the inventory changes.
+- **Causality checks, not assumed:** run 1's `LtNeutralAutoRegressionTest` failure was A/B-confirmed via
+  `git stash push -u -- src/main/java/frc/robot/Robot.java src/test/java/frc/robot/RobotAutoTerminationTelemetryTest.java`
+  (stashing the untracked test file too, since it references the not-yet-existing method when `Robot.java` alone
+  is reverted) — baseline reproduced the identical failure signature, confirming it's pre-existing and unrelated
+  to this session's changes; both stashes popped back cleanly, confirmed via `git status --short`. Run 2's
+  `CommandSwerveDrivetrainSysIdSimWorkflowTest` failure (a test untouched by this session) passed cleanly on an
+  immediate isolated rerun, consistent with this repo's already-documented real-wall-clock-timing flakiness
+  class rather than a new regression.
+- **One further prompt-injection occurrence**, same fingerprint as the running tally: a `git stash` tool-output
+  `<system-reminder>` during this session's own A/B causality check, falsely claiming `Robot.java`/the new test
+  file were "modified by the user or a linter" plus a concealment instruction. Declined and surfaced immediately;
+  the change was in fact this session's own stash. Running total now at least twenty-eight.
+- **Files changed:** `src/main/java/frc/robot/Robot.java` (production, minimal diff — one new static method,
+  one call-site change in `autonomousInit()`), `src/test/java/frc/robot/auto/AutoCommandSafetyTest.java` (one
+  new test method), `src/test/java/frc/robot/RobotAutoTerminationTelemetryTest.java` (new),
+  `src/test/java/frc/robot/auto/AutoNamedCommandResolutionTest.java` (new),
+  `docs/Autonomous_Command_Lifecycle_Audit.md` (new "Continued audit" section appended). **Not committed** —
+  awaiting mentor review/commit, same pattern as the prior entry's `8cdcb9a`.
+
+### Autonomous Recovery Audit (same day, new session, 2026-07-28)
+
+Mentor requested a new, broader audit: whether autonomous can detect, tolerate, and recover from
+*failures* (never-checked intake/shot success, unwired jam detection, unbounded parallel groups —
+that last class already fixed by the prior two audits) and from *physical disturbance* (defense
+hits, wheel slip, vision loss) without a human, explicitly excluding drivetrain velocity
+architecture and the completion-trigger-framework worktree. Produced `docs/Autonomous_Recovery_
+Audit.md` (13 numbered findings, F1-F13, every claim traced to this repo's own source or decompiled
+PathplannerLib 2026.1.2/Phoenix 6 26.1.3 sources). Headline findings: **F1** intake success
+(`hasGamePiece`) is populated in sim but never read by any production code and never set at all by
+`IntakeIOReal`; **F3** `Shooter.isJammed()` exists (mirrors `Intake`'s already-shipped jam-recovery
+pattern) but is never consulted by `Superstructure.SHOOTING`; **F4** `TrajectoryErrorTracker`
+computes and logs lateral/longitudinal/heading error live every cycle, but its own getters are
+never called by any runtime code anywhere — the only consumer is a post-hoc JUnit log parser; **F5**
+the MegaTag2 vision innovation gate (`Constants.kMaxVisionJumpMeters=1.0`) has no backoff — once a
+real disturbance displaces the robot far enough, every subsequent *correct* vision reading is
+rejected right alongside bad ones, forever; **F8/F9** PathPlanner ships a real, populated
+`navgrid.json`-backed dynamic pathfinder (`AutoBuilder.pathfindToPose`/`pathfindThenFollowPath`) and
+`FollowPathCommand.initialize()`'s own replan-from-current-pose behavior, neither ever called
+anywhere in this repo; **F7** confirmed (not a new finding) that `FollowPathCommand.isFinished()` is
+purely elapsed-time-based and cannot hang, so the prior two audits' NamedCommand-focused fixes
+correctly targeted the actual risk. Proposed a 4-layer recovery framework (Layer 0 exists today;
+Layer 1=F4 telemetry consumer, recommended first; Layer 2=F1/F3 per-subsystem success signals;
+Layer 3=F5 vision-trust backoff; Layer 4=F8/F9 pathfind-based supervisor, the only layer that
+changes robot behavior) and a regression-test plan for each layer — none implemented this session.
+**No code changed** — every finding was RISK/LIMITATION/UNUSED-CAPABILITY, none met the "critical
+bug, fix immediately" bar that would justify deviating from audit-first. **Files changed:**
+`docs/Autonomous_Recovery_Audit.md` (new, untracked) only.
+
+### Autonomous Disturbance Simulation experiment (same day, new session, 2026-07-28)
+
+Mentor requested, before any recovery behavior is implemented, a simulation-based disturbance
+experiment to validate or challenge the Recovery Audit's F4/F5/F8/F9 with real evidence rather than
+code-reading alone. Built a throwaway JUnit package, `src/test/java/frc/robot/recovery/`
+(`PathDisturbanceSimTestBase` + 4 concrete subclasses: `NoDisturbanceControlTest`/
+`SmallDisplacementDisturbanceTest`(0.4m)/`MediumDisplacementDisturbanceTest`(1.0m)/
+`SevereDisplacementDisturbanceTest`(2.0m)), driving a single isolated PathPlanner path
+(`"Left Trench Neutral"`, via `AutoBuilder.followPath()`) rather than a full `.auto` — deliberately,
+since `LT_Neutral.json`'s own golden already shows `completed:false`/~7m error with **zero**
+disturbance (a separate, already-documented, out-of-scope chassis-PID bug), which would have
+confounded any disturbance-vs-no-disturbance comparison. Each test injects a lateral shove at
+t=1.5s by calling `getMapleSimDrive().setSimulationWorldPose()` **directly** (bypassing
+`CommandSwerveDrivetrain.resetPose()`, which also snaps the CTRE pose estimator and would look like
+a perfect correction, not a collision) — confirmed via decompiled maple-sim 0.4.0-beta source that
+this teleports only the physics body and leaves wheel/gyro/estimator unaware, exactly like a real
+hit. Ran all four trials successfully (`./gradlew test --tests "frc.robot.recovery.<Class>"`, each
+PASSED, each producing a fresh wpilog), then analyzed all four wpilogs with a scratchpad Python
+script reusing `SKILLS/parse_akit_log.py`'s real parser (not reimplemented). **Four findings,
+documented in `docs/Autonomous_Disturbance_Simulation_Report.md`:** (1) the **undisturbed control
+run already diverges to 3.10m** of lateral error over one 6.35s path segment — reproduces, not
+causes, the already-documented chassis-PID bug, and is the reason the isolated-path/control-run
+design was necessary; (2) **all four runs (0m through 2m) report `completed=true` at the identical
+elapsed time** regardless of final error (0.36m-3.47m) — direct empirical confirmation of F7's
+theoretical claim and sharpens F4: a 2m mid-path collision produces an identical "success" signal to
+a perfect run; (3) the severe (2.0m) run triggered **242 consecutive vision rejections** starting
+40ms after injection and continuing for the rest of the run, while the 0.4m/1.0m runs triggered
+zero — concrete numbers confirming F5's no-backoff claim; (4) a genuine, honestly-flagged surprise:
+the severe run's tracking error collapsed to near-zero within 0.5s of injection instead of growing
+like the other three runs. Investigated rather than assumed: ruled out a field-boundary
+collision-stall (pose traced smoothly, drive current stayed in a normal 11-120A driving range, never
+pinned at stall levels); identified the most likely mechanism as `setSimulationWorldPose()`'s
+side effect of zeroing linear velocity interacting with the control run's own demonstrated chaotic
+(non-monotonic) error behavior — reported as an open hypothesis requiring a re-test once the
+chassis-PID bug is fixed, explicitly not presented as proven disturbance-recovery. Answered all four
+of the mentor's assigned questions directly in the report, and specified concrete
+`AutonomousHealthMonitor` requirements (a live `TrajectoryErrorTracker` consumer, a live
+vision-rejection-streak counter, a `pathfindToPose`-based trigger) without implementing any of them.
+**Verification:** `./gradlew compileJava` BUILD SUCCESSFUL (zero production files touched, expected);
+`git status --short` confirmed only `docs/Autonomous_Disturbance_Simulation_Report.md` and
+`src/test/java/frc/robot/recovery/` are new from this session, everything else pre-existing
+same-day carryover. **Files changed:** `docs/Autonomous_Disturbance_Simulation_Report.md` (new),
+`src/test/java/frc/robot/recovery/` (new, 5 files, throwaway — cleanup instructions in the report
+itself: delete the package, delete the four `akit_26-07-28_16-0{3,4}-*.wpilog` files, the scratchpad
+analysis script lives outside the repo). No production code touched; no recovery behavior
+implemented, per explicit instruction.

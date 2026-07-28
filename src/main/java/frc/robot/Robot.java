@@ -130,12 +130,36 @@ public void autonomousInit() {
     // stale IMU seed and produces odometry snaps the first time a tag comes into view.
     m_vision.setIMUMode(4);
     m_vision.setIMUAssistAlpha(0.001);
-    m_autonomousCommand = m_robotContainer.getAutonomousCommand();
+    Command selected = m_robotContainer.getAutonomousCommand();
 
     // schedule the autonomous command (example)
-    if (m_autonomousCommand != null) {
+    if (selected != null) {
+      m_autonomousCommand = wrapAutonomousForTelemetry(selected);
       CommandScheduler.getInstance().schedule(m_autonomousCommand);
+    } else {
+      Logger.recordOutput("Auto/Running", false);
+      Logger.recordOutput("Auto/EndedInterrupted", false);
     }
+  }
+
+  /**
+   * Wraps the autonomous command so its completion is observable after the fact from a wpilog --
+   * before this, nothing distinguished "auto finished on its own" from "auto got cut off" (a
+   * teleopInit() cancel(), a disable-triggered scheduler cancel, or anything else), found during
+   * the autonomous reliability audit. {@code Auto/Running} flips true right before scheduling and
+   * false once the command ends; {@code Auto/EndedInterrupted} records which kind of ending it was.
+   * Package-private and static so {@code RobotAutoTerminationTelemetryTest} can exercise both
+   * outcomes directly without needing a real auto-chooser selection (PathPlanner's default chooser
+   * selection is a trivial {@code Commands.none()} that finishes before there is anything to
+   * observe -- see {@code AutoRegressionTestBase}'s own comment on why it bypasses the chooser too).
+   */
+  static Command wrapAutonomousForTelemetry(Command autoCommand) {
+    Logger.recordOutput("Auto/Running", true);
+    Logger.recordOutput("Auto/EndedInterrupted", false);
+    return autoCommand.finallyDo(interrupted -> {
+      Logger.recordOutput("Auto/Running", false);
+      Logger.recordOutput("Auto/EndedInterrupted", interrupted);
+    });
   }
 
   /** This function is called periodically during autonomous. */
