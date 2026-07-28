@@ -108,7 +108,7 @@ similar or larger order.
   already tested by `CommandSwerveDrivetrainSanitizeSpeedsTest`). Later tasks (Phase 3's `buildAutoRequest()`) call
   this method instead of `sanitizeAutoSpeeds()` directly.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Add to `src/test/java/frc/robot/subsystems/CommandSwerveDrivetrainSanitizeSpeedsTest.java` (existing file — add this
 test method inside the existing `CommandSwerveDrivetrainSanitizeSpeedsTest` class, alongside the two tests already
@@ -158,7 +158,7 @@ there):
 This requires adding `import static org.junit.jupiter.api.Assertions.assertTrue;` to the test file's existing
 static-import block (it currently only imports `assertEquals`).
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 ```bash
 export JAVA_HOME="/c/Users/Public/wpilib/2026/jdk"
@@ -167,7 +167,7 @@ export JAVA_HOME="/c/Users/Public/wpilib/2026/jdk"
 Expected: FAIL — `cannot find symbol: method prepareAutoSpeeds(ChassisSpeeds)` (compile error, since the method
 doesn't exist yet).
 
-- [ ] **Step 3: Implement `prepareAutoSpeeds()` and wire it in**
+- [x] **Step 3: Implement `prepareAutoSpeeds()` and wire it in**
 
 In `src/main/java/frc/robot/subsystems/CommandSwerveDrivetrain.java`, add this import near the existing
 `edu.wpi.first.wpilibj.*` imports (after line 34, `edu.wpi.first.wpilibj.DriverStation.Alliance`):
@@ -214,14 +214,14 @@ to:
                                     .withWheelForceFeedforwardsY(feedforwards.robotRelativeForcesYNewtons())),
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 ```bash
 ./gradlew test --tests "frc.robot.subsystems.CommandSwerveDrivetrainSanitizeSpeedsTest"
 ```
 Expected: PASS — all 4 tests (2 pre-existing + 2 new).
 
-- [ ] **Step 5: Full verification gate**
+- [x] **Step 5: Full verification gate**
 
 ```bash
 ./gradlew compileJava
@@ -230,13 +230,16 @@ python SKILLS/run_headless_sim.py --run-seconds 12
 ```
 Expected: BUILD SUCCESSFUL, sim PASS, full suite green.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/main/java/frc/robot/subsystems/CommandSwerveDrivetrain.java \
         src/test/java/frc/robot/subsystems/CommandSwerveDrivetrainSanitizeSpeedsTest.java
 git commit -m "drivetrain: discretize autonomous chassis speeds before sanitizing"
 ```
+
+**Note:** committed with message "Extract prepareAutoSpeeds helper for autonomous velocity migration" per
+explicit executing-session instruction, not the message drafted above.
 
 **Regression tests:**
 - `CommandSwerveDrivetrainSanitizeSpeedsTest` (all 4 methods, including the 2 new ones above).

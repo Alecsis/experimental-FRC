@@ -34,6 +34,7 @@ import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Notifier;
+import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.Subsystem;
@@ -348,6 +349,19 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         return bounded;
     }
 
+    /**
+     * Discretizes, then bounds, a raw PathPlanner chassis-speed command before it reaches CTRE's
+     * {@code ApplyRobotSpeeds} request. Discretization must run first -- it couples a small vx/vy
+     * term in from omega that {@link #sanitizeAutoSpeeds} would otherwise saturate independently
+     * of, per docs/Path_Following_Tuning_Readiness_Audit.md's sequencing note. CTRE's own official
+     * Phoenix6-Examples reference (temp_reference/Phenoix 6 API Examples/java/SwerveWithPathPlanner)
+     * and Team 6328's independent Drive.java both discretize at this same point in their own
+     * pipelines -- this repo was the outlier in omitting it.
+     */
+    ChassisSpeeds prepareAutoSpeeds(ChassisSpeeds speeds) {
+        return sanitizeAutoSpeeds(ChassisSpeeds.discretize(speeds, TimedRobot.kDefaultPeriod));
+    }
+
     private void configureAutoBuilder() {
         try {
             var config = RobotConfig.fromGUISettings();
@@ -358,7 +372,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                     // Consumer of ChassisSpeeds and feedforwards to drive the robot
                     (speeds, feedforwards) -> setControl(
                             m_pathApplyRobotSpeeds
-                                    .withSpeeds(sanitizeAutoSpeeds(speeds))
+                                    .withSpeeds(prepareAutoSpeeds(speeds))
                                     .withWheelForceFeedforwardsX(feedforwards.robotRelativeForcesXNewtons())
                                     .withWheelForceFeedforwardsY(feedforwards.robotRelativeForcesYNewtons())),
                     new LoggingHolonomicDriveController(

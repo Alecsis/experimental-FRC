@@ -6,6 +6,7 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -72,5 +73,44 @@ class CommandSwerveDrivetrainSanitizeSpeedsTest {
     assertEquals(raw.vxMetersPerSecond, bounded.vxMetersPerSecond, 1e-6);
     assertEquals(raw.vyMetersPerSecond, bounded.vyMetersPerSecond, 1e-6);
     assertEquals(raw.omegaRadiansPerSecond, bounded.omegaRadiansPerSecond, 1e-6);
+  }
+
+  @Test
+  @Timeout(30)
+  void prepareAutoSpeedsDiscretizesBeforeSanitizing() {
+    // A combined translation+rotation command is exactly the case ChassisSpeeds.discretize()
+    // exists for -- it couples a small vx/vy correction in from omega. Comparing against an
+    // independently-computed expected value (built from the same public API, not a magic number)
+    // pins the composition order: discretize() must run before sanitizeAutoSpeeds(), matching
+    // docs/Path_Following_Tuning_Readiness_Audit.md's own sequencing note.
+    ChassisSpeeds raw = new ChassisSpeeds(2.0, 1.0, 1.5);
+
+    ChassisSpeeds actual = drivetrain.prepareAutoSpeeds(raw);
+
+    ChassisSpeeds expectedDiscretized =
+        ChassisSpeeds.discretize(raw, edu.wpi.first.wpilibj.TimedRobot.kDefaultPeriod);
+    ChassisSpeeds expected = drivetrain.sanitizeAutoSpeeds(expectedDiscretized);
+
+    assertEquals(expected.vxMetersPerSecond, actual.vxMetersPerSecond, 1e-9);
+    assertEquals(expected.vyMetersPerSecond, actual.vyMetersPerSecond, 1e-9);
+    assertEquals(expected.omegaRadiansPerSecond, actual.omegaRadiansPerSecond, 1e-9);
+  }
+
+  @Test
+  @Timeout(30)
+  void prepareAutoSpeedsActuallyChangesCombinedTranslationRotationInput() {
+    // Guards against a no-op discretize() call (e.g. a future refactor accidentally passing
+    // dtSeconds=0, which would make discretize() an identity function and silently defeat this
+    // whole phase). Pure translation or pure rotation alone would not exercise the coupling term.
+    ChassisSpeeds raw = new ChassisSpeeds(2.0, 1.0, 1.5);
+
+    ChassisSpeeds prepared = drivetrain.prepareAutoSpeeds(raw);
+    ChassisSpeeds sanitizedWithoutDiscretize = drivetrain.sanitizeAutoSpeeds(raw);
+
+    boolean differs =
+        Math.abs(prepared.vxMetersPerSecond - sanitizedWithoutDiscretize.vxMetersPerSecond) > 1e-9
+            || Math.abs(prepared.vyMetersPerSecond - sanitizedWithoutDiscretize.vyMetersPerSecond) > 1e-9;
+    assertTrue(differs, "discretize() should introduce a measurable vx/vy coupling term "
+        + "for a combined translation+rotation command");
   }
 }
