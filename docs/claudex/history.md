@@ -559,3 +559,41 @@ For cross-project memory (calibrations, gains, peer-benchmarked patterns), see t
     steps and an implementation summary). Committed as `2ac441a` ("Document simulated SysId workflow validation",
     per explicit instruction). Phase 1 (Tasks 1.1 and 1.2) is now fully complete; Phase 2 remains hard-blocked on
     physical-robot access.
+
+- **SysId sim practice session — reverse-direction coverage added (2026-07-28, same-day follow-up session, commit
+  `1991bd3`).** Mentor requested a manual practice session exercising all four SysId directions (quasistatic
+  forward/reverse, dynamic forward/reverse) to validate operator procedure before hardware characterization. Task
+  1.1's existing test only covered the **forward** direction of both routines — this session closed that gap.
+  - **New file: `src/test/java/frc/robot/subsystems/CommandSwerveDrivetrainSysIdReverseSimWorkflowTest.java`** —
+    runs `sysIdQuasistatic(kReverse)` (3s) then `sysIdDynamic(kReverse)` (1.5s), same `Robot()`-thread pattern as
+    the existing forward test. Asserts a **signed** minimum voltage below −0.5V (not just magnitude), proving
+    reverse genuinely drove backward rather than merely "some nonzero value."
+  - **Real finding, not assumed:** the natural first attempt — adding a second `@Test` method to the existing
+    `CommandSwerveDrivetrainSysIdSimWorkflowTest` class — failed with `IllegalThreadStateException` from
+    AdvantageKit's `Logger.start()`. Root cause: `Logger` is a JVM-wide singleton, and `build.gradle`'s
+    `forkEvery = 1` only forks a new JVM per test **class**, not per method — the same reason every
+    `AutoRegressionTestBase` subclass is already its own one-test class. Fixed by splitting into a separate class,
+    matching that established convention. The original `CommandSwerveDrivetrainSysIdSimWorkflowTest.java` file has
+    a confirmed zero-line diff (`git diff --stat`) — nothing in it was touched.
+  - **Analysis leg re-run for reverse data** (one-off scratchpad script, not committed, mirroring Task 1.2's
+    method exactly): `kS = 0.1708 V`, `kV = 1.7428 V·s/m`, R² = 0.9149 over 149 paired samples — closely matching
+    Task 1.2's forward-direction fit (`kS=0.1849`, `kV=1.7293`, R²=0.9198), confirming the analysis pipeline
+    behaves symmetrically in both directions. Same placeholder caveat as Task 1.2: proves the pipeline, not the
+    real robot; `TunerConstants.driveGains` untouched.
+  - **Documented in new `docs/SysId_Sim_Practice_Session_2026-07-28.md`**, opening with the same
+    "NOT HARDWARE CHARACTERIZATION" warning: what was run, whether the procedure works (yes, all four
+    directions), the expected operator workflow (4-button sequential procedure per
+    `docs/SysId_Characterization_Checklist.md` §4), and sim limitations vs. real hardware (headline: no `.hoot`
+    file is producible in this harness at all — confirmed again this session — meaning the *actual* WPILib/Phoenix
+    Tuner X analyzer tool has never been exercised, sim or real, only substituted for by a hand-rolled fit).
+  - **Verified:** `./gradlew compileJava` BUILD SUCCESSFUL; `python SKILLS/run_headless_sim.py --run-seconds 12`
+    PASS; both SysId test classes (forward + reverse) pass, 3 consistent runs total across this session. Full
+    `./gradlew test`: 12/13 passing — the one failure, `LtNeutralAutoRegressionTest.regressionCheck()`
+    ("moved 0.027m over the preceding 0.98s, threshold 0.050m"), is the same already-documented pre-existing flaky
+    stall check from earlier the same day (Task 0.1/1.1 updates above) — confirmed not caused by this session
+    since `git status --short` showed only the new test file changed, zero production code touched.
+  - **Files changed:** `src/test/java/frc/robot/subsystems/CommandSwerveDrivetrainSysIdReverseSimWorkflowTest.java`
+    (new), `docs/SysId_Sim_Practice_Session_2026-07-28.md` (new). Committed as `1991bd3` ("sim sysid reverse
+    quasi/dynamic test plus practice session notes"). Phase 1's original scope (Tasks 1.1/1.2) remains complete and
+    unchanged by this session; this is additional coverage beyond what the plan itself required. Phase 2 remains
+    hard-blocked on physical-robot access, unaffected.
