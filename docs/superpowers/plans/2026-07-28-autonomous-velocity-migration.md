@@ -320,13 +320,20 @@ session note for the result recorded there.
 
 ### Task 1.2: Compute placeholder gains from the sim run, prove the analysis leg works
 
-Not yet implemented — planning only. When implemented: using the wpilog from Task 1.1 (`Drive/AppliedVoltsPerModule`
-vs. `SwerveStates/Measured` module speed, matched by timestamp), compute a crude linear-regression estimate of
-`kV`/`kS` — the same relationship SysId's own analyzer computes, done manually here to prove the *data* supports that
-computation, not to substitute for the real tool. Record the result in a new results doc
-(`docs/SysId_Sim_Workflow_Validation.md`), labeled unmistakably: **"SIMULATION-DERIVED PLACEHOLDER — DO NOT USE FOR
-REAL ROBOT CHARACTERIZATION,"** repeating this TODO's requirement verbatim so the doc is self-contained even if read
-without this plan.
+- [x] **Implemented** — re-ran `CommandSwerveDrivetrainSysIdSimWorkflowTest` to produce a fresh wpilog
+  (`logs/akit_26-07-28_11-56-19.wpilog`, no production code touched). A one-off analysis script (not committed —
+  this task is documentation/analysis-only, per its own scope) reused `SKILLS/parse_akit_log.py` to pair
+  `Drive/AppliedVoltsPerModule` (mean abs across 4 modules) against `DriveState/Speeds`'s `vx` by nearest
+  timestamp (all 151 samples matched within 20ms), then fit `V = kS·sign(vx) + kV·vx` via ordinary least squares
+  — the same two-term relationship SysId's own analyzer computes.
+- [x] **Result recorded** in `docs/SysId_Sim_Workflow_Validation.md`: `kS = 0.1849 V`, `kV = 1.7293 V·s/m`,
+  R² = 0.9198 over 151 paired samples — a well-conditioned, non-degenerate fit, proving the pipeline (telemetry
+  capture → wpilog → timestamp matching → regression) works end-to-end.
+  Labeled unmistakably throughout: **"SIMULATION-DERIVED PLACEHOLDER — DO NOT USE FOR REAL ROBOT
+  CHARACTERIZATION,"** repeating the Phase 1 TODO's requirement verbatim so the doc is self-contained even if read
+  without this plan.
+- [x] **Explicitly not claimed:** that the numbers are numerically reasonable or usable beyond proving the
+  pipeline — `TunerConstants.driveGains` was not touched, and the doc says so directly.
 
 **Regression tests:** Once implemented, the Task 1.1 test itself (asserts the pipeline runs and telemetry is
 captured) is this phase's regression test — re-run on every future change to `CommandSwerveDrivetrain`'s SysId
