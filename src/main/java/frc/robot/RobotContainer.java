@@ -10,6 +10,7 @@ import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
+import java.util.Set;
 import java.util.jar.Attributes.Name;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
@@ -41,6 +42,18 @@ import frc.robot.utility.TrajectoryErrorTracker;
 @SuppressWarnings("unused")
 
 public class RobotContainer {
+        /**
+         * NamedCommands that are structurally guaranteed to terminate on their own -- checked by
+         * {@code AutoCommandSafetyTest} against every NamedCommand used inside a PathPlanner
+         * "parallel" block (which requires every branch to finish). A NamedCommand belongs here
+         * only once it has a real time bound or self-finishing condition; see
+         * {@link frc.robot.subsystems.superstructure.Superstructure#intakeSequence(double)}'s
+         * javadoc for the bug class this guards against.
+         */
+        public static final Set<String> BOUNDED_NAMED_COMMANDS = Set.of(
+                        "Home Intake", "Orbit", "Shooting Sequence", "Quick Shooting",
+                        "Intake Start Sequence", "Intake Stop");
+
         private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top
                                                                                       // speed
         private double MaxAngularRate = RotationsPerSecond.of(2).in(RadiansPerSecond); // 3/4 of a rotation per
@@ -74,8 +87,15 @@ public class RobotContainer {
                                                                     // since intake is not chained
                 NamedCommands.registerCommand(
                                 "Home Intake", intake.homing());
+                // trackHub(..., finishOnAlign=true) only self-finishes once heading error drops
+                // under trackTarget's tolerance -- with no fallback, a stale pose or an
+                // unconverged heading PID hangs this forever. It runs inside a
+                // parallel(Orbit, Shooting Sequence) block in every auto (a ParallelCommandGroup,
+                // which requires every branch to finish), so an unbounded Orbit would silently
+                // stall the whole auto -- the same bug class as the old intakeCmd() hang (see
+                // Superstructure.intakeSequence's javadoc). Bounded here the same way.
                 NamedCommands.registerCommand("Orbit",
-                                drivetrain.trackHub(vision, 0, () -> 0, () -> 0, true));
+                                drivetrain.trackHub(vision, 0, () -> 0, () -> 0, true).withTimeout(2.0));
                 NamedCommands.registerCommand(
                                 "Shooting Sequence", superstructure.shootingSequence(5.0));
                 NamedCommands.registerCommand(
