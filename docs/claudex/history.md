@@ -500,3 +500,32 @@ For cross-project memory (calibrations, gains, peer-benchmarked patterns), see t
   the pre-existing baseline. Both declined and surfaced to the mentor immediately per the Trust Boundary policy;
   work continued unaffected. This corrects/supersedes the audit-writing half's "no occurrence" line directly above
   — the full session had two, both in this later half.
+- **Autonomous Velocity migration — Phase 1 Task 1.1 implemented and committed (thirty-first session, 2026-07-28,
+  later the same day as Phase 0 above):** sim-only integration test proving the already-wired SysId command
+  lifecycle, AdvantageKit telemetry, and wpilog analysis pipeline all work end-to-end — **not** hardware
+  characterization, no gain value computed or asserted. New
+  `src/test/java/frc/robot/subsystems/CommandSwerveDrivetrainSysIdSimWorkflowTest.java` boots the robot in sim
+  (`AutoRegressionTestBase`'s proven `Robot()`-thread pattern), selects the Translation SysId routine, runs
+  `sysIdQuasistatic(kForward)` for a bounded 3s window then `sysIdDynamic(kForward)` for 1.5s (not the full 10s
+  default timeout), then reads the resulting wpilog via WPILib's `DataLogReader`/`DataLogRecord` to assert
+  `Drive/AppliedVoltsPerModule` shows >10 samples, max-abs >0.5V, and >3 distinct values — proving the signal
+  actually ramped/stepped during the run, not a constant. **Zero production code touched** — every method exercised
+  (`useTranslationSysId`, `sysIdQuasistatic`, `sysIdDynamic`) already existed and was already wired.
+  - **Verified:** new test passed 3/3 consecutive runs; `./gradlew compileJava` BUILD SUCCESSFUL;
+    `python SKILLS/run_headless_sim.py --run-seconds 12` PASS. Full `./gradlew test` (7 classes/12 tests): 11/12
+    passed — the one failure, `LtNeutralAutoRegressionTest`'s stall check ("moved 0.047m... threshold 0.050m"), is
+    the same pre-existing razor-thin-margin flakiness class documented in the Task 0.1 entry directly above (there
+    0.045m vs 0.050m); since this task touched zero production code, there is no causal path from it to that auto's
+    behavior. Gate 3 (`python SKILLS/parse_akit_log.py`) independently confirmed, by direct inspection of
+    `/RealOutputs/Drive/AppliedVoltsPerModule` samples, a textbook 1V/s linear voltage ramp across all four modules
+    in lockstep — cross-validating the test's own assertions via a separate tool.
+  - **Genuine finding, recorded rather than assumed either way:** Phoenix's `SignalLogger` (the `.hoot` log, per
+    `docs/SysId_Characterization_Checklist.md` §3) produces **no file** in `logs/` under this headless JUnit sim
+    harness, confirmed consistently across all 3 runs (`SignalLogger.start()`/`writeString()` never throw, but
+    nothing is written) — most likely because no real CAN bus/CANivore is present for Phoenix's native logger to
+    attach to. Recorded in the plan doc so a future session doesn't spend time trying to make headless JUnit sim
+    produce an analyzable `.hoot` file.
+  - **Files changed:** `src/test/java/frc/robot/subsystems/CommandSwerveDrivetrainSysIdSimWorkflowTest.java` (new),
+    `docs/superpowers/plans/2026-07-28-autonomous-velocity-migration.md` (Task 1.1's prose replaced with checked
+    steps and an implementation summary). Committed as `7518244` ("Validate simulated SysId workflow pipeline",
+    per explicit instruction). `git status --short` clean before and after.
