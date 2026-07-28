@@ -529,3 +529,33 @@ For cross-project memory (calibrations, gains, peer-benchmarked patterns), see t
     `docs/superpowers/plans/2026-07-28-autonomous-velocity-migration.md` (Task 1.1's prose replaced with checked
     steps and an implementation summary). Committed as `7518244` ("Validate simulated SysId workflow pipeline",
     per explicit instruction). `git status --short` clean before and after.
+- **Autonomous Velocity migration — Phase 1 Task 1.2 implemented and committed (same-day follow-up session,
+  2026-07-28):** documentation/analysis-only, no production or test code touched — closes the loop on Task 1.1's
+  telemetry-capture proof by proving the *analysis* leg specifically. Re-ran
+  `CommandSwerveDrivetrainSysIdSimWorkflowTest` to produce a fresh wpilog (`logs/akit_26-07-28_11-56-19.wpilog`,
+  PASSED). A one-off Python script, written to the session scratchpad and deliberately not committed (this task is
+  scoped as documentation/analysis-only, per the plan), reused `SKILLS/parse_akit_log.py`'s existing wpilog parser
+  to pair `/RealOutputs/Drive/AppliedVoltsPerModule` (mean abs across the 4 drive modules) against
+  `/RealOutputs/DriveState/Speeds`'s `vx` (translation SysId drives straight, so chassis `vx` stands in for
+  per-module speed) by nearest timestamp — all 151 voltage samples matched a speed sample within 20ms — then fit
+  the same two-term model SysId's own analyzer uses, `V = kS·sign(vx) + kV·vx`, via an ordinary-least-squares 2×2
+  normal-equations solve (no external numerics dependency, consistent with this repo's existing dependency-free
+  `SKILLS/` scripts).
+  - **Result:** `kS = 0.1849 V`, `kV = 1.7293 V·s/m`, R² = 0.9198 over 151 paired samples — a well-conditioned,
+    non-degenerate fit, which is this task's entire success criterion (the pipeline works end-to-end; the numbers
+    themselves are explicitly not claimed to be meaningful — `TunerConstants.driveGains` currently uses
+    `kS=0.1, kV=0.124`, and no attempt was made to reconcile the sim-placeholder `kV` being ~14× larger, per the
+    task's own success criteria).
+  - **Recorded in new `docs/SysId_Sim_Workflow_Validation.md`**, opening with the exact "SIMULATION-DERIVED
+    PLACEHOLDER — DO NOT USE FOR REAL ROBOT CHARACTERIZATION" warning the plan's Phase 1 TODO requires, repeated
+    verbatim so the doc is self-contained if read without the plan. Explicitly states what the task does and does
+    not prove, and that Phase 2's physical-hardware precondition is unaffected.
+  - **Verified:** `git status --short`/`git diff --stat` before and after confirmed only
+    `docs/SysId_Sim_Workflow_Validation.md` (new) and the plan doc changed — `TunerConstants.java` and every
+    production/test file untouched. No `./gradlew` gate applies beyond the one test re-run (PASSED); no production
+    Java changed this task.
+  - **Files changed:** `docs/SysId_Sim_Workflow_Validation.md` (new),
+    `docs/superpowers/plans/2026-07-28-autonomous-velocity-migration.md` (Task 1.2's prose replaced with checked
+    steps and an implementation summary). Committed as `2ac441a` ("Document simulated SysId workflow validation",
+    per explicit instruction). Phase 1 (Tasks 1.1 and 1.2) is now fully complete; Phase 2 remains hard-blocked on
+    physical-robot access.
