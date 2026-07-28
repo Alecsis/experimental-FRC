@@ -151,10 +151,18 @@ public class Superstructure extends SubsystemBase {
     return Commands.runOnce(this::requestStow, this);
   }
 
-  /** Bridges the state machine into a bounded, self-finishing Command for autonomous/NamedCommands. */
+  /**
+   * Bridges the state machine into a bounded, self-finishing Command for autonomous/NamedCommands.
+   * The {@code runOnce} declares {@code this} as a requirement (unlike a bare no-arg
+   * {@code Commands.runOnce}) so the composed sequence requires Superstructure like every other
+   * bridge Command here -- without it, a concurrently-scheduled {@link #shootCmd()}/
+   * {@link #ejectCmd()} (e.g. a SmartDashboard button pressed mid-autonomous) would not be
+   * cancelled and would run alongside this, both writing {@code mWantedState} on alternating
+   * scheduler ticks.
+   */
   public Command shootingSequence(double timeoutSeconds) {
     return Commands.sequence(
-        Commands.runOnce(() -> requestShoot(timeoutSeconds)),
+        Commands.runOnce(() -> requestShoot(timeoutSeconds), this),
         Commands.waitUntil(() -> !mShotInProgress));
   }
 
