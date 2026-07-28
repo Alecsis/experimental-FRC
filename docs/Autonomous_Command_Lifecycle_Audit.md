@@ -5,8 +5,10 @@
 velocity architecture (untouched; see `docs/superpowers/plans/2026-07-28-autonomous-velocity-migration.md`
 for that separate, hardware-blocked track).
 **Files audited:** `RobotContainer.java`, `OperatorControls.java`, `Superstructure.java`,
-`CommandSwerveDrivetrain.java` (Command-returning methods only), `Intake.java`, `Shooter.java`, all 12
-`.auto` files in `src/main/deploy/pathplanner/autos/`, `Robot.java` (mode-transition cancellation).
+`CommandSwerveDrivetrain.java` (Command-returning methods only), `Intake.java`, `Shooter.java`, all `.auto`
+files in `src/main/deploy/pathplanner/autos/` (12 at the time of the original pass; see "Continued audit"
+below for a file-count correction), `Robot.java` (mode-transition cancellation and, as of the continued
+audit below, completion telemetry).
 
 ## Summary
 
@@ -120,9 +122,9 @@ stash, not the user's or a linter's.)*
 | `"Intake Start Sequence"` | `Superstructure.intakeSequence(5.0)` = `intakeCmd().withTimeout(5.0)` | Superstructure | Yes | hard 5.0s cap (intakeCmd() itself never self-finishes) | LOW |
 | `"Intake Stop"` | `Superstructure.stowCmd()` | Superstructure | Yes | instant (`runOnce`) | LOW |
 
-Every NamedCommand in this table is used inside a PathPlanner `"parallel"` block in at least one of the 12
-autos (confirmed via direct JSON inspection), so every row above is a "can this hang the whole auto"
-question, not a hypothetical.
+Every NamedCommand in this table is used inside a PathPlanner `"parallel"` block in at least one auto
+(confirmed via direct JSON inspection), so every row above is a "can this hang the whole auto" question, not
+a hypothetical.
 
 ## Button binding inventory (interruption behavior)
 
@@ -211,3 +213,133 @@ hardware-blocked per the Autonomous Velocity migration plan. This audit also did
 2.0s timeout, the existing `Shooting Sequence`/`Quick Shooting` feed timeouts, or re-baseline any
 regression golden — all are pre-existing values or intentionally conservative new ones, not touched beyond
 what each fix required.
+
+## Continued audit, same day (new session): resolution guard + termination telemetry
+
+**Scope:** picking up directly from this file's own findings, re-verifying two things the first pass
+established by manual inspection rather than by an automated regression guard: (1) that every NamedCommand
+any `.auto` file actually references resolves to something registered, and (2) whether autonomous
+completion is observable at all in production telemetry (as opposed to only inside this repo's own JUnit
+harness). Same constraint as before: drivetrain velocity architecture (`DriveRequestType`, `TunerConstants`,
+SysId migration files) untouched.
+
+**Correction to this doc's own file count:** the header above and the bugs-found section both say "every
+12 `.auto` files" — there are actually **13** in `src/main/deploy/pathplanner/autos/` (`RB Neutral.auto` is
+present; the Backlog section of `CLAUDE.md` had listed `LB Neutral`/`RB Neutral` as "deferred" from the
+regression-suite's *golden* scope, which is a different thing from the NamedCommand-safety scope this audit
+covers). Confirmed via direct directory listing — all 13 use the exact same six NamedCommands as the other
+12 (`"Home Intake"`, `"Intake Start Sequence"`, `"Orbit"`, and either `"Shooting Sequence"` or `"Quick
+Shooting"`), so nothing found by the original audit changes; both new regression tests below iterate
+`Files.list()` over the real directory rather than a hardcoded count, so this was never a blind spot in the
+tests themselves, only in this doc's prose.
+
+### 3. New guard: every `.auto` NamedCommand reference actually resolves
+
+`AutoCommandSafetyTest` (finding #1's guard) only checks that a NamedCommand used **inside a `parallel`
+block** is on the `BOUNDED_NAMED_COMMANDS` allowlist — it never checked that the name resolves to anything
+registered at all, in any position (parallel or plain sequential). Read PathplannerLib's own
+`NamedCommands.getCommand()` (decompiled `PathplannerLib-java-2026.1.2-sources.jar`): an unregistered name
+does **not** throw or fail `compileJava` — it prints a `DriverStation.reportWarning` and silently
+substitutes `Commands.none()`. A typo'd or renamed NamedCommand reference in a `.auto` file would compile
+fine, pass gate 1, and simply skip that step of the auto at runtime with nothing but an easy-to-miss
+driver-station warning as evidence.
+
+**New regression test:** `src/test/java/frc/robot/auto/AutoNamedCommandResolutionTest.java` — boots a real
+`Robot()` in sim (needs `NamedCommands`'s registry actually populated, which only happens once
+`RobotContainer`'s constructor runs, so this can't be the pure-JSON style `AutoCommandSafetyTest` uses),
+walks every `.auto` file's command tree collecting every `"named"` command's name regardless of nesting or
+position, and asserts `NamedCommands.hasCommand(name)` for each. A `collectNamedCommandNames()` static
+helper does the traversal; its correctness (finds names nested arbitrarily deep, e.g. sequential-inside-
+parallel) is covered by a new test in the existing `AutoCommandSafetyTest.java`
+(`collectNamedCommandNamesFindsNamesRegardlessOfNesting`, pure JSON, no boot needed) rather than duplicating
+boot machinery just to prove the traversal itself.
+
+**Verified non-vacuous, not just written and trusted:** temporarily commented out `"Orbit"`'s
+`NamedCommands.registerCommand` call in `RobotContainer.java`, reran the test — failed exactly as expected,
+naming `"Orbit"` in the violation message. Reverted (confirmed via `git diff --stat`, zero-line diff
+afterward), reran — passed. Currently all six registered NamedCommands (`"Home Intake"`, `"Orbit"`,
+`"Shooting Sequence"`, `"Quick Shooting"`, `"Intake Start Sequence"`, `"Intake Stop"`) resolve; every name
+any `.auto` file references is a subset of that six (`"Intake Stop"` is registered but not currently
+referenced by any auto — dead registration, not a bug).
+
+### 4. Real gap found and fixed: autonomous termination was not observable in production telemetry
+
+`Robot.java`'s `autonomousInit()`/`teleopInit()` scheduled and cancelled the autonomous command but never
+recorded whether it finished naturally, was cut off by the teleop transition, or was cancelled some other
+way (e.g. a disable-triggered scheduler cancel). This repo's own JUnit harness can tell the difference
+(`AutoRegressionTestBase` polls `CommandScheduler.getInstance().isScheduled(autoCommand)` from the test
+thread) but **that path is test-only** — it is not RobotContainer's real `getAutonomousCommand()` command,
+and none of that information reaches AdvantageKit. A real match's wpilog had no signal to distinguish "auto
+completed" from "auto got interrupted" after the fact — exactly the "autonomous termination is observable"
+goal named for this continued audit.
+
+**Fix:** `Robot.java` gained a small, directly testable wrapper:
+
+```java
+static Command wrapAutonomousForTelemetry(Command autoCommand) {
+  Logger.recordOutput("Auto/Running", true);
+  Logger.recordOutput("Auto/EndedInterrupted", false);
+  return autoCommand.finallyDo(interrupted -> {
+    Logger.recordOutput("Auto/Running", false);
+    Logger.recordOutput("Auto/EndedInterrupted", interrupted);
+  });
+}
+```
+
+`autonomousInit()` now wraps `m_robotContainer.getAutonomousCommand()` with this before scheduling it (and
+still assigns the *wrapped* Command to `m_autonomousCommand`, so `teleopInit()`'s existing `.cancel()` call
+correctly targets the scheduled instance, not an unscheduled original). `Command.finallyDo(BooleanConsumer)`
+receives WPILib's own `interrupted` flag from the scheduler at end-time, so this distinguishes a natural
+finish from any kind of interruption (teleop cancel, a disable-triggered cancel, or anything else) with no
+new polling loop and no change to scheduling/requirements.
+
+**Regression test (TDD, RED first):** `src/test/java/frc/robot/RobotAutoTerminationTelemetryTest.java`.
+Bypasses the auto chooser entirely (its default selection is a trivial `Commands.none()` that finishes
+before there's anything to observe — the same reason `AutoRegressionTestBase` bypasses it) and exercises
+`wrapAutonomousForTelemetry` directly against two synthetic `WaitCommand`s in one test method (a second
+`@Test` method in the same class would double-call `Logger.start()` within one JVM fork and throw
+`IllegalThreadStateException`, the exact failure class discovered earlier the same day building the reverse
+SysId workflow test): a short one left to finish naturally, then a long one cancelled mid-flight. Watched it
+fail (`cannot find symbol: method wrapAutonomousForTelemetry`) before the method existed. **One real
+correction made mid-implementation:** the first version of this test partitioned samples by a timestamp
+this test thread captured itself via `Timer.getFPGATimestamp()`, comparing it against each wpilog record's
+own timestamp — this produced a false failure (`Auto/Running=true` for phase 2 landed in the wrong
+partition) traced to clock skew between this thread's clock read and AdvantageKit's own cycle-timestamp
+bookkeeping for records written from outside the robot thread. Rewritten to compare the two boolean series
+**by ordinal position** instead (both keys are always written together, in the same call, so they stay in
+lockstep) — deterministic regardless of any cross-thread timing skew. A second real correction: `Auto/
+EndedInterrupted` turned out to be write-on-change in the underlying log (repeated same-value writes
+collapse to one sample) — confirmed empirically, not assumed — so the test asserts the deduped series
+`[false, true]` (never spuriously true during the natural-finish phase, true exactly once after the cancel)
+rather than one sample per phase.
+
+**Verified:**
+- `RobotAutoTerminationTelemetryTest`: RED (missing symbol) → GREEN, reran 2/2 consecutive passes.
+- `./gradlew compileJava` / `compileTestJava`: BUILD SUCCESSFUL.
+- `python SKILLS/run_headless_sim.py --run-seconds 12`: PASS.
+- **Gate 3, independently cross-validated with a separate tool** (`python SKILLS/parse_akit_log.py --dump`),
+  against the test's own freshly-produced wpilog: `/RealOutputs/Auto/Running` → `True, False, True, False`
+  at t=0.022s/0.203s/0.623s/0.823s; `/RealOutputs/Auto/EndedInterrupted` → `False, True` at t=0.022s/0.823s
+  — matching the test's own internal assertions exactly, via a tool that never shares code with the test.
+- Full `./gradlew test`, run three times total this session: run 1 was 19/19 minus `LtNeutralAutoRegressionTest`'s
+  stall check (independently A/B-confirmed pre-existing and unrelated via `git stash` on just `Robot.java`
+  — baseline fails with the identical signature, no code from this session involved); run 2 was 19/19 minus
+  `CommandSwerveDrivetrainSysIdSimWorkflowTest` (a different, untouched-by-this-session test — passed cleanly
+  when rerun in isolation immediately after, consistent with this repo's already-documented class of
+  real-wall-clock-timing flakiness under full-suite load, not a regression); run 3 was a clean 19/19. Neither
+  of this session's two new tests failed in any of the three runs.
+- `git status --short` / `git diff --stat` confirm exactly what changed: `Robot.java` (production, minimal
+  diff), `AutoCommandSafetyTest.java` (one new test method), plus two new test files. Nothing else.
+
+### Remaining unknowns / not in scope
+
+- Whether the full-suite's pre-existing timing flakiness (now confirmed to affect at least two different
+  test classes, not only `LtNeutralAutoRegressionTest`) has a common root cause worth investigating as its
+  own item — out of scope for this audit, flagged for awareness.
+- `Auto/Running`/`Auto/EndedInterrupted` are new telemetry only; they don't yet feed any dashboard/alerting
+  and nothing consumes them automatically (e.g. no "flash a warning light if auto ended interrupted" logic)
+  — this was scoped as "make it observable in a wpilog," not "build a live-alert consumer," matching what
+  was asked.
+- `RobotContainer.BOUNDED_NAMED_COMMANDS`'s eventual merge conflict with the still-unmerged
+  `feature/autonomous-completion-trigger-framework` worktree (flagged in the first pass of this audit) is
+  unchanged by this continuation.

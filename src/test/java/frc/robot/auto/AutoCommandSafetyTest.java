@@ -60,6 +60,32 @@ class AutoCommandSafetyTest {
   }
 
   @Test
+  void collectNamedCommandNamesFindsNamesRegardlessOfNesting() throws IOException {
+    // Regression case for AutoNamedCommandResolutionTest's traversal -- proves it finds "named"
+    // commands nested arbitrarily deep (sequential inside parallel inside sequential), not just at
+    // the top level, so a typo'd/unregistered name buried in a real .auto file's structure can't
+    // slip past unnoticed just because of where it's nested.
+    String json = "{\"command\": {\"type\": \"sequential\", \"data\": {\"commands\": ["
+        + "{\"type\": \"named\", \"data\": {\"name\": \"TopLevelNamed\"}},"
+        + "{\"type\": \"parallel\", \"data\": {\"commands\": ["
+        + "{\"type\": \"path\", \"data\": {\"pathName\": \"Foo\"}},"
+        + "{\"type\": \"sequential\", \"data\": {\"commands\": ["
+        + "{\"type\": \"named\", \"data\": {\"name\": \"DeeplyNestedNamed\"}}"
+        + "]}}"
+        + "]}}"
+        + "]}}}";
+    ObjectMapper mapper = new ObjectMapper();
+    JsonNode root = mapper.readTree(json);
+
+    List<String> names = new ArrayList<>(
+        AutoNamedCommandResolutionTest.collectNamedCommandNames(root.get("command")));
+
+    assertTrue(names.contains("TopLevelNamed"), "expected the top-level named command to be found");
+    assertTrue(names.contains("DeeplyNestedNamed"),
+        "expected the named command nested inside sequential-inside-parallel to be found");
+  }
+
+  @Test
   void namedCommandNestedInSequentialInsideParallelIsFlagged() throws IOException {
     // Regression case for the traversal blind spot: a "named" command nested inside a
     // "sequential" branch of a "parallel" block must still be flagged, even though it is not
