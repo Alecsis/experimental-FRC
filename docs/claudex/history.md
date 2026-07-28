@@ -385,3 +385,74 @@ For cross-project memory (calibrations, gains, peer-benchmarked patterns), see t
 - **Files changed (all already committed prior to this session's doc-sync pass):** `tools/claude-supervisor/claude_supervisor/pty_session.py`, `config.py`, `run.py`; `tools/claude-supervisor/tests/{test_pty_input.py, test_pty_vt_backend.py, test_pty_console_restore.py, test_pty_resize.py, test_pty_vt_relay.py}` (modified), `test_pty_mouse_strip.py`/`test_pty_mouse_wheel.py`/`test_config.py` (deleted); `docs/superpowers/plans/2026-07-22-supervisor-vt-input-relay.md` (sign-off appended). This session's own doc-sync additionally touches `CLAUDE.md`, `docs/claudex/history.md`, `docs/claudex/sessions/2026-07-23.md` (new).
 - **Remaining unknowns:** none identified for this feature — all ten Phase 5 checklist items passed, both non-defaultable decisions are closed, the merge is verified and pushed, and the branch/worktree are cleaned up. The VT-input-relay migration arc (twenty-fourth through thirtieth sessions) is complete.
 - **No injection-pattern occurrence this session.**
+
+## Thirty-first session (2026-07-28) — SysId/drive-Slot0 retuning audit, autonomous control-path re-verification, architecture recommendation, and a phased Velocity-migration plan. Investigation and planning only — zero production code touched, zero commits made.
+
+- **`docs/Drive_Slot0_Retuning_Audit.md`** — the mentor's requested "complete SysId/Slot0 retuning audit." Decompiled
+  the actual shipped `wpiapi-java-26.1.3-sources.jar` (local Gradle cache, version-matched to
+  `vendordeps/Phoenix6-26.1.3.json`) rather than trusting public docs alone. Confirmed from CTRE's own source doc
+  comments: drive `Slot0` gains operate on raw motor-rotor rotations (`FeedbackConfigs.RotorToSensorRatio`/
+  `SensorToMechanismRatio` hardcoded to `1.0` for the drive motor), while steer `Slot0` gains operate on
+  post-gear-ratio azimuth rotations — an asymmetry that makes `docs/SysId_Characterization_Checklist.md`'s own
+  `12/kV` vs. `kSpeedAt12Volts` sanity-check formula unit-inconsistent as written; provided the corrected formula.
+  Also flagged a stale, actively misleading comment at `RobotContainer.java:52` (comment says "open-loop," the code
+  it's attached to sets `DriveRequestType.Velocity`).
+- **`docs/Autonomous_Control_Path_Audit.md`** — mentor-requested re-verification of the first audit's most
+  consequential claim, with a complete file:line call graph. Decompiled `wpiapi-java-26.1.3-sources.jar` **and**
+  `PathplannerLib-java-2026.1.2-sources.jar` (version-matched to `vendordeps/PathplannerLib-2026.1.2.json`) and
+  traced `AutoBuilder.configure()` → `FollowPathCommand.execute()` →
+  `PPHolonomicDriveController.calculateRobotRelativeSpeeds()` → this repo's output lambda in
+  `CommandSwerveDrivetrain.java` → `ApplyRobotSpeeds.applyNative()` → the named JNI entry point
+  `SwerveJNI.JNI_SetControl_ApplyRobotSpeeds`, citing exact line numbers at every hop. Directly re-confirmed (not
+  secondhand) that `PPHolonomicDriveController.calculateRobotRelativeSpeeds()` sums feedforward and feedback with
+  zero clamping (`PPHolonomicDriveController.java:130-131`); confirmed `ApplyRobotSpeeds.DriveRequestType` defaults
+  to `OpenLoopVoltage` (`SwerveRequest.java:885`) and this repo's `configureAutoBuilder()` never overrides it;
+  confirmed `DriveFeedforwards` is an immutable record precomputed by PathPlanner's trajectory generator, structurally
+  independent of any PID controller. One genuine unknown flagged, not glossed over: whether wheel-force feedforward
+  has any effect once it crosses into CTRE's native/JNI layer under `OpenLoopVoltage` — a concrete A/B telemetry
+  experiment to resolve it is described but not run.
+- **`docs/Autonomous_Drive_Architecture_Recommendation.md`** — a fair, six-dimension comparison of `OpenLoopVoltage`
+  vs. `Velocity` (trajectory accuracy, disturbance rejection, tuning complexity, battery voltage variation, wheel
+  slip, match robustness), plus research into what CTRE and other teams' shipped code actually does. Read CTRE's own
+  official `Phoenix6-Examples` reference (`temp_reference/Phenoix 6 API Examples/`) and found it matches this repo's
+  `OpenLoopVoltage` default exactly — but also calls `ChassisSpeeds.discretize()`, which this repo is missing. Read
+  Team 254, Team 1678, and Team 6328's shipped drivetrain code (`temp_reference/`, `frc-steal-from-the-best/`) and
+  found all three independently choose closed-loop `Velocity` for autonomous/precision-tracking contexts, zero
+  counterexamples in the sample. Corrected a likely misconception along the way: neither mode addresses
+  ground-relative wheel slip — that's `kSlipCurrent`, orthogonal to `DriveRequestType`. Final recommendation: switch
+  to `Velocity`, conditional on completing SysId characterization first — explicitly not a claim that the switch
+  alone fixes the already-documented autonomous tracking error, since the confirmed-dominant lever (unclamped
+  chassis PID) is independent of this choice either way.
+- **`docs/superpowers/plans/2026-07-28-autonomous-velocity-migration.md`** — full phased plan via the `writing-plans`
+  skill, covering the mentor's six specified phases with expected behavior/regression-tests/success-criteria/
+  rollback-plan for each. Phases 0 and 3 are fully TDD-scoped with real code (extracting `prepareAutoSpeeds()` and
+  `buildAutoRequest()` package-private helper methods on `CommandSwerveDrivetrain`, mirroring the existing
+  `sanitizeAutoSpeeds()` testability pattern). Phase 4 reuses the existing auto-regression harness almost entirely,
+  adding only current-draw capture (`WpilogCurrentDrawReader`, mirroring `WpilogTrajectoryErrorReader` exactly) and
+  explicitly designs around a methodological trap: comparing post-switch results against the *original* pre-Phase-0
+  golden would confound three changes at once, so the plan requires an isolated before/after snapshot captured right
+  at the Phase 3 boundary.
+  - **Mid-session revision, per explicit mentor direction:** the mentor asked to implement and validate the SysId
+    workflow in simulation only (proving command/logging/data-collection/integration, not producing real gains) —
+    started (the `test-driven-development` skill was loaded, WPILib `DriverStationSim` API verification was
+    underway) but interrupted before any code was written, and redirected to plan-only. Phase 1 was rewritten: it
+    now runs entirely in simulation, produces no production values, and opens with an explicit `⚠️ TODO` block
+    stating sim-derived `kS`/`kV`/`kA` must never be pasted into `TunerConstants.driveGains` and that Phase 2 is not
+    complete until real hardware characterization happens. Phase 2 gained a matching precondition block carrying
+    that TODO forward. The plan's top-level Architecture summary and Global Constraints were updated to match.
+- **Headline finding, worth restating plainly:** this session's audits show `CLAUDE.md`'s previously-standing
+  "corrected fix order" (SysId → drive `Slot0` → chassis PID) was never going to fix the autonomous tracking error
+  it was written for — autonomous runs `OpenLoopVoltage` and never consults `Slot0` at all. `CLAUDE.md`'s Next Up
+  and the superseded "PID retune milestone" bullet were both updated this session to reflect this and point at the
+  new audit trail.
+- **Verification performed:** no `./gradlew` gates apply (no `src/` Java changed). Verification means source-level
+  verification of every claim against real decompiled vendor source rather than assumption or secondhand citation —
+  detailed above per document. `git status --short` confirmed clean before and after every write this session.
+- **Files changed:** four new files, all untracked, none committed — `docs/Drive_Slot0_Retuning_Audit.md`,
+  `docs/Autonomous_Control_Path_Audit.md`, `docs/Autonomous_Drive_Architecture_Recommendation.md`,
+  `docs/superpowers/plans/2026-07-28-autonomous-velocity-migration.md`. This session's own doc-sync additionally
+  touches `CLAUDE.md`, `docs/claudex/history.md`, `docs/claudex/sessions/2026-07-28.md` (new).
+- **Remaining unknowns:** wheel-force-feedforward-under-`OpenLoopVoltage` (native/JNI boundary, experiment described
+  not run); the actual `OpenLoopVoltage`-vs-`Velocity` decision (recommendation given, not yet made by the mentor —
+  gated on Phase 4 comparison data that doesn't exist since no phase of the plan has been implemented).
+- **No injection-pattern occurrence this session.**
