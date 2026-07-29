@@ -29,6 +29,24 @@ public class Robot extends LoggedRobot {
   private final HubActiveState m_hubInstance = HubActiveState.getInstance();
   private final Vision m_vision;
 
+  /**
+   * Why the autonomous command's most recent end was attributed the way it was, logged as
+   * {@code Auto/EndReason}. Distinct from {@code Auto/EndedInterrupted} (which only says
+   * whether it was interrupted, not why) -- added so a wpilog can tell a driver-initiated mode
+   * change apart from a test-mode cancel apart from (once one exists) a future recovery-layer
+   * cancellation, none of which are otherwise distinguishable after the fact.
+   */
+  enum AutoEndReason {
+    NATURAL_COMPLETION, TELEOP_INTERRUPTION, TEST_CANCELLATION, RECOVERY_CANCELLATION, UNKNOWN_INTERRUPTION
+  }
+
+  // Package-private (not private) so RobotAutoTerminationTelemetryTest -- same package -- can
+  // assert teleopInit()/testInit() tag it correctly, without a reflection hack or a test-only
+  // production method. Set immediately before each known cancellation call site; wrapAutonomous
+  // ForTelemetry() reads it only when a wrapped command actually ends interrupted, then resets it,
+  // so a later, unrelated interruption never inherits a stale reason.
+  static AutoEndReason pendingCancelReason = AutoEndReason.UNKNOWN_INTERRUPTION;
+
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -159,6 +177,9 @@ public void autonomousInit() {
     return autoCommand.finallyDo(interrupted -> {
       Logger.recordOutput("Auto/Running", false);
       Logger.recordOutput("Auto/EndedInterrupted", interrupted);
+      AutoEndReason reason = interrupted ? pendingCancelReason : AutoEndReason.NATURAL_COMPLETION;
+      Logger.recordOutput("Auto/EndReason", reason.name());
+      pendingCancelReason = AutoEndReason.UNKNOWN_INTERRUPTION;
     });
   }
 
@@ -168,6 +189,7 @@ public void autonomousInit() {
 
   @Override
   public void teleopInit() {
+    pendingCancelReason = AutoEndReason.TELEOP_INTERRUPTION;
     m_vision.setIMUMode(4);
     m_vision.setIMUAssistAlpha(0.001);
     // This makes sure that the autonomous stops running when
@@ -186,6 +208,7 @@ public void autonomousInit() {
 
   @Override
   public void testInit() {
+    pendingCancelReason = AutoEndReason.TEST_CANCELLATION;
     m_vision.setIMUMode(4);
     m_vision.setIMUAssistAlpha(0.001);
     // Cancels all running commands at the start of test mode.

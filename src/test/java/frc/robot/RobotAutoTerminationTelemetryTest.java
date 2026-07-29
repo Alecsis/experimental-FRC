@@ -48,7 +48,9 @@ import org.junit.jupiter.api.Timeout;
 class RobotAutoTerminationTelemetryTest {
     private static final String kRunningEntryName = "/RealOutputs/Auto/Running";
     private static final String kEndedInterruptedEntryName = "/RealOutputs/Auto/EndedInterrupted";
+    private static final String kEndReasonEntryName = "/RealOutputs/Auto/EndReason";
     private static final String kBooleanType = "boolean";
+    private static final String kStringType = "string";
 
     private Robot robot;
     private Thread robotThread;
@@ -122,6 +124,19 @@ class RobotAutoTerminationTelemetryTest {
         CommandScheduler.getInstance().cancel(cancelled);
         Thread.sleep(200);
 
+        // Phase 3: teleopInit()/testInit() attribution -- neither has a live autonomous command to
+        // cancel here (this test never calls autonomousInit(), same reason AutoRegressionTestBase
+        // bypasses the chooser), but both unconditionally tag Robot.pendingCancelReason at the top
+        // of the method, before any cancel() call -- that tag is what a *real* interrupted-mid-auto
+        // cancellation would carry into Auto/EndReason. Package-private (not private) specifically
+        // so this same-package test can read it directly, no reflection/test-only setter needed.
+        robot.teleopInit();
+        assertEquals(Robot.AutoEndReason.TELEOP_INTERRUPTION, Robot.pendingCancelReason,
+                "teleopInit() should tag the next autonomous-command cancellation as a teleop interruption");
+        robot.testInit();
+        assertEquals(Robot.AutoEndReason.TEST_CANCELLATION, Robot.pendingCancelReason,
+                "testInit() should tag the next autonomous-command cancellation as a test-mode cancellation");
+
         finishCompetitionAndClose();
 
         Path wpilog = findNewestWpilog();
@@ -137,12 +152,23 @@ class RobotAutoTerminationTelemetryTest {
         // true during phase 1's natural finish, and did turn true once phase 2 was cancelled.
         List<Boolean> running = readBooleanSeries(wpilog, kRunningEntryName);
         List<Boolean> endedInterrupted = readBooleanSeries(wpilog, kEndedInterruptedEntryName);
+        List<String> endReason = readStringSeries(wpilog, kEndReasonEntryName);
 
         assertEquals(List.of(true, false, true, false), running,
                 kRunningEntryName + ": expected true,false,true,false (schedule/end x2 phases), got " + running);
         assertEquals(List.of(false, true), endedInterrupted,
                 kEndedInterruptedEntryName + ": expected false (never interrupted through phase 1's natural "
                         + "finish) then true exactly once (phase 2's cancel), got " + endedInterrupted);
+        // Phase 1 ends naturally -> NATURAL_COMPLETION. Phase 2 is cancelled directly via
+        // CommandScheduler.cancel(), bypassing teleopInit()/testInit() entirely, so
+        // pendingCancelReason is still at its post-construction default (UNKNOWN_INTERRUPTION) when
+        // it fires -- correctly reflecting that this cancellation went through no known attribution
+        // path, exercising the fallback case rather than a stale/wrong label.
+        assertEquals(List.of(
+                        Robot.AutoEndReason.NATURAL_COMPLETION.name(),
+                        Robot.AutoEndReason.UNKNOWN_INTERRUPTION.name()),
+                endReason,
+                kEndReasonEntryName + ": expected NATURAL_COMPLETION then UNKNOWN_INTERRUPTION, got " + endReason);
     }
 
     /**
@@ -178,6 +204,40 @@ class RobotAutoTerminationTelemetryTest {
             }
 
             samples.add(record.getBoolean());
+        }
+
+        return samples;
+    }
+
+    /** Same shape as {@link #readBooleanSeries}, for a string-typed entry (Auto/EndReason). */
+    private static List<String> readStringSeries(Path wpilogFile, String entryName) throws IOException {
+        DataLogReader reader = new DataLogReader(wpilogFile.toString());
+        if (!reader.isValid()) {
+            throw new IOException("Not a valid WPILOG file: " + wpilogFile);
+        }
+
+        Map<Integer, String> activeNames = new HashMap<>();
+        Map<Integer, String> activeTypes = new HashMap<>();
+        List<String> samples = new ArrayList<>();
+
+        for (DataLogRecord record : reader) {
+            if (record.isStart()) {
+                DataLogRecord.StartRecordData start = record.getStartData();
+                activeNames.put(start.entry, start.name);
+                activeTypes.put(start.entry, start.type);
+                continue;
+            }
+            if (record.isFinish() || record.isSetMetadata()) {
+                continue;
+            }
+
+            String name = activeNames.get(record.getEntry());
+            String type = activeTypes.get(record.getEntry());
+            if (!entryName.equals(name) || !kStringType.equals(type)) {
+                continue;
+            }
+
+            samples.add(record.getString());
         }
 
         return samples;

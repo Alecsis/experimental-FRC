@@ -67,6 +67,11 @@ public class Vision extends SubsystemBase {
   private final CommandSwerveDrivetrain drivetrain;
   private int currentIMUMode;
   private double currentIMUAssistAlpha;
+  // Mirrors what's already logged as Vision/RejectedJumpMeters each cycle -- stored so a live
+  // consumer (AutonomousHealthMonitor) can read it without depending on the log, closing the gap
+  // docs/Autonomous_Recovery_Audit.md's F5 flagged ("nothing consumes this at runtime"). Purely
+  // additive: does not change fuseMeasurements()'s accept/reject decision or trust logic at all.
+  private double lastRejectedJumpMeters;
 
   /** Creates a new Vision. Use {@link #getInstance(CommandSwerveDrivetrain)} instead of constructing directly. */
   private Vision(VisionIO io, CommandSwerveDrivetrain drivetrain) {
@@ -236,8 +241,16 @@ public class Vision extends SubsystemBase {
       }
     }
 
+    lastRejectedJumpMeters = rejectedJumpMeters;
     Logger.recordOutput("Vision/RejectedJumpMeters", rejectedJumpMeters);
     Logger.recordOutput("Vision/AcceptedStdDevMeters", acceptedStdDevMeters);
+  }
+
+  /** The rejected-jump distance from the most recently completed {@link #fuseMeasurements()}
+   * cycle, or 0.0 if nothing was rejected that cycle -- same convention as the logged
+   * {@code Vision/RejectedJumpMeters} value this mirrors. */
+  public double getLastRejectedJumpMeters() {
+    return lastRejectedJumpMeters;
   }
 
   @Override

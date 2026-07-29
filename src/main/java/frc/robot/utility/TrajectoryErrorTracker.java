@@ -1,6 +1,7 @@
 package frc.robot.utility;
 
 import java.util.List;
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 import edu.wpi.first.math.geometry.Pose2d;
@@ -24,9 +25,18 @@ public class TrajectoryErrorTracker {
     private static final double kTangentEpsilonMeters = 1e-4;
 
     private final Supplier<Pose2d> measuredPoseSupplier;
+    private final DoubleSupplier timestampSecondsSupplier;
 
     private List<Pose2d> latestActivePath = List.of();
     private Pose2d latestTargetPose = null;
+
+    // Set only when a fresh target pose actually arrives (see logAndClearFreshness()); NaN means
+    // "no path setpoint has ever been delivered". Backs getSecondsSinceLastFreshTargetPose(), the
+    // live equivalent of AutoRegressionTolerances.kStalePathSetpointGraceSeconds's post-hoc grace
+    // window -- lets a live consumer (AutonomousHealthMonitor) tell "still path-following" from
+    // "path-following ended, now in a stationary named-command phase" without re-deriving the
+    // same aliasing problem WpilogStallAnalyzer's own comment already documents.
+    private double lastFreshTargetPoseTimestampSeconds = Double.NaN;
 
     // Path tangent is derived from consecutive per-loop setpoints (this loop vs. last), not from
     // latestActivePath -- there is no "current progress index" into that list, so it isn't a
@@ -43,8 +53,9 @@ public class TrajectoryErrorTracker {
     // setpoint arrived this loop", not "the robot is successfully following the trajectory".
     private boolean hasFreshTargetPose;
 
-    public TrajectoryErrorTracker(Supplier<Pose2d> measuredPoseSupplier) {
+    public TrajectoryErrorTracker(Supplier<Pose2d> measuredPoseSupplier, DoubleSupplier timestampSecondsSupplier) {
         this.measuredPoseSupplier = measuredPoseSupplier;
+        this.timestampSecondsSupplier = timestampSecondsSupplier;
     }
 
     /** Stores PathPlanner's active path. Ingest only -- no computation, no logging. */
@@ -107,6 +118,9 @@ public class TrajectoryErrorTracker {
         Logger.recordOutput("Trajectory/ErrorLongitudinalMeters", longitudinalErrorMeters);
         Logger.recordOutput("Trajectory/ErrorHeadingRadians", headingErrorRadians);
         Logger.recordOutput("Trajectory/SetpointFresh", hasFreshTargetPose);
+        if (hasFreshTargetPose) {
+            lastFreshTargetPoseTimestampSeconds = timestampSecondsSupplier.getAsDouble();
+        }
         hasFreshTargetPose = false;
     }
 
@@ -120,5 +134,18 @@ public class TrajectoryErrorTracker {
 
     public double getHeadingErrorRadians() {
         return headingErrorRadians;
+    }
+
+    /**
+     * Seconds elapsed since a path setpoint was last delivered via {@link #onTargetPose}, i.e.
+     * "how long since path-following was last active". {@link Double#POSITIVE_INFINITY} if no
+     * setpoint has ever arrived. A live gate for stall/degradation checks that should not fire
+     * during an intentional stationary phase (e.g. every auto's final aim-and-shoot segment).
+     */
+    public double getSecondsSinceLastFreshTargetPose() {
+        if (Double.isNaN(lastFreshTargetPoseTimestampSeconds)) {
+            return Double.POSITIVE_INFINITY;
+        }
+        return timestampSecondsSupplier.getAsDouble() - lastFreshTargetPoseTimestampSeconds;
     }
 }
