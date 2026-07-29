@@ -993,3 +993,94 @@ confirmation of every referenced file path, not asserted from memory.
 `SKILLS/simulation-agent.md`, `replay-testing-agent.md`, `log-analysis-agent.md`, `robot-description-agent.md`,
 `game-knowledge-agent.md` (all new). Nothing else — no `src/`, `build.gradle`, or vendordep file touched. **Nothing
 committed** (not asked this session).
+
+## Thirty-third session (2026-07-28) — `AutonomousHealthMonitor` behavior-neutrality re-audit, then an end-to-end
+validation pass of the whole AI tooling scaffold, then a documentation-only cleanup of the two gaps it found.
+All three parts same-day continuations of the thirty-second session's tooling work; zero production code changed
+by the end of the session (one production file was temporarily edited and fully reverted mid-session, with
+explicit mentor approval, as part of proving a finding rather than fixing anything).
+
+**Part 1 — `/audit` re-verification of `AutonomousHealthMonitor`.** Mentor asked to confirm the Phase 0.5
+observability layer was still behavior-neutral. Produced `docs/AutonomousHealthMonitor_BehaviorNeutrality_Audit.md`:
+confirmed zero `src/` drift since `d848ea5` (the commit the earlier Phase 0.5 audit had verified) via
+`git diff --stat d848ea5 HEAD -- src/` returning empty; independently re-read `AutonomousHealthMonitor.java` in
+full (no `CommandScheduler` reference anywhere) and grepped for its four query getters across `src/`, confirming
+the only consumers are the class itself and its test — no production decision logic reads its output. Re-read
+`Vision.java`'s `getLastRejectedJumpMeters()` and `TrajectoryErrorTracker.java`'s
+`getSecondsSinceLastFreshTargetPose()` in full, confirming both are pure additive getters that don't participate
+in any accept/reject or error-computation branch. Gates: `compileJava` BUILD SUCCESSFUL, `run_headless_sim.py`
+PASS, 19/19 targeted tests (`AutonomousHealthMonitorTest` 14, `TrajectoryErrorTrackerTest` 4,
+`RobotAutoTerminationTelemetryTest` 1). **Uncommitted** — the audit doc remains the sole untracked file through
+the rest of this session.
+
+**Part 2 — 8-step validation pass of `/replay`, `/regression`, and the five `SKILLS/*-agent.md` docs.** Mentor
+asked what "testing all skills" should look like next, since the thirty-second session's tooling scaffold had
+never actually been exercised beyond `/audit`. Used plan mode: dispatched an Explore agent to read all 8 tooling
+files in full and cross-reference their claims against real repo state, then a Plan agent to design a sequenced,
+risk-aware test checklist from that research; the mentor approved the resulting plan before any execution began.
+Ran, in order:
+- `/regression` gates 1-2 (`compileJava`, `run_headless_sim.py`) — both green, independently cross-checked the
+  script's own "Newest log" claim against a direct `ls -t logs/*.wpilog`.
+- `/regression` gate 3, targeted at the two documented flaky classes (`LtNeutralAutoRegressionTest`,
+  `IntakeJamRecoveryTest`) under a bounded 5-minute `--no-daemon` run — completed in 53s with no hang;
+  `LtNeutralAutoRegressionTest` failed with the exact documented stall-check signature ("moved 0.038m... threshold
+  0.050m") and was correctly classified as a known flake, not a new regression; `IntakeJamRecoveryTest` passed
+  clean (the documented `SimHooks.stepTiming()` JNI-hang class is intermittent and didn't reproduce this run).
+- `/replay` single-log mode — **found a real, previously-undocumented gap**: `Constants.java`'s `simMode` field is
+  a hardcoded `public static final Mode.SIM`, so `Robot.java`'s `case REPLAY:` branch is dead code as shipped.
+  Confirmed two ways: decompiled AdvantageKit's actual `ReplayWatch.java`/`LogFileUtil.java` (extracted from the
+  local Gradle module cache) and found `replayWatch` just re-runs `simulateJava` with an `AKIT_LOG_PATH` env var
+  set, never touching `Constants.java`; then empirically confirmed setting that env var alone still hit
+  `case SIM:` (fresh empty log, no "Replaying log from..." message). With explicit mentor approval (via
+  `AskUserQuestion`, "scoped edit-run-revert"), temporarily set `simMode = Mode.REPLAY`, ran `simulateJava` with
+  `AKIT_LOG_PATH` set, and confirmed the mechanism works exactly as documented once reachable: a real `_sim`-suffixed
+  wpilog (261 entries, 0.00s-1.58s span) with real `/Intake/*`/`/Shooter/*`/`/RealOutputs/Odometry/Robot` telemetry;
+  `parse_akit_log.py --dump`/`--pose-entry` both returned real decoded values (a genuine 0.1805m frame-to-frame
+  pose delta at t=0.06s, flagged by the tool's own 0.15m threshold — an early-boot spawn artifact, not investigated
+  further, out of scope). Reverted the `Constants.java` edit immediately; `git diff --stat` on that file confirmed
+  empty afterward; `compileJava` re-confirmed BUILD SUCCESSFUL.
+- `/replay` two-log comparison mode — correctly refused to imply an automated diff tool exists, did the manual
+  `--dump /RealOutputs/DriveState/OdometryFrequency` workflow per log (baseline mean ≈249.94 Hz, modified
+  mean ≈246.55 Hz over first-10-sample windows), reported both raw value sets plus the delta.
+- `log-analysis-agent.md` negative-case check — `parse_akit_log.py --dump` against a bogus entry name produced an
+  honest `❌ no entry named...` and exit code 1, confirming the doc's self-documented historical fabrication bug
+  (pre-2026-07-17) is genuinely fixed in the current script.
+- `robot-description-agent.md` dry-run — "what's the drive gear ratio and max speed, does `settings.json` agree?"
+  answered fully from the doc's four named sources (`TunerConstants.java`'s `kSpeedAt12Volts=7.52`,
+  `kDriveGearRatio=3.7142857142857144`; `settings.json`'s `maxDriveSpeed=7.52`, `driveGearing=3.714286`) — they
+  agree.
+- `game-knowledge-agent.md` dry-run — "which autos use `Orbit`, and is it always inside a `parallel` block?" —
+  **found a second real, previously-undocumented gap**: programmatically parsed all 13 `.auto` files' JSON trees
+  and found 12 place `"Orbit"` inside a `parallel` block, but `LT Neutral - Depot Recollect.auto` (lines 50-55)
+  runs it as a standalone step in the outer `"sequential"` list — contradicting `CLAUDE.md`'s long-standing "all
+  12/13 autos" claim. Cross-checked against `AutoCommandSafetyTest.java`'s actual `walk()` method and confirmed its
+  own "flagged `\"Orbit\"` in all 12 autos" description is accurate as written (that test only ever checks
+  parallel-block-nested named commands, by design — it correctly wouldn't flag the 13th auto's different pattern).
+- `/audit` spot-check — read 3 of `AutonomousHealthMonitor_BehaviorNeutrality_Audit.md`'s file:line citations
+  against live source (`Robot.java:192,211`, `Vision.java:74`, `RobotContainer.java:164-167`); all exact.
+
+**Part 3 — documentation-only cleanup of both gaps, explicitly scoped by the mentor** ("Documentation and AI
+workflow metadata only... Do NOT modify production robot code, tests, Gradle files, vendordeps, or constants").
+`SKILLS/replay-testing-agent.md` and `.claude/commands/replay.md` each gained a new Prerequisite section: replay
+infrastructure existing is not proof replay is executable; verify `Constants.currentMode` actually resolves to
+`Mode.REPLAY` before claiming a replay ran; if it can't be activated, report the blocker honestly instead of
+faking a result; the one narrow exception to "never edit robot code while replaying" is a user-explicitly-authorized,
+always-reverted `Constants.java` `simMode` toggle for a single run, exactly as done in Part 2. `CLAUDE.md`'s Session
+Handoff narrative and its "Autonomous Command Lifecycle Audit" Next-up bullet were corrected to state the real
+12/13 `"Orbit"`/`parallel` split instead of the prior overstated "all 12 autos" claim, noting both placements are
+equally vulnerable to an unbounded `Orbit` stalling the auto. `AutoCommandSafetyTest`'s own RED-run description was
+deliberately left unchanged (confirmed accurate, see Part 2). Verification: `git diff --stat` showed exactly 3
+files changed (`.claude/commands/replay.md`, `SKILLS/replay-testing-agent.md`, `claude.md`); `git diff -- src/
+build.gradle vendordeps/` returned empty.
+
+**Verification, whole session:** every finding backed by either a decompiled vendor source, an independently-run
+command with quoted output, or a direct file read — no claim asserted from memory. The one production-code edit
+(`Constants.java`, Part 2) was explicitly mentor-approved before being made, and confirmed fully reverted
+(`git diff --stat` empty) before this session's work was considered complete.
+
+**Files touched:** `SKILLS/replay-testing-agent.md`, `.claude/commands/replay.md`, `claude.md` (all modified).
+`docs/AutonomousHealthMonitor_BehaviorNeutrality_Audit.md` (new). `Constants.java` was temporarily modified and
+fully reverted mid-session — zero net change, confirmed via `git diff`. No other `src/`, test, `build.gradle`, or
+vendordep file touched. **Committed by the mentor directly (not an assistant-initiated commit) as `ba4487f`
+("docs: validate and correct AI agent workflow") — confirmed via `git show --stat` to contain exactly the 3
+documentation files.** The audit doc remains uncommitted.
