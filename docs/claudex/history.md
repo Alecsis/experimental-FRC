@@ -823,3 +823,82 @@ same-day carryover. **Files changed:** `docs/Autonomous_Disturbance_Simulation_R
 itself: delete the package, delete the four `akit_26-07-28_16-0{3,4}-*.wpilog` files, the scratchpad
 analysis script lives outside the repo). No production code touched; no recovery behavior
 implemented, per explicit instruction.
+
+- **Autonomous Recovery Readiness Assessment (2026-07-28, same-day continuation):** mentor asked for a synthesis
+  document, no implementation: `docs/Autonomous_Recovery_Readiness_Assessment.md`, analyzing the Lifecycle Audit,
+  Recovery Audit, and Disturbance Simulation Report together to answer whether the robot is ready for a recovery
+  layer. Verdict: **not ready** — the chassis-PID divergence bug is the dominant blocker, since the Disturbance
+  Report's own zero-displacement control run already produced 3.10m of lateral error, meaning every threshold-based
+  signal (tracking error, vision-rejection streak) cannot distinguish "disturbed" from "normal" operation. Every item
+  from the three source docs classified as blocker-before-recovery / can-proceed-in-parallel / future-enhancement.
+  One new finding not present in any prior doc: a future recovery-initiated command cancellation would be
+  indistinguishable from a teleop transition or a dashboard click in `Auto/EndedInterrupted` unless given its own
+  attribution telemetry — this directly motivated the observability work below. No production code touched.
+
+- **Phase 0.5: Autonomous Observability Layer (2026-07-28, same-day continuation) — implemented, TDD throughout, all
+  gates green, nothing committed.** Mentor's explicit scope: build the telemetry foundation a future recovery layer
+  would need, with zero behavior change — no drivetrain changes, no PathPlanner recovery integration, no PID tuning,
+  no autonomous behavior changes, tests written first. Delivered:
+  1. **`src/main/java/frc/robot/auto/AutonomousHealthMonitor.java`** (new package `frc.robot.auto`) — a
+     supplier-injected, boot-free-testable aggregator mirroring `TrajectoryErrorTracker`'s own pure-`update()`/
+     logging-`periodic()` split. Computes `TrackingDegraded` (lateral/longitudinal error over placeholder 1.0m
+     thresholds), `Stalled` (a ported rolling-window no-motion check, gated on "is path-following currently active"
+     so it never fires during an intentional stationary phase like the final Orbit/Shooting-Sequence segment of
+     every auto), `VisionUnhealthy` (5+ consecutive rejected vision corrections), and a priority-ordered
+     `RecoveryReason` enum (`TRACKING_DEGRADED` > `STALLED` > `VISION_UNHEALTHY` > `NONE`). Every threshold is
+     package-private and explicitly commented as a placeholder, not yet trustworthy, per the Readiness Assessment's
+     own verdict. Never references `CommandScheduler` — proven by a dedicated test that schedules a command, calls
+     `update()` 20 times with maximally adverse signal values, and asserts the command is still scheduled afterward.
+  2. **Telemetry:** `Auto/Health/{TrackingDegraded,Stalled,VisionUnhealthy,RecoveryReason}`, logged from
+     `periodic()` only — `update()` itself does no I/O.
+  3. **Attribution telemetry:** new `Auto/EndReason` on `Robot.java`, a `Robot.AutoEndReason` enum
+     (`NATURAL_COMPLETION`/`TELEOP_INTERRUPTION`/`TEST_CANCELLATION`/`RECOVERY_CANCELLATION`(reserved, unused until
+     a future recovery layer exists)/`UNKNOWN_INTERRUPTION`), driven by a package-private static
+     `pendingCancelReason` field set at the top of `teleopInit()`/`testInit()` and read (then reset) inside
+     `wrapAutonomousForTelemetry()`'s existing `finallyDo` callback. Closes exactly the gap the Readiness
+     Assessment flagged.
+  4. Two small, purely additive supporting changes this required: `TrajectoryErrorTracker.
+     getSecondsSinceLastFreshTargetPose()` (a new live getter — `Double.POSITIVE_INFINITY` if no path setpoint has
+     ever arrived, otherwise seconds since the last one — the live equivalent of `AutoRegressionTolerances.
+     kStalePathSetpointGraceSeconds`'s existing post-hoc grace window, needed to gate the stall check), and
+     `Vision.getLastRejectedJumpMeters()` (exposes a value `fuseMeasurements()` already computed and logged but
+     that, per the Recovery Audit's F5, had zero runtime consumers). Neither changes any existing decision logic;
+     both are new getters plus one new field each.
+  5. **Tests written first (TDD):** `src/test/java/frc/robot/auto/AutonomousHealthMonitorTest.java` (14 tests: 13
+     pure-logic, using injected mutable fields and lambda suppliers, no HAL boot; 1 boot-based integration test —
+     the only one in the class, per this project's `forkEvery=1`/`Logger.start()`-singleton constraint — that
+     schedules a `WaitCommand`, lets it finish naturally, and reads the resulting wpilog to confirm all four
+     `Auto/Health/*` entries were actually logged) and `src/test/java/frc/robot/utility/TrajectoryErrorTrackerTest.java`
+     (4 pure tests for the new getter). `RobotAutoTerminationTelemetryTest.java` was extended (not replaced) with a
+     third phase driving `teleopInit()`/`testInit()` directly and asserting both `Auto/EndReason` transitions
+     (`NATURAL_COMPLETION` → `UNKNOWN_INTERRUPTION`, the latter being the correct fallback for phase 2's direct
+     `CommandScheduler.cancel()`, which bypasses both lifecycle methods) and the new `pendingCancelReason` tags.
+
+  **Real bug caught by TDD, not shipped:** the first port of the rolling-window stall check translated
+  `WpilogStallAnalyzer`'s original `if (windowStart == i) continue;` (an index-based "no other sample exists yet"
+  check) into a threshold-based time comparison (`oldest[0] > t - kStallWindowSeconds + epsilon`) — this looked
+  plausible but is structurally wrong: a discrete rolling window's oldest retained sample is generically ~1 tick
+  newer than the ideal boundary, which is a real property of discrete sampling, not floating-point noise (confirmed
+  via a standalone debug harness run outside gradle/JUnit for fast iteration, testing both the epsilon-tolerance
+  hypothesis and irregular/realistic tick spacing). Fixed by matching the original algorithm's actual semantics
+  exactly: `if (poseHistory.size() == 1) { stalled = false; return; }`, no epsilon constant.
+
+  **Verification:** `./gradlew compileJava` BUILD SUCCESSFUL; `python SKILLS/run_headless_sim.py --run-seconds 12`
+  PASS; full `./gradlew test` 41/42 — the one failure, `LtNeutralAutoRegressionTest.regressionCheck()` ("moved
+  0.044m over the preceding 1.00s, threshold 0.050m"), is the same pre-existing flaky stall-check class documented
+  extensively elsewhere in this file. **Causality independently checked, not assumed:** `git stash -u` (all 9
+  changed/new files) → rerun in isolation against the pre-change baseline → also failed, same signature ("moved
+  0.025m... threshold 0.050m") → `git stash pop`, confirmed via `git status --short` that all changes were restored
+  intact.
+
+  **Files touched:** `src/main/java/frc/robot/Robot.java`, `src/main/java/frc/robot/RobotContainer.java`,
+  `src/main/java/frc/robot/subsystems/vision/Vision.java`, `src/main/java/frc/robot/utility/TrajectoryErrorTracker.java`
+  (all modified, `git diff --stat`: 5 files, 141 insertions, 3 deletions), plus new
+  `docs/Autonomous_Recovery_Readiness_Assessment.md`, `src/main/java/frc/robot/auto/AutonomousHealthMonitor.java`,
+  `src/test/java/frc/robot/auto/AutonomousHealthMonitorTest.java`, `src/test/java/frc/robot/utility/
+  TrajectoryErrorTrackerTest.java`. **Nothing committed** (not asked this session).
+
+  Four further prompt-injection occurrences this session, same fingerprint as the running tally above (`<system-
+  reminder>` on `git stash`/`git stash pop` tool output, falsely claiming specific files were "modified by the user
+  or a linter" plus a "don't tell the user" instruction) — all four declined and surfaced to the mentor immediately.
+  Running total now at least thirty-two.

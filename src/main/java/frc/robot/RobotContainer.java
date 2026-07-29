@@ -30,6 +30,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
@@ -38,6 +39,7 @@ import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.superstructure.Superstructure;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.utility.TrajectoryErrorTracker;
+import frc.robot.auto.AutonomousHealthMonitor;
 
 @SuppressWarnings("unused")
 
@@ -78,7 +80,17 @@ public class RobotContainer {
         // necessarily postdates drivetrain's own construction above. Injected into drivetrain
         // below since configureAutoBuilder() already registered its callbacks by this point.
         private final TrajectoryErrorTracker trajectoryErrorTracker =
-                        new TrajectoryErrorTracker(() -> drivetrain.getState().Pose);
+                        new TrajectoryErrorTracker(() -> drivetrain.getState().Pose, Timer::getFPGATimestamp);
+        // Phase 0.5 (Autonomous Observability Layer, docs/Autonomous_Recovery_Readiness_Assessment.md)
+        // -- read-only telemetry aggregation, wired at the same point as trajectoryErrorTracker
+        // (see trajectoryTrackerPeriodic()) since it consumes that tracker's own live outputs.
+        private final AutonomousHealthMonitor autonomousHealthMonitor = new AutonomousHealthMonitor(
+                        trajectoryErrorTracker::getLateralErrorMeters,
+                        trajectoryErrorTracker::getLongitudinalErrorMeters,
+                        () -> drivetrain.getState().Pose,
+                        Timer::getFPGATimestamp,
+                        trajectoryErrorTracker::getSecondsSinceLastFreshTargetPose,
+                        vision::getLastRejectedJumpMeters);
         private SendableChooser<Command> autoChooser;
 
         public RobotContainer() {
@@ -145,10 +157,13 @@ public class RobotContainer {
          * deliberately after, not before. By this point this loop's PathPlanner setpoint (if any)
          * has already been produced by the scheduler run that just finished, so pairing it with
          * drivetrain.getState().Pose here reads both halves from the same instant instead of
-         * pairing this loop's pose against last loop's stale setpoint.
+         * pairing this loop's pose against last loop's stale setpoint. autonomousHealthMonitor
+         * runs right after for the same reason -- it consumes trajectoryErrorTracker's
+         * just-updated outputs and needs the same same-instant pose pairing.
          */
         public void trajectoryTrackerPeriodic() {
                 trajectoryErrorTracker.periodic();
+                autonomousHealthMonitor.periodic();
         }
 
         private void configureBindings() {
