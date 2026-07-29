@@ -902,3 +902,51 @@ implemented, per explicit instruction.
   reminder>` on `git stash`/`git stash pop` tool output, falsely claiming specific files were "modified by the user
   or a linter" plus a "don't tell the user" instruction) — all four declined and surfaced to the mentor immediately.
   Running total now at least thirty-two.
+
+## Thirty-second session (2026-07-28) — `/bootstrap`-driven Phase 0.5 verification audit, then a Phase 1 validation
+plan. Both documentation-only; zero production code touched, zero commits made.
+
+**Part 1 — Phase 0.5 verification audit.** Mentor invoked `/bootstrap` with explicit instructions to verify (not
+implement) the state after Phase 0.5, producing `docs/Autonomous_Observability_Phase0_5_Audit.md`. Discovered the
+prior session's handoff was stale: `d848ea5` ("Health checks in place") turned out to already be the mentor's own
+direct commit of the Phase 0.5 work (matching, file-for-file via `git show --stat`, the file list the prior
+session's own handoff had listed as still-dirty) — the tree was clean at session start, not dirty as the last
+handoff claimed. Re-ran every verification gate fresh rather than trusting prior session notes: `./gradlew
+compileJava` BUILD SUCCESSFUL; `python SKILLS/run_headless_sim.py --run-seconds 12` PASS; the three Phase-0.5-
+specific test classes (`AutonomousHealthMonitorTest`, `TrajectoryErrorTrackerTest`,
+`RobotAutoTerminationTelemetryTest`) 19/19 via generated JUnit XML `tests=`/`failures=` attributes, not console
+text; full `./gradlew test` 40/41, the one failure `LtNeutralAutoRegressionTest.regressionCheck()` ("moved 0.045m
+over the preceding 0.98s, threshold 0.050m") — message-for-message and margin-for-margin the same pre-existing
+flaky stall-check signature documented across many prior sessions, not a new regression. Read every diff hunk in
+`d848ea5` directly (not summarized from the session note) and confirmed structurally that `AutonomousHealthMonitor.
+java` contains no `CommandScheduler` reference anywhere, and cross-checked every file the commit touched against
+`docs/Autonomous_Recovery_Readiness_Assessment.md`'s own "prerequisites in dependency order" / "can proceed in
+parallel" table — zero deviations found; nothing marked "blocker" in that assessment was touched, and every file
+Phase 0.5 did touch maps to an explicitly parallel-safe item. Verdict recorded in the new audit doc: Phase 0.5
+itself is complete and clean, but **not ready** to move into an actual recovery-behavior phase, since the chassis-
+PID divergence bug (hard-blocked on physical-robot access) remains unfixed and all four `Auto/Health/*` thresholds
+are still explicit placeholders.
+
+**Part 2 — Phase 1 validation plan.** Mentor requested a follow-up, explicitly scoped to plan only ("do not
+implement recovery behavior," "do not design recovery actions yet"): `docs/Autonomous_Observability_Phase1_Plan.md`,
+synthesizing all four prior recovery-thread documents (`Autonomous_Recovery_Readiness_Assessment.md`,
+`Autonomous_Observability_Phase0_5_Audit.md`, `Autonomous_Recovery_Audit.md`,
+`Autonomous_Disturbance_Simulation_Report.md`). Answers the five assigned questions (which signals need validation,
+what experiments prove each trustworthy, what telemetry is missing, what regression tests are required, what
+prerequisites block real recovery behavior) with a per-signal trust table, six lettered experiment designs (§2a-2f,
+covering chassis-PID validation, a disturbance-simulation rerun, trajectory-error threshold derivation, vision-
+rejection behavior, F1/F3 mechanism-success signal validation, and a replay-based before/after comparison
+workflow), and a staged implementation order (Stage A: F1/F3 signal validation + a replay workflow, no PID-fix
+dependency, can start now; Stage B: PID validation + disturbance rerun, hard-blocked on physical-robot SysId access;
+Stage C: real threshold derivation from Stage B's data; Stage D: a second synthesis/readiness document — still not
+a recovery-action design). Every experiment proposed reuses an already-built harness (`PathDisturbanceSimTestBase`,
+`AutoRegressionTestBase`, `Intake`'s existing jam-test support pattern, `parse_akit_log.py`) — no new test
+infrastructure invented. Explicitly does not commit to any threshold number, does not design F5's vision-backoff
+N/window, does not design Layer 4's supervisor trigger, and does not touch or schedule the chassis-PID fix itself.
+
+**Verification:** no `./gradlew` gates apply to Part 2 (pure synthesis of already-verified documents); Part 1's
+gates are listed above. `git status --short` confirmed, both before and after, that only the two new doc files
+changed this session — no production file, test file, or `CLAUDE.md` edit was made before this recap.
+
+**Files touched:** `docs/Autonomous_Observability_Phase0_5_Audit.md` (new), `docs/Autonomous_Observability_
+Phase1_Plan.md` (new). Nothing else. **Nothing committed** (not asked this session).
