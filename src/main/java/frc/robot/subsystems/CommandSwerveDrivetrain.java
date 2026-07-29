@@ -73,6 +73,10 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     // configured CAN-FD odometry rate (TunerConstants' default of 250 Hz -- see
     // createDrivetrain()'s javadoc), not an arbitrary maximum.
     private static final double kSimOdometrySignalHz = 250.0;
+    // Sim-only: how long resetPose() waits for the teleported heading to reach the Pigeon status
+    // signal. Generous relative to the 250 Hz signal rate (4 ms) and the 5 ms sim notifier period;
+    // waitForUpdate returns as soon as a fresh value arrives, so this is a ceiling, not a sleep.
+    private static final double kSimGyroSettleSeconds = 0.1;
     private Notifier m_simNotifier = null;
     private SwerveModuleConstants<?, ?, ?>[] moduleConstantsForSim;
     private MapleSimSwerveDrivetrain mapleSim;
@@ -735,12 +739,35 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         }
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>In simulation the physics body must be teleported, and the sim Pigeon must have caught up
+     * to the new heading, BEFORE the estimator is seeded.
+     *
+     * <p>MapleSimSwerveDrivetrain drives the sim Pigeon's raw yaw off the physics body, and CTRE's
+     * odometry integrates gyro DELTAS. With the old ordering (seed first, teleport second) the
+     * Pigeon still reported the pre-teleport heading for a tick or two, then jumped to the new one;
+     * odometry folded that catch-up step in as real rotation, leaving
+     * {@code reported = 2*target - heading_before}. Measured 2026-07-29: seeding to 78.296 deg from
+     * a body at -22.05 deg settled the estimator at 177.28 deg, and on the "Left Trench Neutral"
+     * control run (body at 0 deg) it settled at 156.6 deg against a 78.296 deg target -- handing
+     * PathPlanner a 78 deg heading error on the very first sample of every simulated auto while
+     * translation error was still 0.000 m.
+     *
+     * <p>Real hardware never enters this branch ({@code mapleSim} is null there), so the
+     * physical-robot path is byte-for-byte unchanged. Guarded by ResetPoseHeadingSimTest.
+     */
     @Override
     public void resetPose(Pose2d pose) {
-        super.resetPose(pose);
         if (mapleSim != null) {
             mapleSim.mapleSimDrive.setSimulationWorldPose(pose);
+            mapleSim.syncGyroToSimulationPose();
+            // Block until the odometry thread can actually observe the post-teleport yaw. Without
+            // this the stale value still lands after super.resetPose() and the delta reappears.
+            getPigeon2().getYaw().waitForUpdate(kSimGyroSettleSeconds);
         }
+        super.resetPose(pose);
     }
 
     /** Returns the maple-sim drivetrain simulation, or null on real hardware / before the sim thread starts. */

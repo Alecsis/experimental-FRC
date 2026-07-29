@@ -97,6 +97,20 @@ public class MapleSimSwerveDrivetrain {
     SimulatedArena.getInstance().addDriveTrainSimulation(mapleSimDrive);
   }
 
+  /**
+   * Pushes the physics body's current heading straight into the Pigeon sim state, without advancing
+   * physics.
+   *
+   * <p>{@link #update()} is otherwise the only writer of the Pigeon's RAW yaw, and it runs on the
+   * sim notifier thread. A caller that teleports the body therefore leaves the Pigeon reading the
+   * STALE pre-teleport heading for a tick or two, and CTRE's odometry -- which integrates gyro
+   * DELTAS -- then folds that catch-up step in as if the robot had really rotated. Calling this
+   * immediately after a teleport collapses that delta to zero.
+   */
+  public void syncGyroToSimulationPose() {
+    pigeonSim.setRawYaw(mapleSimDrive.getSimulatedDriveTrainPose().getRotation().getMeasure());
+  }
+
   /** Advances the physics simulation one tick and injects the results into the CTRE sim devices. */
   public void update() {
     SimulatedArena.getInstance().simulationPeriodic();
