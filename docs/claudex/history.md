@@ -950,3 +950,46 @@ changed this session — no production file, test file, or `CLAUDE.md` edit was 
 
 **Files touched:** `docs/Autonomous_Observability_Phase0_5_Audit.md` (new), `docs/Autonomous_Observability_
 Phase1_Plan.md` (new). Nothing else. **Nothing committed** (not asked this session).
+
+### `/bootstrap`-driven AI tooling workflow scaffold (2026-07-28, same-day session)
+
+Mentor invoked `/bootstrap` with a fully-scoped implementation task attached (per `.claude/commands/bootstrap.md`'s
+own rule: proceed into a task the arguments already name, after the read-only bootstrap check). Built a
+project-local AI tooling workflow — explicitly **not** touching `~/.claude` or any global config, so a fresh clone
+of this repo carries the same workflow. Scope was documentation/config only: no production code, no tests, no
+Gradle, no vendordeps, no behavior change — and none were touched, confirmed via `git status --short` before/after
+(clean at `3103361` "Docs" before; exactly 8 new untracked files after, nothing else).
+
+**Three new slash commands** (`.claude/commands/audit.md`, `replay.md`, `regression.md`), matching the existing
+`bootstrap.md`/`recap.md` frontmatter (`description:` only) and body conventions (`$ARGUMENTS` placeholder):
+- `/audit` — codifies this project's existing audit-first pattern (every `docs/*_Audit.md` file to date) as a
+  reusable command: read-only, findings-before-conclusions, output under `docs/`.
+- `/replay` — guides AdvantageKit replay analysis via the two new agent docs below; explicitly documents that no
+  automated baseline-vs-modified log comparison harness exists in this repo, and describes the manual
+  `parse_akit_log.py --dump`-per-log workflow instead of implying a tool that isn't there.
+- `/regression` — walks the verification-loop's four gates in order (`compileJava` → `run_headless_sim.py` →
+  `./gradlew test` → full suite) and requires cross-checking any failure against `CLAUDE.md`'s already-documented
+  flaky signatures (`LtNeutralAutoRegressionTest`'s stall-check margin, the `SimHooks.stepTiming()` JNI-hang class)
+  before calling it a new regression.
+
+**Five new `SKILLS/` agent docs** (`simulation-agent.md`, `replay-testing-agent.md`, `log-analysis-agent.md`,
+`robot-description-agent.md`, `game-knowledge-agent.md`), each using the requested Purpose/When to use/Required
+tools/Expected inputs/Expected outputs/Safety constraints structure. Every capability referenced was independently
+confirmed to exist by direct inspection this session before being written down — `SKILLS/run_headless_sim.py`'s
+actual CLI flags and exit-code semantics; `SKILLS/parse_akit_log.py --help`'s real flag set; `build.gradle`'s
+`replayWatch` task and `Robot.java`'s real `REPLAY`-mode wiring (`LogFileUtil.findReplayLog()`/
+`Logger.setReplaySource(new WPILOGReader(...))`); the real paths of `Constants.java`/`FieldConstants.java`/
+`generated/TunerConstants.java`/`pathplanner/settings.json`; and `src/main/deploy/pathplanner/autos/*.auto` as the
+actual source of auto/game-piece naming, after confirming via a repo-wide grep that no separate game-manual
+document exists here (so `game-knowledge-agent.md` says that explicitly rather than inventing one).
+
+**Verification:** doc/config-only task, so the code-behavior verification-loop gates don't apply. The applicable
+check — "does every referenced tool/class/flag actually exist as described" — was performed file-by-file via direct
+reads (`run_headless_sim.py`, `parse_akit_log.py --help`, `Robot.java`, `build.gradle`,
+`AutoRegressionTestBase.java`, `PathDisturbanceSimTestBase.java`, `AutonomousHealthMonitor.java`) and `Glob`
+confirmation of every referenced file path, not asserted from memory.
+
+**Files touched:** `.claude/commands/audit.md`, `replay.md`, `regression.md` (all new);
+`SKILLS/simulation-agent.md`, `replay-testing-agent.md`, `log-analysis-agent.md`, `robot-description-agent.md`,
+`game-knowledge-agent.md` (all new). Nothing else — no `src/`, `build.gradle`, or vendordep file touched. **Nothing
+committed** (not asked this session).
