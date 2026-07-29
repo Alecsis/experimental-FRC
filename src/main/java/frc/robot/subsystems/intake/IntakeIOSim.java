@@ -158,4 +158,12 @@ public class IntakeIOSim implements IntakeIO {
     rollerVelocitySetpointRadPerSec = velocityRadPerSec;
     intakeRunning = velocityRadPerSec > 0;
   }
+
+  /** Test-only: adds one game piece directly to the lazily-constructed IntakeSimulation,
+   *  bypassing field/collision physics. Returns false if IntakeSimulation hasn't been constructed
+   *  yet (RobotContainer.drivetrain's MapleSim drive wasn't available on any prior
+   *  updateInputs() tick). Package-private -- only for JUnit tests in this package. */
+  boolean addGamePieceForTest() {
+    return intakeSimulation != null && intakeSimulation.addGamePieceToIntake();
+  }
 }

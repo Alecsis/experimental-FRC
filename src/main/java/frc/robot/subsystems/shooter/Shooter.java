@@ -45,6 +45,10 @@ public class Shooter extends SubsystemBase {
   private Agitate currentAgitate = Agitate.STOP;
   private indexing currentIndexing = indexing.STOP;
 
+  private boolean testJamOverrideActive = false;
+  private double testJamStatorCurrentAmps;
+  private double testJamVelocityRadsPerSec;
+
   public enum Agitate {
     STOP(0),
     IN(0.35), // if shred lower 5%
@@ -111,9 +115,24 @@ public class Shooter extends SubsystemBase {
     return Commands.run(() -> setAgitator(Agitate.STOP));
   }
 
-  private boolean isJammed() {
+  /** Package-private (not private) so in-package JUnit tests can assert on it directly -- same
+   *  reasoning as Intake's identical pattern. */
+  boolean isJammed() {
     return inputs.indexStatorCurrentAmps > kJamStatorCurrentAmps
         && inputs.indexVelocityRadsPerSec < kJamVelocityThresholdRadPerSec;
+  }
+
+  /** Test-only: forces isJammed()'s inputs, bypassing physics ShooterIOSim can't model (no
+   *  load/obstruction). Package-private -- only for JUnit tests in this package. */
+  void forceJamConditionForTest(double statorCurrentAmps, double velocityRadsPerSec) {
+    testJamOverrideActive = true;
+    testJamStatorCurrentAmps = statorCurrentAmps;
+    testJamVelocityRadsPerSec = velocityRadsPerSec;
+  }
+
+  /** Test-only: stops overriding sensor readings, resumes real ShooterIOSim physics. */
+  void clearJamOverrideForTest() {
+    testJamOverrideActive = false;
   }
 
   public Command indexJam() {
@@ -220,10 +239,15 @@ public class Shooter extends SubsystemBase {
   @Override
   public void periodic() {
     io.updateInputs(inputs);
+    if (testJamOverrideActive) {
+      inputs.indexStatorCurrentAmps = testJamStatorCurrentAmps;
+      inputs.indexVelocityRadsPerSec = testJamVelocityRadsPerSec;
+    }
     Logger.processInputs("Shooter", inputs);
 
     SmartDashboard.putBoolean(
         "Shooter/Index Stall", inputs.indexStatorCurrentAmps > kJamStatorCurrentAmps);
+    Logger.recordOutput("Shooter/Jammed", isJammed());
 
     if (targetRPM > 0) {
       setRPMShooter(targetRPM);

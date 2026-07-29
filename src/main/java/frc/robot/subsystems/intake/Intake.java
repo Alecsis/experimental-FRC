@@ -158,6 +158,21 @@ public class Intake extends SubsystemBase {
     return currentRoller;
   }
 
+  /** Whether the intake currently holds a game piece. Sim: IronMaple's simulated field/collision
+   *  ground truth (IntakeIOSim). Real: not yet wired to a sensor -- IntakeIOReal never sets this,
+   *  so it always reads false on real hardware today. */
+  public boolean hasGamePiece() {
+    return inputs.hasGamePiece;
+  }
+
+  /** Test-only: injects one simulated game piece directly into IntakeIOSim's IntakeSimulation,
+   *  bypassing field/collision physics. No-op (returns false) if not running against IntakeIOSim,
+   *  or if IntakeIOSim's IntakeSimulation hasn't been lazily constructed yet. Package-private --
+   *  only for JUnit tests in this package. */
+  boolean provideGamePieceForTest() {
+    return io instanceof IntakeIOSim sim && sim.addGamePieceForTest();
+  }
+
   private boolean isJammed() {
     return inputs.rollerStatorCurrentAmps > kJamStatorCurrentAmps
         && inputs.rollerVelocityRadsPerSec < kJamVelocityThresholdRadPerSec;
