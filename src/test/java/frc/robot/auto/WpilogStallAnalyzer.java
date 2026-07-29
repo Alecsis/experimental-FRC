@@ -49,7 +49,9 @@ final class WpilogStallAnalyzer {
         // {timestampSeconds, xMeters, yMeters}, sorted below -- WPILOG doesn't guarantee
         // per-entry record order (see parse_akit_log.py's own docstring on this).
         List<double[]> poseTrace = new ArrayList<>();
-        List<Double> freshSetpointTimestamps = new ArrayList<>();
+        // {timestampSeconds, 1|0} -- SetpointFresh is a de-duplicated LEVEL in the log, so both
+        // edges matter, not just the true ones. See checkForStall's javadoc.
+        List<double[]> setpointFreshTransitions = new ArrayList<>();
 
         for (DataLogRecord record : reader) {
             if (record.isStart()) {
@@ -75,9 +77,8 @@ final class WpilogStallAnalyzer {
                 double y = buf.getDouble(8);
                 poseTrace.add(new double[] {tSeconds, x, y});
             } else if (name.equals(kSetpointFreshEntryName) && kBooleanType.equals(type)) {
-                if (record.getBoolean()) {
-                    freshSetpointTimestamps.add(tSeconds);
-                }
+                setpointFreshTransitions.add(
+                        new double[] {tSeconds, record.getBoolean() ? 1.0 : 0.0});
             }
         }
 
@@ -85,35 +86,91 @@ final class WpilogStallAnalyzer {
             throw new IOException("wpilog " + wpilogFile + " never logged " + kPoseEntryName
                     + " -- is Telemetry.telemeterize() wired up?");
         }
-        if (freshSetpointTimestamps.isEmpty()) {
+
+        return checkForStall(poseTrace, setpointFreshTransitions, stallWindowSeconds,
+                stallThresholdMeters, graceSeconds);
+    }
+
+    /**
+     * Pure stall rule, split out from the file reader so it can be unit-tested without a .wpilog
+     * (see WpilogStallAnalyzerTest).
+     *
+     * <p>A sample counts as "path-following active" when a fresh PathPlanner setpoint arrived
+     * within {@code graceSeconds} before it. The stall check runs only where the ENTIRE trailing
+     * window is active, i.e. a path was driving for the whole window.
+     *
+     * <p>That last part is the point: gating on the globally-last fresh setpoint instead (the
+     * original rule) silently assumed the robot never stops until the final path ends. It does now
+     * -- "LT Neutral" holds position between path segments while its parallel intake branch runs
+     * (see AutoPathEndVelocityTest) -- and that deliberate wait was being reported as a stall.
+     * Requiring the whole window to be active also keeps the dwell suppressed for the first window
+     * after the next path starts, when the trailing window still overlaps the wait.
+     *
+     * <p>{@code Trajectory/SetpointFresh} is written every periodic tick and a fresh setpoint
+     * arrives on every tick while a path drives, so WPILOG's change-only de-duplication turns it
+     * into a LEVEL: one {@code true} record at the rising edge, one {@code false} at the falling
+     * edge (measured: 5 records across a 15 s "LT Neutral" run). It is therefore passed in as
+     * transitions and reconstructed here, not treated as a list of per-tick pulses.
+     *
+     * @param poseTrace {@code {timestampSeconds, xMeters, yMeters}} samples, any order
+     * @param setpointFreshTransitions {@code {timestampSeconds, 1|0}} level transitions, any order
+     */
+    static Result checkForStall(List<double[]> poseTrace, List<double[]> setpointFreshTransitions,
+            double stallWindowSeconds, double stallThresholdMeters, double graceSeconds) {
+        boolean everFresh = setpointFreshTransitions.stream().anyMatch(r -> r[1] != 0.0);
+        if (!everFresh) {
             return new Result(false, "no fresh PathPlanner setpoint ever logged -- "
                     + "path-following-window stall check skipped entirely (nothing to gate on)");
         }
 
-        poseTrace.sort((a, b) -> Double.compare(a[0], b[0]));
-        double lastFreshSetpointSeconds = freshSetpointTimestamps.get(freshSetpointTimestamps.size() - 1);
+        List<double[]> trace = new ArrayList<>(poseTrace);
+        trace.sort((a, b) -> Double.compare(a[0], b[0]));
+        List<double[]> fresh = new ArrayList<>(setpointFreshTransitions);
+        fresh.sort((a, b) -> Double.compare(a[0], b[0]));
 
-        int windowStart = 0;
-        for (int i = 0; i < poseTrace.size(); i++) {
-            double tI = poseTrace.get(i)[0];
-            while (poseTrace.get(windowStart)[0] < tI - stallWindowSeconds) {
+        // Index of the most recent sample that was NOT path-following active. Any window reaching
+        // back to or past it overlaps a no-path-driving stretch and must not be judged.
+        int lastInactiveIndex = -1;
+        int freshCursor = -1;
+        // Index of the newest sample at or before (tI - stallWindowSeconds), so the comparison
+        // below always spans a FULL window. Starts at -1 = no such sample yet.
+        int windowStart = -1;
+
+        for (int i = 0; i < trace.size(); i++) {
+            double tI = trace.get(i)[0];
+            while (freshCursor + 1 < fresh.size() && fresh.get(freshCursor + 1)[0] <= tI) {
+                freshCursor++;
+            }
+            // Level in effect at tI: true => a path is driving right now; false => a path stopped
+            // driving at that transition, and the grace window still counts as active.
+            boolean active = freshCursor >= 0
+                    && (fresh.get(freshCursor)[1] != 0.0
+                            || tI <= fresh.get(freshCursor)[0] + graceSeconds);
+            if (!active) {
+                lastInactiveIndex = i;
+            }
+
+            while (windowStart + 1 < trace.size()
+                    && trace.get(windowStart + 1)[0] <= tI - stallWindowSeconds) {
                 windowStart++;
             }
-            if (windowStart == i) {
-                continue; // not enough history yet for a full window
+            if (windowStart < 0) {
+                continue; // not enough history yet to span a full stallWindowSeconds
             }
-            if (tI > lastFreshSetpointSeconds + graceSeconds) {
-                continue; // past the path-following phase -- stationary aim/shoot is expected here
+            if (lastInactiveIndex >= windowStart) {
+                continue; // window overlaps a stretch with no path driving -- stationary is expected
             }
-            double dx = poseTrace.get(i)[1] - poseTrace.get(windowStart)[1];
-            double dy = poseTrace.get(i)[2] - poseTrace.get(windowStart)[2];
+            double dx = trace.get(i)[1] - trace.get(windowStart)[1];
+            double dy = trace.get(i)[2] - trace.get(windowStart)[2];
             double moved = Math.hypot(dx, dy);
             if (moved < stallThresholdMeters) {
-                double windowSpan = tI - poseTrace.get(windowStart)[0];
+                double windowSpan = tI - trace.get(windowStart)[0];
                 return new Result(true, String.format(
                         "stalled at t=%.2fs: moved %.3fm over the preceding %.2fs (threshold %.3fm), "
-                                + "still within %.2fs of the last fresh path setpoint (t=%.2fs)",
-                        tI, moved, windowSpan, stallThresholdMeters, graceSeconds, lastFreshSetpointSeconds));
+                                + "with a path actively driving throughout that window "
+                                + "(most recent SetpointFresh transition t=%.2fs, grace %.2fs)",
+                        tI, moved, windowSpan, stallThresholdMeters, fresh.get(freshCursor)[0],
+                        graceSeconds));
             }
         }
 
