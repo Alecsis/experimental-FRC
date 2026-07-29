@@ -14,8 +14,27 @@ import edu.wpi.first.wpilibj.RobotBase;
  * constants are needed, to reduce verbosity.
  */
 public final class Constants {
+  // AdvantageKit's own LogFileUtil.findReplayLog() (called from Robot.java's REPLAY branch) and
+  // the replayWatch Gradle task both already treat this environment variable as the highest
+  // priority replay-log source (decompiled akit-java-26.0.2-sources.jar, LogFileUtil.java:17,51,
+  // ReplayWatch.java:49,168). Deriving currentMode from it is what makes that branch reachable --
+  // previously nothing here consulted it, so REPLAY was unreachable no matter how AKIT_LOG_PATH
+  // was set. Unset in every existing sim/test invocation path, so this changes no default
+  // behavior; it only takes effect when a developer explicitly sets it to run a replay.
+  private static final String kReplayLogPathEnvVar = "AKIT_LOG_PATH";
+
   public static final Mode simMode = Mode.SIM;
-  public static final Mode currentMode = RobotBase.isReal() ? Mode.REAL : simMode;
+
+  /** Package-private and pure so it's independently testable -- see ConstantsReplayModeTest. */
+  static Mode resolveCurrentMode(boolean isReal, String replayLogPathEnvVar, Mode simMode) {
+    if (isReal) {
+      return Mode.REAL;
+    }
+    return replayLogPathEnvVar != null ? Mode.REPLAY : simMode;
+  }
+
+  public static final Mode currentMode =
+      resolveCurrentMode(RobotBase.isReal(), System.getenv(kReplayLogPathEnvVar), simMode);
 
   public static enum Mode {
     /** Running on a real robot. */
