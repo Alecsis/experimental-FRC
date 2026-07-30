@@ -11,6 +11,9 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import edu.wpi.first.wpilibj.simulation.SimHooks;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Robot;
 import frc.robot.RobotContainer;
 import org.junit.jupiter.api.AfterEach;
@@ -89,7 +92,18 @@ class ResetPoseHeadingSimTest {
     SimHooks.stepTiming(0.02);
 
     Pose2d target = new Pose2d(8.0, 6.6643, TARGET);
-    RobotContainer.drivetrain.resetPose(target);
+
+    // resetPose() is normally called by PathPlanner from the robot/scheduler thread. Schedule
+    // the reset while timing is paused, then let the real robot loop execute it with one stepped
+    // periodic cycle. Calling resetPose() directly from this JUnit thread races the robot loop
+    // and MapleSim notifier, which can manufacture the very intermittency this test is meant to
+    // detect.
+    Command resetPoseCommand = Commands.runOnce(
+        () -> RobotContainer.drivetrain.resetPose(target), RobotContainer.drivetrain);
+    CommandScheduler.getInstance().schedule(resetPoseCommand);
+    SimHooks.stepTiming(0.02);
+    assertTrue(!CommandScheduler.getInstance().isScheduled(resetPoseCommand),
+        "the scheduled pose reset should execute during the stepped robot cycle");
 
     // Let the Pigeon catch-up step land. Pre-fix, this is exactly where the doubling appeared.
     for (int i = 0; i < 4; i++) {

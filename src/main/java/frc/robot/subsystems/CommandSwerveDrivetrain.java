@@ -770,6 +770,17 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         super.resetPose(pose);
     }
 
+    /** Stops the MapleSim notifier before the Phoenix drivetrain's own odometry thread closes. */
+    @Override
+    public void close() {
+        if (m_simNotifier != null) {
+            m_simNotifier.stop();
+            m_simNotifier.close();
+            m_simNotifier = null;
+        }
+        super.close();
+    }
+
     /** Returns the maple-sim drivetrain simulation, or null on real hardware / before the sim thread starts. */
     public AbstractDriveTrainSimulation getMapleSimDrive() {
         return mapleSim == null ? null : mapleSim.mapleSimDrive;

@@ -203,4 +203,9 @@ public class RobotContainer {
         public Command getAutonomousCommand() {
                 return autoChooser.getSelected();
         }
+
+        /** Releases drivetrain simulation and Phoenix odometry threads during test/sim shutdown. */
+        public void close() {
+                drivetrain.close();
+        }
 }
