@@ -1,0 +1,18 @@
+{
+  "autoName" : "LB Neutral",
+  "recordedAtGitSha" : "b0d1739b300cc1ee42437aeb6858e0a2a3a8ec61",
+  "completed" : false,
+  "runtimeSeconds" : 15.0071262,
+  "maxLateralErrorMeters" : 0.10641902399315323,
+  "maxLongitudinalErrorMeters" : 0.23630061215276346,
+  "diagnosticStartPose" : {
+    "xMeters" : 3.694235955056179,
+    "yMeters" : 5.227348314606742,
+    "thetaRadians" : 0.0
+  },
+  "diagnosticFinalPose" : {
+    "xMeters" : 2.7299813213213424,
+    "yMeters" : 6.299367353901347,
+    "thetaRadians" : -0.23666448416502503
+  }
+}
