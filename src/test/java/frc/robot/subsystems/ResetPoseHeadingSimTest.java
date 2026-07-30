@@ -91,48 +91,51 @@ class ResetPoseHeadingSimTest {
     DriverStationSim.notifyNewData();
     SimHooks.stepTiming(0.02);
 
-    Pose2d target = new Pose2d(8.0, 6.6643, TARGET);
+    for (int i = 0; i < 20; i++) {
+      final int iteration = i;
+      Rotation2d targetHeading = (i % 2 == 0) ? TARGET : Rotation2d.fromDegrees(-37.0);
+      Pose2d target = new Pose2d(8.0, 6.6643, targetHeading);
 
-    // resetPose() is normally called by PathPlanner from the robot/scheduler thread. Schedule
-    // the reset while timing is paused, then let the real robot loop execute it with one stepped
-    // periodic cycle. Calling resetPose() directly from this JUnit thread races the robot loop
-    // and MapleSim notifier, which can manufacture the very intermittency this test is meant to
-    // detect.
-    Command resetPoseCommand = Commands.runOnce(
-        () -> RobotContainer.drivetrain.resetPose(target), RobotContainer.drivetrain);
-    CommandScheduler.getInstance().schedule(resetPoseCommand);
-    SimHooks.stepTiming(0.02);
-    assertTrue(!CommandScheduler.getInstance().isScheduled(resetPoseCommand),
-        "the scheduled pose reset should execute during the stepped robot cycle");
-
-    // Let the Pigeon catch-up step land. Pre-fix, this is exactly where the doubling appeared.
-    for (int i = 0; i < 4; i++) {
+      // resetPose() is normally called by PathPlanner from the robot/scheduler thread. Schedule
+      // the reset while timing is paused, then let the real robot loop execute it with one stepped
+      // periodic cycle. Calling resetPose() directly from this JUnit thread races the robot loop
+      // and MapleSim notifier, which can manufacture the very intermittency this test is meant to
+      // detect.
+      Command resetPoseCommand = Commands.runOnce(
+          () -> RobotContainer.drivetrain.resetPose(target), RobotContainer.drivetrain);
+      CommandScheduler.getInstance().schedule(resetPoseCommand);
       SimHooks.stepTiming(0.02);
+      assertTrue(!CommandScheduler.getInstance().isScheduled(resetPoseCommand),
+          "the scheduled pose reset should execute during the stepped robot cycle");
+
+      // Let the Pigeon catch-up step land. Pre-fix, this is exactly where the doubling appeared.
+      for (int step = 0; step < 4; step++) {
+        SimHooks.stepTiming(0.02);
+      }
+
+      Pose2d body = RobotContainer.drivetrain.getSimulatedGroundTruthPose();
+      assertTrue(body != null,
+          "maple-sim body is null -- this harness cannot exercise the sim reset path, so the"
+              + " assertion below would be vacuous.");
+
+      Rotation2d estimator = RobotContainer.drivetrain.getState().Pose.getRotation();
+      double driftFromBody = Math.abs(estimator.minus(body.getRotation()).getDegrees());
+      double errorFromTarget = Math.abs(estimator.minus(targetHeading).getDegrees());
+
+      System.out.println("[resetPoseHeading] iteration=" + i + " target=" + targetHeading.getDegrees()
+          + " body=" + body.getRotation().getDegrees()
+          + " estimator=" + estimator.getDegrees());
+
+      assertTrue(errorFromTarget < TOLERANCE_DEGREES,
+          () -> "resetPose did not round-trip heading: asked " + targetHeading.getDegrees()
+              + " deg, estimator settled at " + estimator.getDegrees()
+              + " deg. A doubled heading means the teleport delta was integrated again.");
+
+      // The estimator must agree with physics ground truth, not merely with the request.
+      assertTrue(driftFromBody < TOLERANCE_DEGREES,
+          () -> "estimator heading " + estimator.getDegrees()
+              + " deg disagrees with maple-sim ground truth " + body.getRotation().getDegrees()
+              + " deg after pose reset iteration " + iteration + ".");
     }
-
-    Pose2d body = RobotContainer.drivetrain.getSimulatedGroundTruthPose();
-    assertTrue(body != null,
-        "maple-sim body is null -- this harness cannot exercise the sim reset path, so the"
-            + " assertion below would be vacuous.");
-
-    Rotation2d estimator = RobotContainer.drivetrain.getState().Pose.getRotation();
-    double driftFromBody = Math.abs(estimator.minus(body.getRotation()).getDegrees());
-    double errorFromTarget = Math.abs(estimator.minus(TARGET).getDegrees());
-
-    System.out.println("[resetPoseHeading] target=" + TARGET.getDegrees()
-        + " body=" + body.getRotation().getDegrees()
-        + " estimator=" + estimator.getDegrees());
-
-    assertTrue(errorFromTarget < TOLERANCE_DEGREES,
-        () -> "resetPose did not round-trip heading: asked " + TARGET.getDegrees()
-            + " deg, estimator settled at " + estimator.getDegrees()
-            + " deg. A value near " + (2 * TARGET.getDegrees())
-            + " means the teleport delta is being integrated again.");
-
-    // The estimator must agree with physics ground truth, not merely with the request.
-    assertTrue(driftFromBody < TOLERANCE_DEGREES,
-        () -> "estimator heading " + estimator.getDegrees()
-            + " deg disagrees with maple-sim ground truth " + body.getRotation().getDegrees()
-            + " deg after a pose reset.");
   }
 }

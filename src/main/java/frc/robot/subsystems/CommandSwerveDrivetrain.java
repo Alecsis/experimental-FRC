@@ -763,8 +763,16 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         if (mapleSim != null) {
             mapleSim.mapleSimDrive.setSimulationWorldPose(pose);
             mapleSim.syncGyroToSimulationPose();
+            // Force the status signal to observe the post-teleport value before the odometry
+            // estimator is seeded. waitForUpdate() alone can return from a signal update that
+            // was already queued while the notifier was under load.
+            BaseStatusSignal.refreshAll(getPigeon2().getYaw());
             // Block until the odometry thread can actually observe the post-teleport yaw. Without
             // this the stale value still lands after super.resetPose() and the delta reappears.
+            getPigeon2().getYaw().waitForUpdate(kSimGyroSettleSeconds);
+            // Re-assert after the first observation: under load, a queued pre-teleport sample can
+            // still be delivered between the explicit refresh and the odometry thread's read.
+            mapleSim.syncGyroToSimulationPose();
             getPigeon2().getYaw().waitForUpdate(kSimGyroSettleSeconds);
         }
         super.resetPose(pose);
