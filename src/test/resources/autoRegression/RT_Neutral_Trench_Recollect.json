@@ -1,0 +1,18 @@
+{
+  "autoName" : "RT Neutral - Trench Recollect",
+  "recordedAtGitSha" : "2ccce0c959512e87d1cf742cf0d2e42f15bfd37b",
+  "completed" : false,
+  "runtimeSeconds" : 15.0195405,
+  "maxLateralErrorMeters" : 0.07989989223002711,
+  "maxLongitudinalErrorMeters" : 0.20834972192733775,
+  "diagnosticStartPose" : {
+    "xMeters" : 3.6432808988764043,
+    "yMeters" : 0.5,
+    "thetaRadians" : -1.5707963267948966
+  },
+  "diagnosticFinalPose" : {
+    "xMeters" : 3.176416841700397,
+    "yMeters" : 1.3108933007577426,
+    "thetaRadians" : 0.2791364794667842
+  }
+}

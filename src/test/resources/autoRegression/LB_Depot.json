@@ -1,0 +1,18 @@
+{
+  "autoName" : "LB Depot",
+  "recordedAtGitSha" : "2ccce0c959512e87d1cf742cf0d2e42f15bfd37b",
+  "completed" : true,
+  "runtimeSeconds" : 13.9303242,
+  "maxLateralErrorMeters" : 0.13955779273360255,
+  "maxLongitudinalErrorMeters" : 0.20939295139960665,
+  "diagnosticStartPose" : {
+    "xMeters" : 3.694235955056179,
+    "yMeters" : 5.227348314606742,
+    "thetaRadians" : 0.0
+  },
+  "diagnosticFinalPose" : {
+    "xMeters" : 1.861809832259237,
+    "yMeters" : 5.003498291710518,
+    "thetaRadians" : -0.10009224856418439
+  }
+}
