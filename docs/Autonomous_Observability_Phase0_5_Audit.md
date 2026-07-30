@@ -1,5 +1,9 @@
 # Autonomous Observability Phase 0.5 — Verification Audit
 
+**Status update 2026-07-30:** This audit is a 2026-07-28 snapshot. Its verification of Phase 0.5
+behavior-neutrality remains valid, but its repeated characterization of the old 3.10 m sim
+divergence and physical-access dependency is superseded by the corrected pose-reset baseline.
+
 **Date:** 2026-07-28
 **Purpose:** Independently verify, after the fact and without re-implementing anything, that the
 committed Phase 0.5 ("Autonomous Observability Layer") work matches its own stated scope in
@@ -145,18 +149,16 @@ Checked against the assessment's own §4 ("prerequisites... in dependency order"
 | Vision-rejection aggregation (§2 table, "would have to build that aggregation itself") | `consecutiveVisionRejections` counter + `kVisionUnhealthyConsecutiveRejections` threshold added inside `AutonomousHealthMonitor`, not inside `Vision.java` itself — `Vision.java` only exposes the raw per-cycle value via `getLastRejectedJumpMeters()`. | **Yes**, and arguably cleaner than the assessment's phrasing implied (keeps `Vision.java` free of aggregation logic). |
 | "Not prerequisites — can start independently" (F1 sim `hasGamePiece`, F3 `Shooter.isJammed()`) | **Not touched.** Neither `Superstructure.INTAKING` nor `Superstructure.SHOOTING` reference these signals; `Intake.java`/`Shooter.java` are absent from `d848ea5`'s diff entirely. | **Correctly out of scope** — the mentor's Phase 0.5 request didn't ask for these, and this audit confirms they weren't opportunistically bundled in. |
 | "Layer 4 supervisor... should not be improvised" / production auto-trigger wiring | Not touched — no `pathfindToPose`/`pathfindThenFollowPath` call added anywhere; `AutonomousHealthMonitor`'s outputs have zero consumers. | **Correctly out of scope.** |
-| "Fix or characterize-and-bound the chassis-PID divergence bug" (§4.1, the primary blocker) | **Not touched**, and correctly so — Phase 0.5 was never scoped to fix this; the assessment explicitly separates "build the plumbing" (safe now) from "trust the threshold" (blocked on this fix). | **Correctly out of scope**, not a gap in this phase. |
+| "Fix or characterize-and-bound the chassis-PID divergence bug" (§4.1, the historical primary blocker) | **Not touched**, and correctly so — Phase 0.5 was never scoped to fix it. The later pose-reset correction invalidated the old divergence evidence; threshold trust still requires a fresh evidence pass. | **Correctly out of scope**, not a gap in this phase. |
 
 **No deviations found.** Every file Phase 0.5 touched maps to an item the Readiness Assessment
 explicitly marked "can proceed in parallel," and nothing marked "blocker" was touched.
 
 ## 7. Known limitations (carried forward, not resolved by this audit)
 
-- **The four `Auto/Health/*` thresholds are placeholders, not tuned values.** Per the Readiness
-  Assessment §1/§4.1, they should not be trusted to distinguish "disturbed" from "normal" until the
-  chassis-PID divergence bug (currently producing ~3.10m of lateral error on an undisturbed control
-  run, per the Disturbance Report) is fixed and the disturbance experiment is re-run against a stable
-  baseline.
+- **The four `Auto/Health/*` thresholds are placeholders, not tuned values.** They should not be
+  trusted to distinguish "disturbed" from "normal" until the corrected-baseline evidence pass and
+  mentor review establish appropriate thresholds.
 - **Nothing consumes `Auto/Health/*` or `Auto/EndReason` yet.** No alerting, no dashboard widget, no
   decision logic. This was correctly out of scope for Phase 0.5 and remains unimplemented.
 - **`RECOVERY_CANCELLATION` is a reserved, currently-dead enum value** — no code path sets it, by
@@ -187,10 +189,9 @@ one it's answering:
 This is not a new conclusion — it is a re-confirmation of the Readiness Assessment's own verdict,
 checked against current evidence rather than assumed still true:
 
-1. The primary blocker the assessment named (`PPHolonomicDriveController`'s unclamped feedback
-   producing several meters of "normal" tracking error) has not been touched by Phase 0.5 or any
-   session since — it remains hard-blocked on physical-robot SysId access, per `CLAUDE.md`'s
-   standing note.
+1. The assessment's original primary blocker was the pre-pose-fix sim divergence; that evidence is
+   superseded. Phase 0.5 still does not authorize behavior changes, and its placeholder thresholds
+   require a fresh evidence pass before they can drive a decision.
 2. Phase 0.5 itself is complete, correctly scoped, and verified clean in this session (§4-§6) — there
    is nothing further to do *within* Phase 0.5. But completing the plumbing does not unblock what the
    plumbing was explicitly not allowed to do yet (drive a decision).

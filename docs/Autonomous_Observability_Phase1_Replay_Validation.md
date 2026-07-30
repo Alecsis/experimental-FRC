@@ -32,7 +32,7 @@ than assuming the documented `SKILLS/replay-testing-agent.md` prerequisite still
 
 ## 2. Environment / prerequisites
 
-- Branch `refactor/hybrid`, working tree at the state left by the prior Stage A session (doc-only
+- Historical branch `refactor/hybrid`, working tree at the state left by the prior Stage A session (doc-only
   addition since; no `src/` changes between that session and this one).
 - `JAVA_HOME=/c/Users/Public/wpilib/2026/jdk` (Temurin 17.0.16) — required per `CLAUDE.md`, the
   PATH `java` is JDK 25 and cannot run this Gradle version.

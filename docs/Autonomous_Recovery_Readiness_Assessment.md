@@ -17,22 +17,17 @@ readiness: what has to be true before any of that framework is safe to build.
 Every claim below is a citation back to one of those three documents (or, transitively, to the
 source files they already traced) — nothing here is a new code-reading pass.
 
+**Status update 2026-07-30:** The original readiness blocker below was based on the pre-fix 3.10 m undisturbed sim divergence. That evidence was invalidated after the sim pose-reset heading fix; the corrected control baseline is bounded and disturbance error scales with the injected displacement. The verdict remains **not ready for recovery behavior**, but for narrower current reasons: health thresholds are still placeholders, no recovery action has been authorized or implemented, completion remains decoupled from tracking success, and the vision-rejection path still has no backoff. Treat the chassis-PID-divergence sections below as historical analysis, not current status.
+
 ---
 
 ## Verdict
 
-**Not ready.** One confirmed, pre-existing, out-of-scope bug — the unclamped `kP=5`/`kP=3`
-feedback term in `PPHolonomicDriveController` (first documented in `CLAUDE.md`'s sixteenth-session
-findings, empirically reconfirmed by the Disturbance Report's own control run) — currently
-produces **3.10m of lateral tracking error on a single undisturbed 6.35s path segment**
-(Disturbance Report, Finding 1). Every threshold-based signal a recovery layer would need to read
-(tracking error, vision-rejection streak) is downstream of this same instability. Building
-threshold logic on top of it today would not distinguish "the robot was hit" from "the robot
-always does this" — the single largest readiness gap identified across all three source documents.
-
-This is not a new finding — it is the same bug `CLAUDE.md`'s "PID retune milestone" bullet already
-tracks as blocked pending SysId/`Slot0` work — but this assessment is the first place it's been
-evaluated specifically as a blocker for *recovery infrastructure*, not just for tracking accuracy.
+**Not ready for recovery behavior.** The original 3.10 m sim-divergence blocker is superseded by
+the corrected pose-reset baseline. The remaining reasons are narrower: health thresholds are still
+placeholders, no recovery action has been authorized or implemented, command completion remains
+decoupled from tracking success, and the vision-rejection path still has no backoff. The detailed
+3.10 m analysis below is retained as historical evidence, not current controller status.
 
 ---
 
@@ -128,12 +123,9 @@ something," and "the match phase changed."
 
 In dependency order:
 
-1. **Fix or characterize-and-bound the chassis-PID divergence bug.** Blocks every threshold-based
-   signal. This is already a tracked, separate work item (`CLAUDE.md`'s "PID retune milestone"),
-   currently hard-blocked on the same physical-robot access as the Autonomous Velocity migration's
-   Phase 2 SysId characterization. Recovery-layer work and that migration track converge here —
-   this assessment does not create a new blocker, it identifies that the existing one also blocks
-   recovery.
+1. **Re-derive and validate health thresholds against the corrected baseline.** The old divergence
+   blocker no longer applies, but the current thresholds remain explicitly provisional and have no
+   authorized behavior consumer.
 2. **Re-run the Disturbance Report's exact experiment once (1) lands**, to get a trustworthy
    before/after baseline — the report's own explicit recommendation for resolving Finding 4, and
    the only way to know whether real disturbance recovery looks any different from the current

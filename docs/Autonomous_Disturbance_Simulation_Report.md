@@ -1,5 +1,7 @@
 # Autonomous Disturbance Simulation Report
 
+**Status update 2026-07-30:** This report records the pre-pose-fix disturbance experiment. The original 3.10 m undisturbed control-run divergence was traced to the simulated pose-reset heading artifact and is invalidated by the corrected baseline. Finding 2 (completion is not tracking success), Finding 3/F5 (vision rejection has no backoff), and Finding 4 (the severe run was estimator-blind tracking, not recovery) remain relevant. Do not use the pre-fix numeric error/current/battery values as current controller characterization.
+
 **Date:** 2026-07-28
 **Follows:** `docs/Autonomous_Recovery_Audit.md` (F4, F5, F7, F8/F9 referenced throughout)
 **Scope:** Evidence collection only. No production code was modified. No recovery behavior was

@@ -26,6 +26,8 @@ dependency, not a naming coincidence, and is called out explicitly where it matt
 - `docs/Autonomous_Disturbance_Simulation_Report.md` — the four-trial MapleSim experiment and its
   Findings 1-4.
 
+**Status update 2026-07-30:** Stage A (F1 intake signal, F3 jam signal, and replay workflow) is complete. The later pose-reset fix invalidated the plan's original chassis-PID-divergence blocker, so the Stage B/C ordering and hardware-gated wording below are historical and must be re-derived before any recovery-action phase is started. The plan still correctly prohibits wiring health telemetry into behavior without new evidence and explicit approval.
+
 ---
 
 ## 1. What signals need validation before they can drive decisions?
@@ -35,17 +37,16 @@ carried over from the Readiness Assessment's own trust table (§2) plus the two 
 
 | Signal | Currently computes correctly? | Currently trustworthy as a decision input? |
 |---|---|---|
-| `Trajectory/Error{Lateral,Longitudinal,Heading}` → `Auto/Health/TrackingDegraded` | Yes (Recovery Audit F4: arithmetic not in question) | **No** — Disturbance Report Finding 1: the undisturbed control run alone produces 3.10m of lateral error. A threshold that must also ignore 3m of "normal" noise cannot usefully detect a real disturbance. |
+| `Trajectory/Error{Lateral,Longitudinal,Heading}` → `Auto/Health/TrackingDegraded` | Yes (Recovery Audit F4: arithmetic not in question) | **Not yet tuned** — the corrected baseline is bounded, but no evidence-based threshold has been approved and the monitor remains observability-only. |
 | Rolling-window pose delta → `Auto/Health/Stalled` | Yes (ported from `WpilogStallAnalyzer`, TDD-verified in Phase 0.5) | **Unproven at the chosen threshold** — `kStallTranslationThresholdMeters=0.05m`/`kStallWindowSeconds=1.0s` were copied from `AutoRegressionTolerances` as placeholders, and that same threshold is independently documented (Readiness Assessment §3.4) as sitting on a razor's edge in `LtNeutralAutoRegressionTest` (margins as tight as 0.025m-0.049m against 0.050m, repeatedly, across many sessions). |
 | `Vision/RejectedJumpMeters` → `Auto/Health/VisionUnhealthy` | Yes, as a per-cycle fact (Recovery Audit F5) | **Partially** — Disturbance Report Finding 3 gives it real numbers for the first time (242 consecutive rejections on a 2.0m hit, zero on 0.4m/1.0m hits), but the medium (1.0m) trial landed "right at" the gate threshold as measured against the estimate's own drift — meaning it is not yet proven whether ordinary PID-driven drift alone (no real hit) could also trigger the same streak. |
 | `Auto/EndReason`/`Auto/EndedInterrupted` (command completion) | Yes, cross-validated (Lifecycle Audit continuation, gate 3) | **No, as a success proxy** — Disturbance Report Finding 2: all four displacement magnitudes (0/0.4/1.0/2.0m) report `completed=true` at identical elapsed time. Completion and correctness are proven independent variables. |
 | `hasGamePiece` (sim) | Yes, populated from maple-sim ground truth | Untested as a decision input — currently unread by any production code at all (Recovery Audit F1); not yet a "signal" in the observability sense, just an unwired field. |
 | `Shooter.isJammed()` | Yes, structurally proven via `Intake`'s identical pattern | Untested as a decision input for the same reason — never called from `Superstructure.SHOOTING` (F3). |
 
-**The unifying problem, not per-signal:** every threshold-based signal above is downstream of the
-same chassis-PID divergence bug (Readiness Assessment §1, Disturbance Report Finding 1). Validating
-any one signal in isolation, without first re-baselining against a fixed or bounded controller, risks
-tuning a threshold against noise rather than against real disturbance.
+**The current unifying problem is trust, not a known sim divergence:** the corrected baseline makes
+threshold derivation possible, but the thresholds have not yet been derived or approved. Completion
+and tracking correctness must remain separate signals, and no health signal may alter behavior yet.
 
 ## 2. What experiments prove each signal is trustworthy?
 
@@ -55,17 +56,11 @@ F3/F4's own recommendations).
 
 ### 2a. Chassis PID validation
 
-**Experiment:** re-run `PathDisturbanceSimTestBase`'s existing `NoDisturbanceControlTest` (the
-zero-displacement control from the Disturbance Report) immediately after whatever chassis-PID fix or
-bound lands (clamped `PPHolonomicDriveController` output, retuned gains, or both — the specific fix
-is out of this document's scope; see §5).
-**Trustworthy result:** the control run's final lateral error drops from the documented 3.10m to a
-value small enough that it stops dominating the `TrackingDegraded` threshold — i.e., an order of
-magnitude closer to the ~0.03m error the same run shows immediately after path-start, before the
-oscillation grows (Disturbance Report, Finding 1's own description of the error trace).
-**This experiment cannot be run yet** — it is gated on the fix itself, which is gated on physical-
-robot SysId access (`CLAUDE.md`'s standing note). Recorded here so it's ready to execute the moment
-that access exists, not designed from scratch then.
+**Experiment:** re-run `PathDisturbanceSimTestBase`'s existing `NoDisturbanceControlTest` against
+the corrected sim baseline, then compare its distribution with the disturbed runs.
+**Trustworthy result:** a bounded normal-run distribution with enough separation from the smallest
+tested disturbance to support a candidate threshold. The old 3.10 m result is historical and must
+not be used as a current controller or threshold reference.
 
 ### 2b. Disturbance simulation rerun
 
@@ -198,12 +193,9 @@ each have a proven template to reuse rather than inventing a new one.
 Restating and refining the Readiness Assessment's §4 dependency order, now specifically in terms of
 *this validation phase's* exit criteria rather than the original assessment's more general framing:
 
-1. **Chassis-PID divergence fix or bound** — hard-blocks §2a, §2b, §2c, and half of §2d (the
-   PID-noise-only vision experiment). Itself hard-blocked on physical-robot SysId access
-   (`CLAUDE.md`'s standing "Autonomous Velocity migration" track, Phase 2). **This is the single
-   dependency every other item in this plan traces back to**, exactly as the Readiness Assessment
-   already concluded — this document does not change that conclusion, only operationalizes what
-   happens once it's resolved.
+1. **Re-derive thresholds and rerun the remaining trust experiments against the corrected baseline.**
+   The old chassis-PID-divergence dependency is no longer current; the monitor still needs evidence
+   and mentor approval before any behavior can consume it.
 2. **A repeatable replay/comparison workflow (§2f)** — needed before any of §2a-2d's "before/after"
    claims can be made rigorously rather than by eyeballing two log dumps. Low effort (extend an
    existing scratchpad script), no dependency on (1) — **can start now**.
@@ -284,9 +276,8 @@ A3 (F3 signal test)  ───────────────────�
   paths and reproduce the Disturbance Report's original results table from the original four logs
   (a self-check: if it can't reproduce known-good numbers, it isn't trustworthy for new ones).
 - **Stage B complete when:** all four disturbance-harness subclasses have been re-run against the
-  post-fix controller, and the control run's peak lateral error is small enough that it no longer
-  dominates any plausible `TrackingDegraded` threshold (qualitatively: an order of magnitude below the
-  original 3.10m, not a specific number this plan should not pre-commit to before seeing real data).
+  corrected baseline and the normal-versus-disturbed distributions are recorded. The old 3.10m
+  result is historical, not a target or acceptance threshold.
 - **Stage C complete when:** `kTrackingDegradedLateralMeters`/`kTrackingDegradedLongitudinalMeters`
   are set from an actual observed distribution rather than the current 1.0m placeholder, with visible
   separation between "normal" and "smallest tested disturbance" error ranges, and
