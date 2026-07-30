@@ -1,18 +1,18 @@
 {
   "autoName" : "LT Neutral",
-  "recordedAtGitSha" : "d7833f402ad92c4498a04cf5923cf402efbc463c",
+  "recordedAtGitSha" : "5f9091855d7e9688e8032e53248ca3b9bbc58f83",
   "completed" : false,
-  "runtimeSeconds" : 15.0016783,
-  "maxLateralErrorMeters" : 7.008950762476349,
-  "maxLongitudinalErrorMeters" : 6.186737853290578,
+  "runtimeSeconds" : 15.0098205,
+  "maxLateralErrorMeters" : 0.09377851823413957,
+  "maxLongitudinalErrorMeters" : 0.24071654580786783,
   "diagnosticStartPose" : {
     "xMeters" : 3.6534719101123594,
     "yMeters" : 7.5,
-    "thetaRadians" : 3.141592653589793
+    "thetaRadians" : 1.5707963267948966
   },
   "diagnosticFinalPose" : {
-    "xMeters" : 10.030838097506974,
-    "yMeters" : 7.509912761073606,
-    "thetaRadians" : -1.0487636810625383
+    "xMeters" : 2.9551517679497192,
+    "yMeters" : 6.4306737618239165,
+    "thetaRadians" : -0.27875455287017104
   }
 }
