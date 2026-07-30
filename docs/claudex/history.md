@@ -1380,3 +1380,26 @@ race could not be honestly measured before/after in the remaining budget. Note t
 check behaved *correctly* on that run — it flagged a genuinely stuck robot jammed near a field wall.
 
 **No prompt-injection occurrence this session.**
+## Thirty-ninth session (2026-07-29) — simulation diagnostic cleanup and commit
+
+Implemented the simulation warning cleanup after the pose-heading fix. `Robot.java` now silences
+disconnected joystick warnings only in simulation, and `Robot.close()` → `RobotContainer.close()` →
+`CommandSwerveDrivetrain.close()` shuts down the MapleSim notifier and drivetrain cleanly.
+
+MapleSim 0.4.0-beta validates drive ratios against a lower bound of 4.0 even though its constructor
+documents ratios greater than 1. The robot's WCP SwerveX2S X3 ratio (`3.7142857142857144:1`) is valid
+and was not changed. Added the repo-local
+`org.ironmaple.simulation.drivesims.configs.BoundingCheck` compatibility implementation, suppressing
+only that exact known-valid drive-ratio warning while preserving upstream behavior for all other
+checks. `build.gradle` excludes the dependency's duplicate class from the fat JAR.
+
+Verification: targeted lifecycle/pose/autonomous tests passed; full `./gradlew test` completed
+successfully with no failed test XML files; and `python SKILLS/run_headless_sim.py --run-seconds 5
+--echo` passed the headless launch gate. The gear-ratio and disconnected-controller warnings are
+gone. Phoenix's native simulated CAN stale-signal messages remain during startup/test lifecycle
+timing windows; no safe public suppression API exists in the pinned Phoenix version, so they remain
+visible rather than being globally filtered.
+
+Committed as `cd33e80` (`simulation diagnostics cleanup`), on top of `a98e76b` (`pose heading fixes`). The next safe action is to leave the native Phoenix
+diagnostics visible and continue simulation-only autonomous validation; revisit them only with a
+measured startup-order/API experiment.
