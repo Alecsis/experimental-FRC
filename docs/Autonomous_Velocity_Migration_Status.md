@@ -1,6 +1,6 @@
 # Autonomous Velocity Migration Status
 
-Verified 2026-07-29.
+Verified 2026-07-30.
 
 ## Current decision
 
@@ -19,3 +19,7 @@ The migration remains hardware-gated. Autonomous production path following still
 3. Only after that evidence and explicit approval, implement and validate the production `DriveRequestType.Velocity` switch.
 
 Do not paste the simulation-derived values into `TunerConstants.driveGains`, and do not treat a green simulation test as proof that the real robot is ready for closed-loop autonomous control.
+
+## Verification snapshot
+
+The final verification run on 2026-07-30 passed `compileJava`, the 12-second headless simulation launch, and the full JUnit suite: **65 tests, 0 failures, 0 errors, 0 skipped**. A preceding full-suite run reproduced the known intermittent `ResetPoseHeadingSimTest` heading race; its standalone rerun passed, followed by a clean full-suite rerun. This does not remove the underlying nondeterminism from the open-questions list.
