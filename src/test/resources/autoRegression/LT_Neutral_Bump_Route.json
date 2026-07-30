@@ -1,0 +1,18 @@
+{
+  "autoName" : "LT Neutral - Bump Route",
+  "recordedAtGitSha" : "2ccce0c959512e87d1cf742cf0d2e42f15bfd37b",
+  "completed" : false,
+  "runtimeSeconds" : 15.0113191,
+  "maxLateralErrorMeters" : 0.09647095418579321,
+  "maxLongitudinalErrorMeters" : 0.12898523733698897,
+  "diagnosticStartPose" : {
+    "xMeters" : 3.6534719101123594,
+    "yMeters" : 7.5,
+    "thetaRadians" : 1.5707963267948966
+  },
+  "diagnosticFinalPose" : {
+    "xMeters" : 2.721617728244862,
+    "yMeters" : 6.208095751256419,
+    "thetaRadians" : -0.22784411795407872
+  }
+}

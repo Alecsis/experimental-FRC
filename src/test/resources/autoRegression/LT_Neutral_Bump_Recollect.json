@@ -1,0 +1,18 @@
+{
+  "autoName" : "LT Neutral - Bump Recollect",
+  "recordedAtGitSha" : "2ccce0c959512e87d1cf742cf0d2e42f15bfd37b",
+  "completed" : false,
+  "runtimeSeconds" : 15.0121012,
+  "maxLateralErrorMeters" : 0.09004480140299945,
+  "maxLongitudinalErrorMeters" : 0.2506426361032726,
+  "diagnosticStartPose" : {
+    "xMeters" : 3.6534719101123594,
+    "yMeters" : 7.5,
+    "thetaRadians" : 1.5707963267948966
+  },
+  "diagnosticFinalPose" : {
+    "xMeters" : 2.9739257930104555,
+    "yMeters" : 6.5025926413720425,
+    "thetaRadians" : -0.30504644692758914
+  }
+}
