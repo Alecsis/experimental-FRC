@@ -8,11 +8,12 @@
 
 ## Session Handoff
 
-Current authoritative status, verified 2026-07-29:
+Current authoritative status, verified 2026-07-30:
 
-- Tree: `21a8bc6` on branch `codex`; the 13-route autonomous regression suite is expanded and passes against recorded baselines.
+- Tree: `e49aa53` on branch `codex`; the 13-route autonomous regression suite is expanded and passes against recorded baselines.
 - Recent commits: `b0d1739` (sim pose-reset gyro synchronization), `5f90918` (LB/RB Neutral baselines), `2ccce0c` (corrected LT Neutral baseline), and `21a8bc6` (all remaining auto regressions).
 - Verification uses WPILib JDK 17 at `C:\Users\Public\wpilib\2026\jdk`. The baselines are intentionally recorded observations; routes that exceed the 15-second harness window may have `completed: false`.
+- Verification snapshot 2026-07-30: `compileJava` passed, the 12-second headless simulation launch passed, and the final full suite passed with 65 tests, 0 failures, 0 errors, and 0 skipped. One preceding full-suite attempt exposed the documented intermittent `ResetPoseHeadingSimTest` race; the targeted test passed standalone and the immediate full-suite rerun was clean.
 - Historical session detail remains below and in `docs/claudex/history.md` / `docs/claudex/sessions/`. Do not use superseded claims in the archive as current status.
 
 ### Next up
