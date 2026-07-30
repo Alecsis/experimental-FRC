@@ -4,6 +4,8 @@
 
 **Context:** No physical robot until September 2026. All findings are evidence-based, sourced from the 13 `.auto` files, 24 `.path` files, `Superstructure.java`, `Vision.java`, `Intake.java`, `Shooter.java`, `CommandSwerveDrivetrain.java`, `RobotContainer.java`, `OperatorControls.java`, the existing test suite (`src/test/java/...`), and `docs/claudex/history.md`/`CLAUDE.md`'s prior-session findings. No numbers were copied from `temp_reference/` or invented.
 
+**Status update 2026-07-30:** This audit is a 2026-07-28 snapshot. The auto regression suite has since been expanded to all 13 routes and the final verification run passed 65 tests. Coverage claims below that say only `LT Neutral` has a golden are superseded; the mechanism-success, vision-modeling, and recovery-design findings remain relevant.
+
 ---
 
 ## Executive Summary
@@ -14,7 +16,7 @@ The gaps that remain are concentrated in three places, and all three point the s
 
 1. **No note/fuel-presence sensing anywhere in the codebase.** Every intake and shooting sequence is time-bounded, not outcome-verified. A missed note or a stuck shot looks identical to a successful one from the code's point of view.
 2. **Vision's trust filter (jump-gate, std-dev floor) is real and well-built, but its output never influences autonomous timing or behavior**, and — more importantly — **it has never been exercised by any simulation run**, because `VisionIOSim` deliberately returns a "perfect" measurement every cycle with no noise, dropout, or jump injection.
-3. **Test coverage is concentrated almost entirely on one auto** (`LT Neutral`, and that golden is currently stale/failing for unrelated reasons per `CLAUDE.md`). The other 12 autos, the ALIGNING-timeout race, the (dead) indexer jam-recovery code, and the vision trust filter all have zero automated coverage.
+3. **Test coverage is now broad for route execution:** all 13 autos have recorded regression baselines. The ALIGNING-timeout race, mechanism-success behavior, and end-to-end noisy vision modeling remain separate coverage gaps.
 
 None of this is a "the code is broken" finding — the auto that has been characterized runs, and the one historical deadlock bug is fixed and regression-tested. It is a "the code cannot currently tell you when something has silently gone wrong" finding, which is exactly the class of problem that bites teams for the first time at competition, under defense, when a note is missed on attempt one and nobody can prove it from the logs afterward.
 
@@ -89,17 +91,17 @@ All of the roadmap items below are software-only and executable in simulation be
 ## 5. Simulation Coverage — What's Untested
 
 **Coverage today, concretely:**
-- `LT Neutral` is the *only* one of 13 autos with a regression golden (`LtNeutralAutoRegressionTest`), and per `CLAUDE.md` that golden is currently stale/failing for reasons unrelated to command architecture (drivetrain tracking-error drift). **The other 12 autos have zero automated coverage — not even a smoke test that they complete without stalling or throwing.**
+- The route regression guard now covers all 13 autos. Each route has a recorded golden and a concrete regression test. These are observation baselines, not tuning targets; route completion and tracking questions remain separate from the existence of coverage.
 - `IntakeJamRecoveryTest` covers roller-jam detection/recovery well (pulse, cooldown, abort-mid-pulse via `requestStow()`).
 - `SuperstructureEjectingTest` covers `EJECTING` → cancel → `STOWED` cleanly.
 - `CommandSwerveDrivetrainSanitizeSpeedsTest` covers the auto-speed sanitizer.
 - Nothing covers: the `ALIGNING` timeout-vs.-at-speed race, `indexJam()` (dead code, so untestable as-is), the `Intake`-requirement scheduler race from §1, or any vision-confidence/defense-contact scenario.
 
-**The vision trust filter has never actually been exercised by simulation.** `VisionIOSim`'s own class doc states it "returns a single perfect synthetic MegaTag2-style measurement" every cycle (`VisionIOSim.java:12-16`) — no noise, no dropout, no injected jump. `Vision.fuseMeasurements()`'s jump-gate (`kMaxVisionJumpMeters`) and std-dev floor (`kVisionStdDevMinMeters`) are real, committed safety logic that **no test and no simulation run has ever driven down the "reject" branch.** This is the single highest-value gap for anyone about to spend real engineering time on autonomous robustness before a physical robot is available — it's 100% simulatable today and currently 0% tested.
+**The vision model remains idealized end-to-end.** `VisionIOSim`'s own class doc states it "returns a single perfect synthetic MegaTag2-style measurement" every cycle (`VisionIOSim.java:12-16`) — no noise, dropout, or injected jump. `AutonomousHealthMonitorTest` covers the rejection-streak bookkeeping with synthetic inputs, but no simulation test currently drives a noisy camera measurement through `Vision.fuseMeasurements()` and its jump gate. This remains the highest-value vision-modeling gap before autonomous recovery behavior is designed.
 
 **Recommended new tests, ranked by "would this have caught a failure this codebase has already had":**
-1. **A structural/generic test over all `.auto` files**: every NamedCommand referenced inside a `"parallel"` block must be provably self-finishing (bounded timeout or a `finishOnAlign`-style condition) — this is exactly the bug class the `intakeCmd()` hang was. A per-instance fix without a structural guard means the same bug can be reintroduced by the next NamedCommand a future contributor adds. High value, low complexity (parse the `.auto` JSON, cross-reference against a known-bounded NamedCommand registry).
-2. **Expand the auto regression suite to the remaining 12 autos** (already tracked in `CLAUDE.md`'s Next Up as the top backlog item) — re-affirmed here as the largest raw coverage gap, but re-baseline `LT Neutral`'s golden first per the existing note, or the drift gets baked into 12 new goldens at once.
+1. **Keep the structural/generic NamedCommand safety test current:** every NamedCommand referenced inside a `"parallel"` block must be provably self-finishing. This guard now exists; retain it as protection against reintroducing the historical `intakeCmd()` deadlock class.
+2. **Keep the 13-route regression suite healthy:** the suite and recorded baselines now exist for all routes. Investigate route behavior separately from baseline maintenance; do not silently rewrite goldens.
 3. **A `Vision` innovation-gate test**: extend `VisionIOSim` (or add a test-only variant) to inject a synthetic large pose jump mid-run and assert the fused pose does *not* teleport — mirrors the existing `SimSpawnPoseOwnershipTest` style/pattern already in this repo.
 4. **A `Superstructure`-level unit test for the `ALIGNING` OR-timeout race**: force a shooter that never reaches target RPM (already possible via the existing `shooterTuningModeEnable`/mock pattern used elsewhere) and assert `SHOOTING` is still entered via the timeout branch, with the feed still occurring — currently this branch is not exercised anywhere.
 5. **A deterministic REPLAY-mode test**: `Robot.java` already switches on `Constants.currentMode` and supports `WPILOGReader`; a REPLAY test against one of the already-recorded `.wpilog` files would lock in current logged behavior bit-for-bit as a cheap regression net, independent of and much faster than the live-sim regression harness.
@@ -143,10 +145,10 @@ All of the roadmap items below are software-only and executable in simulation be
 
 | # | Recommendation | Benefit | Complexity | Competition Risk | Sim Validation Strategy | Before Sept? |
 |---|---|---|---|---|---|---|
-| 1 | Add a structural test asserting every NamedCommand used inside a PathPlanner `"parallel"` block is self-finishing/bounded | Directly prevents recidivism of the exact bug class already found and fixed once (`intakeCmd()` hang) | Low — parse `.auto` JSON + a small known-bounded registry | None (test-only) | Runs as a plain JUnit test, no sim needed | **Yes** |
+| 1 | Maintain the structural test asserting every NamedCommand used inside a PathPlanner `"parallel"` block is self-finishing/bounded | Directly prevents recidivism of the exact bug class already found and fixed once (`intakeCmd()` hang) | Low — parse `.auto` JSON + a small known-bounded registry | None (test-only) | Runs as a plain JUnit test, no sim needed | **Yes** |
 | 2 | Distinctly log whether `ALIGNING→SHOOTING` fired via `shooterAtSpeed()` or via `mAlignTimeoutSeconds` timeout | Makes "shot fired at wrong RPM" visible after the fact instead of indistinguishable from a good shot | Low — one `Logger.recordOutput` call at the existing branch | None | Immediately visible in any existing sim/regression run's wpilog | **Yes** |
-| 3 | Re-baseline the `LT Neutral` regression golden, then expand the auto regression suite to the remaining 12 autos | Closes the single largest raw coverage gap (12 of 13 autos currently have zero automated coverage) | Medium — harness already exists and is proven, this is mechanical expansion | None (test-only), but *finding* real issues in the other 12 autos is likely and would need triage | Direct — this *is* the sim validation | **Yes** |
-| 4 | Add noise/dropout/jump injection to `VisionIOSim`, then a test exercising the jump-gate's reject path | The trust filter is real, committed safety logic that has literally never been exercised by any test or sim run today | Medium — extend `VisionIOSim`, mirror `SimSpawnPoseOwnershipTest`'s style | None (test-only) | Direct | **Yes** |
+| 3 | Maintain the 13-route regression suite and investigate route behavior independently of golden updates | Keeps all routes covered without turning observed behavior into an implicit tuning decision | Ongoing — the harness and baselines already exist | Route-specific failures still require triage | Direct — this is the current sim validation surface | **Yes** |
+| 4 | Add noise/dropout/jump injection to `VisionIOSim`, then a test exercising the jump-gate's reject path | The trust filter is real, committed safety logic; the current tests cover health bookkeeping but not the full noisy measurement path | Medium — extend `VisionIOSim`, mirror `SimSpawnPoseOwnershipTest`'s style | None (test-only) | Direct | **Yes** |
 | 5 | Delete `Shooter.indexJam()` or wire it into `Superstructure.SHOOTING`, decide explicitly rather than leaving it as unregistered dead code | Removes ambiguity between "unused" and "forgotten safety feature" | Low (delete) or Medium (wire in + test) | Low either way | If wired in: `IntakeJamRecoveryTest`-style test | **Yes** |
 
 ### High Impact / Medium Risk

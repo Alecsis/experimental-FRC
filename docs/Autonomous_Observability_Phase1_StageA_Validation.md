@@ -11,6 +11,10 @@ Both remain exactly what the Readiness Assessment (`docs/Autonomous_Recovery_Rea
 mechanism signals, safe to validate ahead of the chassis-PID fix that blocks everything else in that
 assessment.
 
+**Status update 2026-07-30:** The signal-validation work is complete and remains valid. The phrase
+"chassis-PID fix that blocks everything else" is historical wording from the pre-pose-fix assessment;
+the corrected sim baseline removed that blocker, but no recovery behavior is authorized by this document.
+
 ---
 
 ## 1. Purpose (expanded)

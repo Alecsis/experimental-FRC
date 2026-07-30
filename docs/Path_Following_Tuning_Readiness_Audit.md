@@ -4,6 +4,8 @@
 
 **Assumed correct per instruction, not re-audited here:** controller output sanitization (`sanitizeAutoSpeeds`, commit `56ebba2`), the SysId infrastructure audit, the physical constants audit, and the autonomous architecture audit. Their findings are referenced where directly relevant but not re-derived.
 
+**Status update 2026-07-30:** This is a 2026-07-19 investigation snapshot. Since it was written, auto-speed preparation gained `ChassisSpeeds.discretize()` in commit `309a89b`, the first-segment non-zero end velocities in `Left Trench Start.path` and `Left Bump Start.path` were removed, and the 13-route regression suite was established. The historical evidence below is retained; affected findings are updated where they no longer describe the tree.
+
 ---
 
 ## 1. PathPlanner Controller Configuration
@@ -20,19 +22,19 @@ Both are unchanged from a prior session's setup and have never been empirically 
 
 **Rotation delay distance — confirmed not applicable, not a gap.** Per PathPlanner's current docs, this parameter exists only on `AutoBuilder.pathfindToPose()`/on-the-fly pathfinding commands ("how far the robot should travel before attempting to rotate"). This repo makes **zero** calls to any pathfinding API (confirmed by grep — no `pathfindToPose`/`pathfindThenFollowPath`/`rotationDelayDistance` references anywhere) — every auto is built from statically-authored `.path` files loaded by name. There is nothing to configure here for this codebase's usage pattern.
 
-**Goal end velocity behavior — one confirmed authoring inconsistency.** 3 of 25 `.path` files end with a non-zero `goalEndState.velocity` (0.85 m/s): `Left Trench Start.path`, `Left Bump Start.path`, `Right Bump Start.path` — all the first segment of a Neutral auto, intended to carry momentum into the next chained path rather than stopping between segments. Checking the immediately-following path in each auto's `.auto` sequence:
+**Goal end velocity behavior — one confirmed authoring inconsistency remains.** Only `Right Bump Start.path` ends with a non-zero `goalEndState.velocity` (0.85 m/s), while its successor `Bump Neutral Right.path` starts at 0 m/s. The corresponding left-side start paths were changed to end at rest when the uncommanded inter-segment drift was fixed. The remaining mismatch is a PathPlanner authoring question, not a gain-tuning result.
 
 | Auto | First path (`goalEndState.velocity`) | Next path (`idealStartingState.velocity`) | Consistent? |
 |---|---|---|---|
-| LT Neutral / LT Neutral - * | `Left Trench Start.path` (0.85) | `Left Trench Neutral.path` (0.85) | **Yes** |
-| LB Neutral | `Left Bump Start.path` (0.85) | `Bump Neutral Left.path` (0.85) | **Yes** |
+| LT Neutral / LT Neutral - * | `Left Trench Start.path` (0) | `Left Trench Neutral.path` (0.85) | **Not a handoff mismatch; path starts after a stop** |
+| LB Neutral | `Left Bump Start.path` (0) | `Bump Neutral Left.path` (0.85) | **Not a handoff mismatch; path starts after a stop** |
 | RB Neutral | `Right Bump Start.path` (0.85) | `Bump Neutral Right.path` (**0**) | **No — confirmed mismatch** |
 
-`RB Neutral` is the one auto where the first path is authored to hand off momentum but the second path is authored assuming a standing start. This is a real, evidenced `.path`-authoring inconsistency — a PathPlanner GUI edit, not a gain-tuning item, and independent of the September tuning order below. Whether it's *causing* measurable tracking error hasn't been isolated (no `RB Neutral` regression golden exists yet per the Autonomous Architecture Audit), so its runtime impact is a **hypothesis**, but the inconsistency itself is a **confirmed fact**.
+`RB Neutral` is the one auto where the first path is still authored to hand off momentum but the second path is authored assuming a standing start. This is a real, evidenced `.path`-authoring inconsistency — a PathPlanner GUI edit, not a gain-tuning item, and independent of the September tuning order below. Whether it causes measurable tracking error has not been isolated, so its runtime impact is a **hypothesis**, but the inconsistency itself is a **confirmed fact**.
 
 **Replanning configuration — confirmed removed from the vendor library, not a gap.** PathPlanner removed generalized dynamic replanning (`ReplanningConfig`) starting with the 2025 season release (confirmed via PathPlanner's own release history/community notes) specifically because a one-size-fits-all replanning solution didn't work well enough to keep. `AutoBuilder.configure()`'s call signature in this codebase (7 args, no replanning parameter) matches the current post-removal API exactly. There is nothing to audit here — the feature doesn't exist in 2026.1.2.
 
-**Net assessment against current best practices:** the controller wiring itself (gains injection, dual feedforward paths, alliance-flip supplier, subsystem requirement) matches what PathPlanner's current docs describe as correct usage. The one concrete best-practice gap found in this section's scope is downstream of the controller, in §4 (discretization).
+**Net assessment against current best practices:** the controller wiring itself (gains injection, dual feedforward paths, alliance-flip supplier, subsystem requirement) matches what PathPlanner's current docs describe as correct usage. The former downstream discretization gap is fixed; the remaining items are physical characterization, steer validation, and the isolated RB Neutral authoring mismatch.
 
 ---
 
@@ -81,9 +83,9 @@ Both are unchanged from a prior session's setup and have never been empirically 
 
 Traced the full path: `AutoBuilder.configure()` → `LoggingHolonomicDriveController`/`PPHolonomicDriveController` → the consumer lambda in `configureAutoBuilder()` → `sanitizeAutoSpeeds()` → `SwerveRequest.ApplyRobotSpeeds` → CTRE's generated module control.
 
-**Confirmed finding — no discretization is ever applied to the commanded chassis speeds.** `grep` across the entire `src/` tree for `discretize` returns zero matches. CTRE's own current API documentation for `SwerveRequest.ApplyRobotSpeeds` states explicitly: *"Users must manually discretize these speeds if appropriate"* and *"this request does not automatically discretize the provided ChassisSpeeds."* PathPlanner's `FollowPathCommand`/`PPHolonomicDriveController` only auto-discretizes when paired with `SwerveSetpointGenerator` — confirmed unused anywhere in this repo (grep). **This is a confirmed gap in the pipeline**, not a hypothesis: continuous-time `ChassisSpeeds` (vx, vy, omega all computed independently for "this instant") are sent straight to the modules every loop with no correction for the well-documented skew that occurs when translating and rotating simultaneously within the same control period.
+**Discretization is now present at the correct boundary.** `CommandSwerveDrivetrain.prepareAutoSpeeds()` calls `ChassisSpeeds.discretize()` before `sanitizeAutoSpeeds()`, and `CommandSwerveDrivetrainSanitizeSpeedsTest` pins both the ordering and non-identity behavior. The historical absence of this call was fixed in commit `309a89b`; it is no longer an open pipeline gap.
 
-Whether this measurably contributes to the already-documented tracking error (`CLAUDE.md`'s ~6.9 m peak lateral error on `LT Neutral`) is a **hypothesis, not confirmed** — it hasn't been isolated from the other two already-known variables (uncharacterized drive `Slot0` gains, unclamped `kP=5` chassis feedback) via a controlled comparison this session. It's plausible the effect is present given several paths combine translation with active rotation targets (e.g. the 78–90° rotation targets seen in the sampled `.path` files), which is exactly the scenario discretization exists to correct — but plausibility is not proof.
+The effect on tracking is not independently characterized here; do not infer it from pre-fix tracking numbers. The focused unit test proves the transform is applied, while route-level impact remains a measurement question.
 
 **Scaling:** `sanitizeAutoSpeeds()` uses this drivetrain's own `getKinematics()` symmetrically in both directions (states→bounded-ChassisSpeeds) — self-consistent, all SI units (m/s, rad/s) confirmed throughout by reading the unit imports; no unit-mismatch found.
 
@@ -116,7 +118,7 @@ Whether this measurably contributes to the already-documented tracking error (`C
 1. **The actual applied `DriveRequestType`/closed-loop mode is never logged.** Directly closes the unverified-default gap from §4 — a single logged enum/string would let a mentor confirm from any wpilog, without decompiling anything, that autonomous is really running through the drive `Slot0` loop about to be characterized.
 2. **No motor-controller-level closed-loop error is logged** (distinct from module-level `Measured` vs `Setpoints`) — e.g. the drive `TalonFX`'s own reported closed-loop velocity error. This is the single highest-value addition for distinguishing "the `Slot0` gains are wrong" from "the trajectory/chassis controller is demanding something unreasonable," which is precisely the ambiguity the whole characterization effort exists to resolve.
 3. **No per-module velocity/angle error computed directly** — `SwerveStates/Measured` and `SwerveStates/Setpoints` both exist but a direct `SwerveStates/ErrorPerModule` would remove a manual AdvantageScope-math step from every tuning iteration.
-4. **No discretization-related telemetry**, because discretization isn't performed (§4) — if it's added later, logging pre/post-discretization commanded speeds would make its effect directly visible instead of inferred.
+4. **No discretization-related telemetry** — the transform is now applied, but pre/post values are not logged. Add such telemetry only if route-level evidence shows it is needed to explain a regression.
 5. **No explicit path-segment-boundary markers** in the live log — nothing distinctly flags "path N ended / path N+1 began" the way the offline `WpilogTrajectoryErrorReader`/`WpilogStallAnalyzer` do post-hoc inside the JUnit harness only. This would make it much easier to visually confirm or rule out the `RB Neutral` goal-end-velocity mismatch (§1) against a live AdvantageScope trace during a real bring-up session.
 
 ---
@@ -138,13 +140,13 @@ This order follows directly from `CLAUDE.md`'s already-established fix sequence 
 
 **Step 3 — Retune drive `Slot0` closed-loop gains (`kP`/`kI`/`kD`) now that feedforward is characterized.** Use short step-response tests (manual `SwerveRequest.Velocity` command, not yet a full PathPlanner auto) to isolate module-level tracking from chassis-level PID. *Acceptance criteria:* settling time/overshoot the mentor finds acceptable at commanded-speed steps, without stator current pinning at the 120 A slip-current ceiling during routine (non-defense) tracking. *Telemetry:* `SwerveStates/Measured` vs `Setpoints` (module speed), `Drive/StatorCurrentAmpsPerModule`. *Move on when:* module-level velocity tracking is solid in isolation, before any chassis-level controller is involved.
 
-**Step 4 — Re-verify the steer loop on real hardware.** Note from §2: sim's steer gains (`kP=70/kD=4.5`) never apply to real hardware, which runs `TunerConstants`' actual `kP=100/kD=0.5` — sim steer behavior observed to date is not representative of what real hardware will show. Watch especially during simultaneous translate+rotate motion, since this is also where the missing-discretization gap (§4) would be most visible even without any code change yet. *Telemetry:* `SwerveStates/Measured` vs `Setpoints` (module angle). *Move on when:* steer tracking is solid on real hardware specifically (not inferred from sim).
+**Step 4 — Re-verify the steer loop on real hardware.** Note from §2: sim's steer gains (`kP=70/kD=4.5`) never apply to real hardware, which runs `TunerConstants`' actual `kP=100/kD=0.5` — sim steer behavior observed to date is not representative of what real hardware will show. Watch especially during simultaneous translate+rotate motion. *Telemetry:* `SwerveStates/Measured` vs `Setpoints` (module angle). *Move on when:* steer tracking is solid on real hardware specifically (not inferred from sim).
 
-**Step 5 — Only now revisit `PPHolonomicDriveController`'s chassis-level gains** (current placeholders: translation `kP=5`, rotation `kP=3`). Start with `LT Neutral` — it already has the most existing characterization history and a (currently stale, to be re-baselined per the Autonomous Architecture Audit) regression golden to compare against. Validate in sim first against the existing regression suite before any real-hardware run, then progress from straight-line-dominant paths to rotation-heavy ones (Bump crossings, U-turns) last, deliberately, since those are where the discretization gap would show up most. *Acceptance criteria:* `Trajectory/ErrorLateralMeters`/`ErrorLongitudinalMeters`/`ErrorHeadingRadians` within mentor-set bounds per path; watch `Trajectory/CommandedFeedbackSpeeds` relative to `CommandedFeedforwardSpeeds` — a persistently large feedback term signals the chassis controller (or the trajectory itself) still isn't matched to real dynamics, not just an undertuned gain. *Telemetry:* `Trajectory/Error*`, `Trajectory/Commanded*Speeds`, `Trajectory/*CommandedSpeed(s)`.
+**Step 5 — Only now revisit `PPHolonomicDriveController`'s chassis-level gains** (current placeholders: translation `kP=5`, rotation `kP=3`). Use the 13-route regression suite as the observation surface, not as permission to retune from simulation-only data. Progress from straight-line-dominant paths to rotation-heavy ones (Bump crossings, U-turns) deliberately. *Acceptance criteria:* `Trajectory/ErrorLateralMeters`/`ErrorLongitudinalMeters`/`ErrorHeadingRadians` within mentor-set bounds per path; watch `Trajectory/CommandedFeedbackSpeeds` relative to `CommandedFeedforwardSpeeds` — a persistently large feedback term signals the chassis controller or trajectory is not matched to dynamics, not automatically an undertuned gain. *Telemetry:* `Trajectory/Error*`, `Trajectory/Commanded*Speeds`, `Trajectory/*CommandedSpeed(s)`.
 
-**Step 6 — Only after Steps 1–5 hold on real hardware, evaluate whether discretization (§4) is worth adding.** This is a code change and out of this audit's scope, but flagged as the next concrete implementation candidate once the other two known confounds (uncharacterized feedforward, untuned chassis PID) are no longer in the way of isolating its real contribution. Recommend an A/B (with vs. without a manually-inserted `ChassisSpeeds.discretize()` call ahead of `sanitizeAutoSpeeds()`) specifically on the rotation-heavy paths identified in Step 5.
+**Step 6 — Validate the existing discretization on real hardware.** The code change is complete and covered by a focused test. Once real characterization and bring-up are available, measure whether the rotation-heavy paths behave as expected; do not reintroduce an A/B against a deliberately undiscretized path unless a new regression requires it.
 
-**Step 7 — Expand the auto regression suite** to the remaining autos (already tracked in `CLAUDE.md`'s backlog) only once the above is stable, so new goldens are established against genuinely-tuned behavior rather than baking in pre-characterization drift. **Fix the `RB Neutral` `goalEndState`/`idealStartingState` velocity mismatch (§1) at any point in this window** — it's a PathPlanner GUI edit, independent of the gain-tuning order, and cheap to do whenever convenient.
+**Step 7 — Maintain the 13-route auto regression suite.** Keep the goldens stable while investigating route behavior separately. **Fix the `RB Neutral` `goalEndState`/`idealStartingState` velocity mismatch (§1) when the mentor chooses to make that PathPlanner authoring change** — it is independent of gain tuning.
 
 **Paths/telemetry quick-reference by step:**
 
@@ -156,16 +158,16 @@ This order follows directly from `CLAUDE.md`'s already-established fix sequence 
 | 3 | none / manual velocity step | `SwerveStates/Measured` vs `Setpoints`, `Drive/StatorCurrentAmpsPerModule` |
 | 4 | none / manual steer step | `SwerveStates/Measured` vs `Setpoints` (angle) |
 | 5 | `LT Neutral` first, then Bump/U-Turn/Recollect | `Trajectory/Error*`, `Trajectory/Commanded*` |
-| 6 | rotation-heavy paths from Step 5 | Same as Step 5, A/B with/without discretization |
-| 7 | remaining 12 autos | Auto regression suite goldens |
+| 6 | rotation-heavy paths from Step 5 | Same as Step 5, with discretization present |
+| 7 | all 13 autos | Auto regression suite goldens |
 
 ---
 
 ## Summary of Confirmed vs. Hypothesis Findings
 
 **Confirmed (evidenced directly from repo source or vendor docs):**
-- No `ChassisSpeeds.discretize()` call exists anywhere in the pipeline; CTRE's `ApplyRobotSpeeds` does not do it automatically.
-- `RB Neutral`'s path chain has a real `goalEndState`/`idealStartingState` velocity mismatch; `LT Neutral`/`LB Neutral`'s equivalent chains do not.
+- `ChassisSpeeds.discretize()` is applied before the auto-speed bound; CTRE's `ApplyRobotSpeeds` still does not apply it automatically, so keep the call at the repo-owned boundary.
+- `RB Neutral`'s path chain has a real `goalEndState`/`idealStartingState` velocity mismatch; the left-side start paths now end at rest.
 - Rotation delay distance and replanning configuration are both genuinely not applicable to this codebase's current PathPlanner usage (not gaps, feature-absence-by-design/vendor-removal).
 - Simulated steer gains, friction voltages, gyro, and vision are all confirmed to diverge from real-hardware behavior in specific, named ways.
 - Vision fusion timing, alliance transforms, and estimator update ordering are all confirmed correct.
