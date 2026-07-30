@@ -53,6 +53,13 @@ public class Robot extends LoggedRobot {
    * initialization code.
    */
   public Robot() {
+    // Simulation runs intentionally have no physical controller attached. Keep WPILib from
+    // emitting the repeated "Joystick Button ... not available" warning while preserving the
+    // warning on real hardware, where a disconnected driver controller is actionable.
+    if (Constants.currentMode != Constants.Mode.REAL) {
+      DriverStation.silenceJoystickConnectionWarning(true);
+    }
+
     // Record metadata
     Logger.recordMetadata("ProjectName", BuildConstants.MAVEN_NAME);
     Logger.recordMetadata("BuildDate", BuildConstants.BUILD_DATE);
@@ -226,4 +233,13 @@ public void autonomousInit() {
   /** This function is called periodically whilst in simulation. */
   @Override
   public void simulationPeriodic() {}
+
+  /** Stops simulation-owned background resources before AdvantageKit and HAL shutdown. */
+  @Override
+  public void close() {
+    if (m_robotContainer != null) {
+      m_robotContainer.close();
+    }
+    super.close();
+  }
 }
