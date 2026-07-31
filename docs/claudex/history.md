@@ -1435,5 +1435,15 @@ decision; removing the second sync would require re-recording all 13 goldens.
 checking mtimes "confirms" the previous session's numbers while executing nothing — check timestamps
 before believing a gate.
 
-Committed as `74f9891` on top of `164ca6a`. The `refactor/hybrid` merge was deliberately held at
-`1430d1c` pending the remaining reset-pose decision.
+Committed as `74f9891` on top of `164ca6a`. The `refactor/hybrid` merge was later approved and
+fast-forwarded; the remaining reset-pose decision stays open.
+
+**Route timing investigation (2026-07-30).** A temporary 30-second autonomous regression cap
+completed all 11 routes whose 15-second baselines recorded `completed=false`; the only failures
+were expected golden mismatches, with no earlier stall or tracking assertion. The named commands
+are bounded (`Orbit` 2 seconds; shooting feed 5 seconds). The first path optimization target is
+the left neutral family: both `Left Trench Neutral` paths globally cap velocity at `0.85 m/s` while
+their local zones permit `4.5-6.0 m/s`, unlike the right-side pattern. A temporary cap-only A/B
+reduced `LT Neutral` 19.56s -> 17.59s and `LT Neutral U Turn` 20.90s -> 18.25s; all edits were
+reverted and no goldens changed. Next step is a GUI-authored constraint edit followed by the same
+diagnostic and 15-second gates.
