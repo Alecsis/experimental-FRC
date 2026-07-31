@@ -10,14 +10,15 @@
 
 Authoritative status: [`docs/claudex/sessions/2026-07-30.md`](docs/claudex/sessions/2026-07-30.md).
 
-- Branch: `codex`. Newest source-changing commit is `253919a` (BoundingCheck shadow removed); anything after it is documentation. Verify the actual tip and push state with `git log --oneline -5` / `git status -sb` — a SHA recorded in this file is falsified by the commit that records it.
+- Branch: `refactor/hybrid`. The reviewed `codex` work has been fast-forwarded into this branch; the newest source-changing milestone is `253919a` (BoundingCheck shadow removed), and anything after it is documentation. Verify the actual tip and push state with `git log --oneline -5` / `git status -sb` — a SHA recorded in this file is falsified by the commit that records it.
 - The `BoundingCheck` vendor shadow and its fat-JAR exclusion are gone. MapleSim's upstream gear-ratio console warning is expected on startup again — that is intended, not a regression. The real WCP X2S X3 ratio `3.7142857142857144:1` was never changed.
-- `refactor/hybrid` has been fast-forwarded to `codex` (mentor-approved). Both branches point at the same tree; the FF was verified as a direct-ancestor move, so no merge commit exists and no conflict was possible. The merge carried the whole series, including the `resetPose()` item still listed as open below — accepted as a documented tradeoff, not as resolved. `origin/refactor/hybrid` may still trail the local branch; check `git status -sb`. Do not record commit counts or tip SHAs for these branches here — the commit that writes the number changes it.
+- `refactor/hybrid` has been fast-forwarded to `codex` (mentor-approved). Both branches point at the same tree; the FF was verified as a direct-ancestor move, so no merge commit exists and no conflict was possible. The merge carried the whole series, including the `resetPose()` item still listed as open below — accepted as a documented tradeoff, not as resolved. `origin/refactor/hybrid` is expected to track the merged branch; check `git status -sb`. Do not record commit counts or tip SHAs for these branches here — the commit that writes the number changes it.
 - The 13-route autonomous regression suite has recorded baselines and the latest full verification run passed: 65 tests, 0 failures, 0 errors, 0 skipped.
 - Autonomous path following still uses `DriveRequestType.OpenLoopVoltage`.
 - The Autonomous Velocity migration is hardware-gated: real Slot0 characterization must precede any production `Velocity` switch.
 - `RobotMotor` real-hardware behavior and physical measurements (mass, MOI, wheel COF, bumper footprint) remain unverified.
 - A `ResetPoseHeadingSimTest` full-suite race has been observed. A clean rerun does not prove that race is eliminated.
+- The 15-second autonomous cap is a competition-window baseline: all 11 previously incomplete routes finished under a temporary 30-second diagnostic cap. The left neutral paths are the first optimization target because their global `maxVelocity` is `0.85 m/s` while comparable right-side paths use localized slow zones.
 
 One review finding remains open and needs a mentor decision (detail in the 2026-07-30 note):
 
@@ -26,7 +27,7 @@ One review finding remains open and needs a mentor decision (detail in the 2026-
 Next safe actions:
 
 1. Keep the verification gates green for future changes. `build/test-results/*.xml` persists between runs — check mtimes before trusting an aggregate.
-2. Preserve the 13 autonomous goldens; investigate route completion/tracking separately from baseline maintenance.
+2. Preserve the 13 autonomous goldens; optimize the left neutral PathPlanner constraints in the GUI, then validate with the 30-second diagnostic run and the normal 15-second regression gate before re-recording anything.
 3. Continue simulation-only validation until hardware characterization and bring-up are available.
 
 For more detail, read the latest session handoff first, then consult [`docs/claudex/architecture.md`](docs/claudex/architecture.md), [`docs/claudex/verification-loop.md`](docs/claudex/verification-loop.md), or [`docs/claudex/history.md`](docs/claudex/history.md) only as needed. Older session notes are historical evidence, not current status.
