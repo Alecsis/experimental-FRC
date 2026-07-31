@@ -1423,18 +1423,17 @@ an *improvement*; `RobotContainer.close()` closes a `static` field and that one-
 constraint was undocumented; the `claude.md` streamlining deleted the Obsidian vault path from the
 only place it existed in the repository.
 
-**Flagged, not acted on.** MapleSim 0.4.0-beta's `BoundingCheck.check()` was read from the sources
+**Resolved in the follow-up session.** MapleSim 0.4.0-beta's `BoundingCheck.check()` was read from the sources
 jar and only calls `DriverStation.reportError` — it never throws, so the gear-ratio "rejection" was
-a console line. The repo-local vendor-namespace shadow is well built but disproportionate to that,
-and its correctness now rests on an untested build-order invariant (verified working: `javap` on the
-fat JAR shows the shadow's constants, so the `build.gradle` exclude does take effect). Separately,
+a console line. The repo-local vendor-namespace shadow and its `build.gradle` fat-JAR exclusion were
+removed, restoring the upstream warning. Separately,
 `b0d1739` stacked a second `syncGyroToSimulationPose()`/`waitForUpdate()` pair into `resetPose()`
-defensively, against a race the same notes say is unproven. Both are mentor decisions; removing the
-second sync would require re-recording all 13 goldens.
+defensively, against a race the same notes say is unproven. That remaining item is still a mentor
+decision; removing the second sync would require re-recording all 13 goldens.
 
 **Process lesson.** `build/test-results/*.xml` persists between runs. Aggregating it without
 checking mtimes "confirms" the previous session's numbers while executing nothing — check timestamps
 before believing a gate.
 
 Committed as `74f9891` on top of `164ca6a`. The `refactor/hybrid` merge was deliberately held at
-`1430d1c` pending the two flagged decisions.
+`1430d1c` pending the remaining reset-pose decision.

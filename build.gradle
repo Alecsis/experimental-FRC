@@ -122,10 +122,6 @@ wpi.sim.addDriverstation()
 jar {
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
-    } {
-        // MapleSim 0.4.0-beta's BoundingCheck rejects this robot's valid WCP X2S X3 ratio.
-        // The repo-local compatibility class is included from the normal main output below.
-        exclude 'org/ironmaple/simulation/drivesims/configs/BoundingCheck.class'
     }
     from('src') { into 'backup/src' }
     from('vendordeps') { into 'backup/vendordeps' }
