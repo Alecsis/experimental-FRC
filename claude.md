@@ -10,8 +10,8 @@
 
 Authoritative status: [`docs/claudex/sessions/2026-07-30.md`](docs/claudex/sessions/2026-07-30.md).
 
-- Branch: `codex`; current HEAD and `origin/codex` are both `3cf2115` (peer-review handoff).
-- Local follow-up changes remove the `BoundingCheck` shadow and restore the upstream warning; they are ready for review but not committed yet.
+- Branch: `codex`. Newest source-changing commit is `253919a` (BoundingCheck shadow removed); anything after it is documentation. Verify the actual tip and push state with `git log --oneline -5` / `git status -sb` — a SHA recorded in this file is falsified by the commit that records it.
+- The `BoundingCheck` vendor shadow and its fat-JAR exclusion are gone. MapleSim's upstream gear-ratio console warning is expected on startup again — that is intended, not a regression. The real WCP X2S X3 ratio `3.7142857142857144:1` was never changed.
 - `refactor/hybrid` is unchanged at `1430d1c`. The merge is deliberately held: it would carry all twelve Codex commits including the remaining flagged item below. Clean fast-forward when approved.
 - The 13-route autonomous regression suite has recorded baselines and the latest full verification run passed: 65 tests, 0 failures, 0 errors, 0 skipped.
 - Autonomous path following still uses `DriveRequestType.OpenLoopVoltage`.
