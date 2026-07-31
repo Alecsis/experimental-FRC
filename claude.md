@@ -68,3 +68,5 @@ The canonical workflow is implemented by the files in `.claude/commands/`:
 - `/audit`, `/regression`, and `/replay` are read-only investigation/verification workflows; follow their command files for scope and reporting.
 
 Session notes are indexed in [`docs/claudex/sessions/README.md`](docs/claudex/sessions/README.md). Keep current handoff short; put detailed chronology in `history.md` or a dated note.
+
+The Obsidian vault `/tldr` writes to lives **outside this repository** at `C:\Users\xdm\6767 frc bible`, entry point `00 Index.md`. The `6767` is a naming meme — this is team **4935**. Keep this path here: it is the only record of it, and `/tldr` has no other way to find its target.

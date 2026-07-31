@@ -204,7 +204,25 @@ public class RobotContainer {
                 return autoChooser.getSelected();
         }
 
-        /** Releases drivetrain simulation and Phoenix odometry threads during test/sim shutdown. */
+        /**
+         * Releases drivetrain simulation and Phoenix odometry threads during test/sim shutdown.
+         *
+         * <p><b>This closes a {@code static} field and is therefore one-shot per JVM.</b>
+         * {@link #drivetrain} is initialized once at class-load, so a later {@code new
+         * RobotContainer()} reuses the SAME closed instance -- it re-runs neither the static
+         * initializer nor {@code startSimThread()}. A second {@code Robot} booted in the same JVM
+         * would get a drivetrain whose MapleSim notifier is stopped and nulled, so its physics
+         * would never advance and any assertion about motion would be silently meaningless rather
+         * than failing loudly.
+         *
+         * <p>Nothing hits this today: {@code build.gradle} sets {@code forkEvery = 1} (fresh JVM
+         * per test CLASS) and every test class keeps at most one {@code @Test} that constructs a
+         * {@code Robot} -- see the note in AutonomousHealthMonitorTest, which has 15 tests but
+         * builds a Robot in only one. That convention was already required for the subsystem
+         * singletons; closing this static makes it load-bearing for the drivetrain too. If you
+         * ever need two Robot-booting methods in one class, give {@code drivetrain} a reset hook
+         * first -- do not just delete this call.
+         */
         public void close() {
                 drivetrain.close();
         }

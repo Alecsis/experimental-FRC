@@ -1,6 +1,5 @@
 package frc.robot.auto;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -205,8 +204,21 @@ abstract class AutoRegressionTestBase {
 
         AutoRegressionGolden golden = mapper.readValue(goldenPath.toFile(), AutoRegressionGolden.class);
 
-        assertEquals(golden.completed, actual.completed, () -> autoName() + ": completed regressed "
-                + "(golden=" + golden.completed + ", actual=" + actual.completed + ")");
+        // Direction matters for diagnosis, so it is reported rather than flattened into one word.
+        // 11 of the 13 recorded goldens bank completed=false: those routes run out the harness's
+        // real-time cap instead of finishing. A false->true delta is therefore a route that STARTED
+        // finishing -- progress to confirm and re-record, not a defect to hunt. Calling both
+        // directions "regressed" pointed the next reader at a break that isn't there.
+        if (golden.completed != actual.completed) {
+            fail(autoName() + ": completed changed (golden=" + golden.completed
+                    + ", actual=" + actual.completed + "). "
+                    + (actual.completed
+                            ? "The route now finishes inside the harness window -- an IMPROVEMENT."
+                                    + " Confirm it is intended, then re-record this golden with"
+                                    + " -DupdateAutoGolden=true -DconfirmGoldenUpdate=true."
+                            : "The route stopped finishing inside the harness window -- a"
+                                    + " REGRESSION. Diagnose the cause before touching the golden."));
+        }
         assertTrue(
                 Math.abs(actual.runtimeSeconds - golden.runtimeSeconds)
                         <= AutoRegressionTolerances.kRuntimeToleranceSeconds,
