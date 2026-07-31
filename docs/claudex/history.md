@@ -1403,3 +1403,38 @@ visible rather than being globally filtered.
 Committed as `cd33e80` (`simulation diagnostics cleanup`), on top of `a98e76b` (`pose heading fixes`). The next safe action is to leave the native Phoenix
 diagnostics visible and continue simulation-only autonomous validation; revisit them only with a
 measured startup-order/API experiment.
+
+## Fortieth session (2026-07-30) — peer review of the `codex` branch
+
+Mentor asked for a review of the twelve commits Codex landed on `codex` since the `refactor/hybrid`
+fork (`1430d1c..164ca6a`, 46 files, +702/-343). Note that every commit in this repository carries the
+same git identity, so authorship cannot attribute work — reviews must be scoped by branch divergence.
+
+**Upheld.** The pose-heading fix is sound and the measured win is real: `LT_Neutral`'s golden max
+lateral error moved 7.009 m -> 0.094 m. The 1 -> 13 route regression expansion is genuine coverage.
+The `ResetPoseHeadingSimTest` rewrite (1 -> 20 alternating-heading iterations, reset scheduled
+through `CommandScheduler` while timing is paused instead of called from the JUnit thread) follows
+the repo's own thread-discipline rule and is stronger than what it replaced. The `claude.md`
+reduction from 152,379 to 4,820 bytes is a standing per-session context win.
+
+**Corrected** in `74f9891`: the auto-regression `completed` mismatch message reported every
+direction as a regression, though 11 of 13 goldens bank `completed=false` so the likely mismatch is
+an *improvement*; `RobotContainer.close()` closes a `static` field and that one-shot-per-JVM
+constraint was undocumented; the `claude.md` streamlining deleted the Obsidian vault path from the
+only place it existed in the repository.
+
+**Flagged, not acted on.** MapleSim 0.4.0-beta's `BoundingCheck.check()` was read from the sources
+jar and only calls `DriverStation.reportError` — it never throws, so the gear-ratio "rejection" was
+a console line. The repo-local vendor-namespace shadow is well built but disproportionate to that,
+and its correctness now rests on an untested build-order invariant (verified working: `javap` on the
+fat JAR shows the shadow's constants, so the `build.gradle` exclude does take effect). Separately,
+`b0d1739` stacked a second `syncGyroToSimulationPose()`/`waitForUpdate()` pair into `resetPose()`
+defensively, against a race the same notes say is unproven. Both are mentor decisions; removing the
+second sync would require re-recording all 13 goldens.
+
+**Process lesson.** `build/test-results/*.xml` persists between runs. Aggregating it without
+checking mtimes "confirms" the previous session's numbers while executing nothing — check timestamps
+before believing a gate.
+
+Committed as `74f9891` on top of `164ca6a`. The `refactor/hybrid` merge was deliberately held at
+`1430d1c` pending the two flagged decisions.

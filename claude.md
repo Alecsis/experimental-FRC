@@ -10,16 +10,22 @@
 
 Authoritative status: [`docs/claudex/sessions/2026-07-30.md`](docs/claudex/sessions/2026-07-30.md).
 
-- Branch: `codex`; current HEAD is `8b44857` (documentation cleanup).
+- Branch: `codex`; current HEAD is `74f9891` (peer-review fixes). `origin/codex` is at `164ca6a` — one unpushed commit.
+- `refactor/hybrid` is unchanged at `1430d1c`. The merge is deliberately held: it would carry all twelve Codex commits including the two flagged items below. Clean fast-forward when approved.
 - The 13-route autonomous regression suite has recorded baselines and the latest full verification run passed: 65 tests, 0 failures, 0 errors, 0 skipped.
 - Autonomous path following still uses `DriveRequestType.OpenLoopVoltage`.
 - The Autonomous Velocity migration is hardware-gated: real Slot0 characterization must precede any production `Velocity` switch.
 - `RobotMotor` real-hardware behavior and physical measurements (mass, MOI, wheel COF, bumper footprint) remain unverified.
 - A `ResetPoseHeadingSimTest` full-suite race has been observed. A clean rerun does not prove that race is eliminated.
 
+Two review findings are open and need a mentor decision (detail in the 2026-07-30 note):
+
+- The `org.ironmaple...BoundingCheck` vendor shadow suppresses a warning that never threw; reverting it restores the console message.
+- `resetPose()`'s second `syncGyroToSimulationPose()`/`waitForUpdate()` pair is defensive against an unproven race; removing it requires re-recording all 13 goldens.
+
 Next safe actions:
 
-1. Keep the verification gates green for future changes.
+1. Keep the verification gates green for future changes. `build/test-results/*.xml` persists between runs — check mtimes before trusting an aggregate.
 2. Preserve the 13 autonomous goldens; investigate route completion/tracking separately from baseline maintenance.
 3. Continue simulation-only validation until hardware characterization and bring-up are available.
 
