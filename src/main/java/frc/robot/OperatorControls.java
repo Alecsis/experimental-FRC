@@ -10,6 +10,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandGenericHID;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.superstructure.Superstructure;
 import frc.robot.subsystems.vision.Vision;
@@ -54,13 +55,44 @@ public class OperatorControls {
     joystick.b().whileTrue(drivetrain.driveToPOI(POI.RightStage));
 
     /*
-     * Operator control board -- pure routing into Superstructure state requests.
-     * Manual fixed-RPM shooting lives behind the "Shooter Tuning Mode" dashboard
-     * toggle, which shootCmd() honors through the Superstructure's RPM arbitration.
+     * Operator control board.
+     *
+     * The board is wired as Superstructure's DEFAULT command, not as button Triggers. Buttons 5
+     * and 6 are maintained physical switches, and an edge-triggered binding cannot represent them
+     * correctly: a switch already ON at enable produces no false->true edge, and a whileTrue
+     * command cancelled by anything else is never rescheduled while the switch stays held. A
+     * level-triggered default command reads the live switch positions every tick and is
+     * re-scheduled automatically by the CommandScheduler whenever nothing else requires
+     * Superstructure, which covers already-on-at-enable, disable->enable, and interruption with
+     * one mechanism and no latch.
+     *
+     * The command itself is inert outside teleop (see operatorPolicyCmd), so these controls have
+     * no autonomous effect. STOWED is just the zero-active-control teleop intent, so there is no
+     * separate teleop-start stow command competing for the subsystem and no dependence on the
+     * order in which RobotModeTriggers were registered.
      */
-    controlBox.button(2).whileTrue(superstructure.shootCmd());
-    controlBox.button(6).whileTrue(superstructure.intakeCmd());
-    controlBox.button(3).whileTrue(superstructure.ejectCmd());
+    Trigger fallbackShot = controlBox.button(1);
+    Trigger visionShot = controlBox.button(2);
+    Trigger unifiedEject = controlBox.button(3);
+    // Button 4 is intentionally reserved and left unbound -- its absence is deliberate, not an
+    // oversight. The legacy separate indexer-only eject it used to hold is now folded into the
+    // unified button 3 eject.
+    Trigger bounceToggle = controlBox.button(5);
+    Trigger intakeToggle = controlBox.button(6);
+
+    if (RobotBase.isSimulation()) {
+      // Mirror the board onto the sim controller through the SAME policy, so simulation exercises
+      // the real arbitration -- including its teleop-only gate -- instead of a second set of
+      // competing commands with different lifecycle rules.
+      fallbackShot = fallbackShot.or(simController.y());
+      visionShot = visionShot.or(simController.a());
+      unifiedEject = unifiedEject.or(simController.b());
+      bounceToggle = bounceToggle.or(simController.povUp());
+      intakeToggle = intakeToggle.or(simController.x());
+    }
+
+    superstructure.setDefaultCommand(superstructure.operatorPolicyCmd(
+        fallbackShot, visionShot, unifiedEject, bounceToggle, intakeToggle));
 
     if (RobotBase.isSimulation()) {
       // 1. Override default drivetrain command with Port 3 Controller
@@ -82,10 +114,9 @@ public class OperatorControls {
         vision.getPoseResetEstimate().ifPresent(drivetrain::resetPose);
       }));
 
-      // 4. Superstructure routing -- mirrors the operator control board
-      simController.a().whileTrue(superstructure.shootCmd());
-      simController.x().whileTrue(superstructure.intakeCmd());
-      simController.b().whileTrue(superstructure.ejectCmd());
+      // 4. Superstructure routing is folded into the operator-intent trigger above (a/b/x/y/povUp
+      // are OR'd into the board's own controls) so sim and the real board share one arbitration
+      // path instead of running a second set of commands that fight it.
     }
   }
 
