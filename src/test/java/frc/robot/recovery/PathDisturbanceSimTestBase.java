@@ -1,5 +1,8 @@
 package frc.robot.recovery;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -12,6 +15,7 @@ import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import edu.wpi.first.wpilibj.simulation.SimHooks;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Robot;
 import frc.robot.RobotContainer;
 
@@ -20,6 +24,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterEach;
@@ -43,6 +50,24 @@ import org.junit.jupiter.api.Timeout;
  * estimator never "see" the jump -- exactly like a real collision, where another robot's momentum
  * changes the true pose but the encoders keep integrating from wherever they already were.
  *
+ * <p><b>World ownership.</b> That teleport mutates the dyn4j world, so it must run on the thread
+ * that owns it -- the robot competition thread, the only caller of
+ * {@code SimulatedArena.simulationPeriodic()} since the MapleSim notifier was removed. It used to
+ * be issued directly from the JUnit thread inside the polling loop below, after
+ * {@code resumeTiming()}, i.e. concurrently with the robot loop's physics step: the last remaining
+ * cross-thread world mutation in the codebase.
+ *
+ * <p>The split now is: the JUnit thread <em>requests</em> a disturbance (a plain
+ * {@link AtomicBoolean} write -- not world state), and a one-shot command scheduled while the
+ * simulation is still PAUSED -- the same window {@code followCommand} is scheduled in, and the only
+ * window in which touching the non-thread-safe {@code CommandScheduler} from the test thread is
+ * safe -- picks that request up on the next scheduler tick and performs the mutation from
+ * {@code robotPeriodic()}. The JUnit thread's trigger condition, and therefore the disturbance's
+ * timing, is unchanged; only the executing thread moved. {@link #injectDisturbance()} records the
+ * thread it actually ran on as its first statement, and {@link #disturbanceRun()} asserts that
+ * thread is identically the competition thread -- so a regression back to the JUnit thread fails
+ * this test rather than silently reintroducing the race.
+ *
  * <p>Entire {@code frc.robot.recovery} package is disposable: delete it once
  * docs/Autonomous_Disturbance_Simulation_Report.md is finished with it. No production file is
  * touched by anything in this package.
@@ -57,6 +82,33 @@ abstract class PathDisturbanceSimTestBase {
     private Thread robotThread;
     private boolean toreDown;
     private boolean timingResumed;
+
+    /**
+     * JUnit thread -> robot thread handoff. Set by the polling loop when its existing wall-clock
+     * trigger fires; observed by the pre-scheduled disturbance command on the next scheduler tick.
+     * Carries no world state, so writing it from the test thread is not a world mutation.
+     */
+    private final AtomicBoolean disturbanceRequested = new AtomicBoolean();
+
+    /**
+     * The thread the FIRST {@link #injectDisturbance()} call ran on, captured inside that method
+     * rather than inferred. Null means the disturbance never fired, which is itself a failure.
+     *
+     * <p>Latched with {@code compareAndSet}, never {@code set}: a regression that mutates from the
+     * JUnit thread <em>and</em> leaves the robot-thread command in place would otherwise have its
+     * violating first write overwritten by the compliant second one, and the ownership assertion
+     * would pass on a broken harness. Measured -- that exact negative control passed against a
+     * {@code set()} implementation of this field.
+     */
+    private final AtomicReference<Thread> mutationThread = new AtomicReference<>();
+
+    /** How many times the teleport ran. Anything but 1 means the harness mutates twice. */
+    private final AtomicInteger mutationCount = new AtomicInteger();
+
+    /** Diagnostic record of the teleport, published from the robot thread for the JUnit thread. */
+    private volatile Pose2d injectedFromPose;
+    private volatile Pose2d injectedToPose;
+    private volatile long injectedAtNanos;
 
     /** Robot-relative lateral (perpendicular to heading) displacement to inject, in meters. 0 = control. */
     protected abstract double displacementMeters();
@@ -114,6 +166,17 @@ abstract class PathDisturbanceSimTestBase {
 
         Command followCommand = AutoBuilder.followPath(path);
         CommandScheduler.getInstance().schedule(followCommand);
+
+        // Scheduled HERE, while still paused, for the same reason followCommand is: scheduling from
+        // the test thread while the robot thread is concurrently running CommandScheduler.run() is a
+        // data race on a non-thread-safe Set (see AutoRegressionTestBase's own comment). It declares
+        // no requirements, so it cannot interrupt followCommand or the chooser's Commands.none().
+        // Its whole job is to move the setSimulationWorldPose() call onto the robot loop.
+        Command disturbanceCommand = Commands.waitUntil(disturbanceRequested::get)
+                .andThen(Commands.runOnce(this::injectDisturbance))
+                .withName("DisturbanceInjection");
+        CommandScheduler.getInstance().schedule(disturbanceCommand);
+
         SimHooks.stepTiming(kStepSeconds);
         SimHooks.resumeTiming();
         timingResumed = true;
@@ -128,16 +191,14 @@ abstract class PathDisturbanceSimTestBase {
             Thread.sleep(stepMillis);
             elapsedSeconds = (System.nanoTime() - startNanos) / 1e9;
 
+            // Same trigger condition and same wall-clock instant as before. What changed is what
+            // happens next: this thread only raises the request flag, and the robot loop performs
+            // the world mutation on its next tick.
             if (!injected && elapsedSeconds >= kInjectionElapsedSeconds) {
-                Pose2d groundTruth = RobotContainer.drivetrain.getSimulatedGroundTruthPose();
-                Translation2d lateralShove =
-                        new Translation2d(0, displacementMeters()).rotateBy(groundTruth.getRotation());
-                Pose2d displaced = new Pose2d(
-                        groundTruth.getTranslation().plus(lateralShove), groundTruth.getRotation());
-                RobotContainer.drivetrain.getMapleSimDrive().setSimulationWorldPose(displaced);
+                disturbanceRequested.set(true);
                 injected = true;
-                System.out.println("[disturbance] injected " + displacementMeters() + "m at t="
-                        + elapsedSeconds + "s : " + groundTruth + " -> " + displaced);
+                System.out.println("[disturbance] requested " + displacementMeters() + "m at t="
+                        + elapsedSeconds + "s from " + Thread.currentThread().getName());
             }
 
             if (!CommandScheduler.getInstance().isScheduled(followCommand)) {
@@ -146,14 +207,79 @@ abstract class PathDisturbanceSimTestBase {
             }
         }
 
+        // The request is asynchronous by construction, so wait for the robot loop to actually
+        // consume it before tearing that loop down. Bounded: a disturbance that never lands is a
+        // failure to report, not a hang. In practice this returns on the first poll -- the run
+        // continues for seconds after the 1.5 s trigger.
+        long deadlineNanos = System.nanoTime() + 1_000_000_000L;
+        while (mutationThread.get() == null && System.nanoTime() < deadlineNanos) {
+            Thread.sleep(5);
+        }
+
         System.out.println("[disturbance] run ended: completed=" + completed + " elapsed=" + elapsedSeconds
                 + "s displacement=" + displacementMeters() + "m");
 
         finishCompetitionAndClose();
 
+        // --- world-ownership proof -------------------------------------------------------------
+        // Direct, not inferred: injectDisturbance() records Thread.currentThread() as its first
+        // statement, in the same method body as the setSimulationWorldPose() call, so the two
+        // cannot drift apart without a deliberate edit. Identity comparison, not name comparison.
+        Thread mutator = mutationThread.get();
+        assertTrue(mutator != null,
+                "the disturbance never executed -- setSimulationWorldPose() was never reached, so this"
+                        + " run proves nothing about world ownership (requested=" + injected
+                        + ", completed=" + completed + ", elapsed=" + elapsedSeconds + "s)");
+        assertSame(robotThread, mutator,
+                "MapleSim/dyn4j world mutation must run on the robot competition thread, but ran on '"
+                        + mutator.getName() + "' (expected '" + robotThread.getName() + "')");
+        assertNotSame(Thread.currentThread(), mutator,
+                "world mutation ran on the JUnit test thread '" + mutator.getName()
+                        + "' -- the cross-thread ownership violation has regressed");
+        assertTrue(!CommandScheduler.getInstance().isScheduled(disturbanceCommand),
+                "the one-shot disturbance command should have completed, but is still scheduled");
+        assertEquals(1, mutationCount.get(),
+                "the disturbance teleport must happen exactly once; a second call means the harness"
+                        + " mutates the world from more than one place");
+
+        System.out.println("[disturbance] injected " + displacementMeters() + "m on thread '"
+                + mutator.getName() + "' at t=" + ((injectedAtNanos - startNanos) / 1e9) + "s : "
+                + injectedFromPose + " -> " + injectedToPose);
+
         Path wpilog = findNewestWpilog();
         assertTrue(wpilog != null, "No .wpilog found in logs/ after the run.");
         System.out.println("[disturbance] wpilog: " + wpilog.toAbsolutePath());
+    }
+
+    /**
+     * Performs the disturbance teleport. Runs from {@code CommandScheduler.run()} inside
+     * {@code robotPeriodic()} -- i.e. on the robot competition thread, the owner of the dyn4j world
+     * -- so it cannot race the physics step that {@code Robot.simulationPeriodic()} runs later in
+     * the same loop.
+     *
+     * <p>The thread capture is deliberately the FIRST statement, in the same method as the mutation
+     * it is vouching for. Anything that moves the {@code setSimulationWorldPose()} call back onto
+     * another thread has to move this line with it, or {@link #disturbanceRun()}'s
+     * {@code assertSame} fails.
+     *
+     * <p>Reading the ground-truth pose moved here too, as a consequence rather than as a goal: it
+     * used to be an unsynchronized cross-thread read of the same dyn4j body, taken from the JUnit
+     * thread while the robot loop was stepping physics.
+     */
+    private void injectDisturbance() {
+        mutationThread.compareAndSet(null, Thread.currentThread());
+        mutationCount.incrementAndGet();
+
+        Pose2d groundTruth = RobotContainer.drivetrain.getSimulatedGroundTruthPose();
+        Translation2d lateralShove =
+                new Translation2d(0, displacementMeters()).rotateBy(groundTruth.getRotation());
+        Pose2d displaced = new Pose2d(
+                groundTruth.getTranslation().plus(lateralShove), groundTruth.getRotation());
+        RobotContainer.drivetrain.getMapleSimDrive().setSimulationWorldPose(displaced);
+
+        injectedFromPose = groundTruth;
+        injectedToPose = displaced;
+        injectedAtNanos = System.nanoTime();
     }
 
     private static Path findNewestWpilog() throws IOException {

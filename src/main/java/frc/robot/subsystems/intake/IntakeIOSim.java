@@ -64,7 +64,17 @@ public class IntakeIOSim implements IntakeIO {
   private boolean rollerClosedLoop = false;
   private double rollerVelocitySetpointRadPerSec = 0.0;
 
-  private IntakeSimulation intakeSimulation;
+  /**
+   * Volatile because it is the one field of this class read from a thread other than the robot
+   * loop: {@link #addGamePieceForTest()} runs on a JUnit thread. The robot loop constructs this
+   * lazily in {@link #updateInputs}, which no longer holds the arena monitor, so the monitor
+   * {@code addGamePieceForTest()} still takes no longer supplies a happens-before edge back to that
+   * construction. {@code volatile} supplies it directly. Not a performance concern -- one reference
+   * read per 20 ms tick.
+   */
+  private volatile IntakeSimulation intakeSimulation;
+
+  /** Robot-loop-only: written by setRoller*(), read by updateInputs(), both on the robot thread. */
   private boolean intakeRunning = false;
 
   @Override
@@ -116,39 +126,36 @@ public class IntakeIOSim implements IntakeIO {
         intakeSimulation == null ? RobotContainer.drivetrain.getMapleSimDrive() : null;
 
     if (intakeSimulation != null || driveSim != null) {
-      // maple-sim mutates the shared dyn4j world from TWO threads here: this one (the robot loop,
-      // via Intake.periodic()) and the 5 ms sim Notifier that runs SimulatedArena.simulationPeriodic().
-      // Every world-mutating entry point the library owns -- simulationPeriodic(), addGamePiece(),
-      // removeGamePiece(), addIntakeSimulation(), addDriveTrainSimulation() -- is `synchronized` on
-      // the arena instance. That monitor IS the library's threading contract.
+      // These calls mutate the shared dyn4j world -- IntakeSimulation extends dyn4j's BodyFixture,
+      // so startIntake()/stopIntake() add and remove a fixture on the drivetrain's physics body,
+      // touching the broadphase and contact structures a physics step walks. They used to be
+      // wrapped in `synchronized (SimulatedArena.getInstance())`, because the arena was stepped by
+      // a separate 5 ms Notifier and the two threads genuinely raced: unguarded, that threw
+      // ConcurrentModificationException out of whichever side happened to be iterating, measured at
+      // 2 of 6 runs of OperatorBoxMaintainedSwitchLifecycleTest.
       //
-      // IntakeSimulation.startIntake()/stopIntake() do NOT take it for us, and they are not
-      // incidental: IntakeSimulation extends dyn4j's BodyFixture, so those two calls add and remove
-      // a fixture on the drivetrain's physics body, mutating the broadphase and contact structures
-      // the Notifier thread is walking. Unguarded, that threw ConcurrentModificationException from
-      // whichever side happened to be iterating -- either out of Intake.periodic() (killing the
-      // robot program for the rest of the session) or out of the Notifier (killing the physics
-      // thread, so the world silently stopped advancing while the robot code kept running and
-      // reporting). Measured at 2 of 6 runs of OperatorBoxMaintainedSwitchLifecycleTest.
+      // The monitor is gone because the second thread is gone. This method has exactly one call
+      // chain -- Intake.periodic() (SubsystemBase) <- CommandScheduler.run() <- Robot.robotPeriodic()
+      // -- and the arena is stepped from Robot.simulationPeriodic(), later in that same loopFunc()
+      // pass. Both therefore run on the robot competition thread, sequentially, and no lock can
+      // order a thread against itself. Nothing else in the repository steps or mutates the arena
+      // while it is running; MapleSimIntakeToggleRaceTest pins the stepping thread's identity.
       //
-      // Taking the same monitor closes both directions. The cost is bounded: the robot thread waits
-      // at most one physics step, and simulationPeriodic() runs a single sub-tick per 5 ms period
-      // (MapleSimSwerveDrivetrain's overrideSimulationTimings(simPeriod, 1)).
-      synchronized (SimulatedArena.getInstance()) {
-        if (intakeSimulation == null) {
-          Distance width = Meters.of(Constants.kIntakeSimWidthMeters);
-          intakeSimulation = IntakeSimulation.InTheFrameIntake(
-              "Fuel", driveSim, width, IntakeSimulation.IntakeSide.FRONT, Constants.kIntakeSimCapacity);
-        }
-
-        if (intakeRunning && !intakeSimulation.isRunning()) {
-          intakeSimulation.startIntake();
-        } else if (!intakeRunning && intakeSimulation.isRunning()) {
-          intakeSimulation.stopIntake();
-        }
-
-        inputs.hasGamePiece = intakeSimulation.getGamePiecesAmount() > 0;
+      // REAL hardware is unaffected either way: IntakeIOReal is a different IntakeIO implementation
+      // and this class is never constructed on a roboRIO.
+      if (intakeSimulation == null) {
+        Distance width = Meters.of(Constants.kIntakeSimWidthMeters);
+        intakeSimulation = IntakeSimulation.InTheFrameIntake(
+            "Fuel", driveSim, width, IntakeSimulation.IntakeSide.FRONT, Constants.kIntakeSimCapacity);
       }
+
+      if (intakeRunning && !intakeSimulation.isRunning()) {
+        intakeSimulation.startIntake();
+      } else if (!intakeRunning && intakeSimulation.isRunning()) {
+        intakeSimulation.stopIntake();
+      }
+
+      inputs.hasGamePiece = intakeSimulation.getGamePiecesAmount() > 0;
     } else {
       inputs.hasGamePiece = false;
     }
@@ -194,9 +201,20 @@ public class IntakeIOSim implements IntakeIO {
     if (intakeSimulation == null) {
       return false;
     }
-    // Called from a JUnit test thread, i.e. a THIRD thread reaching into the same world. Same
-    // monitor, same reason as updateInputs() above; addGamePieceToIntake() mutates the piece list
-    // the physics step walks.
+    // DELIBERATELY RETAINED after the updateInputs() monitor above was dropped, and not by
+    // oversight -- the two are not the same case. updateInputs() runs on the robot competition
+    // thread, the same thread that steps the arena, so its lock could not order anything. This
+    // method is the one world mutation in the repository that is BY CONSTRUCTION off that thread:
+    // it is a test hook, invoked from a JUnit thread.
+    //
+    // What makes it safe today is the caller, not this lock: IntakeGamePieceSignalTest calls it
+    // between SimHooks.stepTiming() calls, i.e. with the clock paused and the robot loop parked in
+    // waitForNotifierAlarm, so no physics step is in flight (the same paused-mutation rule
+    // CLAUDE.md states, and that PathDisturbanceSimTestBase's resetPose() seed relies on).
+    // Nothing enforces that rule, though: a future test that called this after resumeTiming()
+    // would race the physics step, and this monitor -- the same one
+    // SimulatedArena.simulationPeriodic() is declared `synchronized` on -- is the only thing that
+    // would still serialize it. It costs one uncontended acquire per test, on no production path.
     synchronized (SimulatedArena.getInstance()) {
       return intakeSimulation.addGamePieceToIntake();
     }
