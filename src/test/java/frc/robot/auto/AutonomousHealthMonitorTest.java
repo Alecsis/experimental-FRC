@@ -163,6 +163,125 @@ class AutonomousHealthMonitorTest {
         assertFalse(monitor.isStalled());
     }
 
+    @Test
+    void notStalledBeforeAFullStallWindowOfHistoryExists() {
+        // kStallTranslationThresholdMeters is "travel required over a whole window". Judging a
+        // partial window against it applies a far stricter rate (0.05 m over 0.2 s is 0.25 m/s,
+        // 5x the intended bar) and is what produced the measured startup pulse -- Stalled=true from
+        // t=0.204s to t=0.364s in all three recorded RB Neutral runs.
+        secondsSinceLastFreshTargetPose = 0.0;
+        measuredPose = new Pose2d(1.0, 1.0, measuredPose.getRotation()); // never moves
+        boolean everStalled = false;
+        for (clockSeconds = 0.0;
+                clockSeconds < AutonomousHealthMonitor.kStallWindowSeconds - 1e-9;
+                clockSeconds += 0.02) {
+            monitor.update();
+            everStalled |= monitor.isStalled();
+        }
+
+        assertFalse(everStalled,
+                "no verdict may be produced until a full window of path-following history exists,"
+                        + " even for a robot that never moved");
+        assertEquals(AutonomousHealthMonitor.RecoveryReason.NONE, monitor.getRecoveryReason());
+    }
+
+    @Test
+    void stalledOnceTheWindowFillsEvenThoughItWasSuppressedEarlier() {
+        // The guard must DELAY the verdict, not suppress it. Same motionless robot as above, run
+        // past the window boundary.
+        secondsSinceLastFreshTargetPose = 0.0;
+        measuredPose = new Pose2d(1.0, 1.0, measuredPose.getRotation());
+        for (clockSeconds = 0.0;
+                clockSeconds <= AutonomousHealthMonitor.kStallWindowSeconds + 0.5;
+                clockSeconds += 0.02) {
+            monitor.update();
+        }
+
+        assertTrue(monitor.isStalled());
+        assertEquals(AutonomousHealthMonitor.RecoveryReason.STALLED, monitor.getRecoveryReason());
+    }
+
+    @Test
+    void notStalledAfterAFullWindowOfRealTravel() {
+        secondsSinceLastFreshTargetPose = 0.0;
+        for (clockSeconds = 0.0;
+                clockSeconds <= AutonomousHealthMonitor.kStallWindowSeconds + 0.5;
+                clockSeconds += 0.02) {
+            measuredPose = new Pose2d(clockSeconds * 0.5, 0.0, measuredPose.getRotation());
+            monitor.update();
+        }
+
+        assertFalse(monitor.isStalled(), "0.5 m of travel per window is ten times the threshold");
+    }
+
+    @Test
+    void windowRestartsAfterPathFollowingLapses() {
+        // Losing path-following clears the history, so the guard must re-arm: a stall cannot be
+        // declared on the strength of samples gathered before the gap.
+        secondsSinceLastFreshTargetPose = 0.0;
+        measuredPose = new Pose2d(1.0, 1.0, measuredPose.getRotation());
+        for (clockSeconds = 0.0; clockSeconds <= 2.0; clockSeconds += 0.02) {
+            monitor.update();
+        }
+        assertTrue(monitor.isStalled(), "precondition: a full motionless window is a stall");
+
+        secondsSinceLastFreshTargetPose = 999.0; // path-following lapses, history cleared
+        monitor.update();
+        assertFalse(monitor.isStalled());
+
+        secondsSinceLastFreshTargetPose = 0.0; // a new path starts
+        for (clockSeconds = 2.02; clockSeconds <= 2.60; clockSeconds += 0.02) {
+            monitor.update();
+        }
+
+        assertFalse(monitor.isStalled(),
+                "only ~0.6 s into the new path-following stretch -- the window must have re-armed");
+    }
+
+    @Test
+    void notStalledWhenReversingDirectionDuringPathFollowing() {
+        // RB Neutral's shape: out to Neutral Position 3, then straight back along
+        // "Bump Neutral Right". Endpoint displacement across the trailing window collapses toward
+        // zero mid-turnaround even though the robot is driving the whole time, which is exactly
+        // how this monitor logged Stalled=true at t=2.98s in 3 of 3 recorded RB Neutral runs.
+        // Accumulated path length sees the ~2 m actually travelled. The real recorded samples are
+        // replayed through this same monitor in StallDetectorMirroringTest.
+        //
+        // Graded across every tick, including the startup ramp: the full-window guard in
+        // updateStalled() means no verdict is produced at all until 1.0 s of path-following history
+        // exists, so there is no startup transient left to exclude here.
+        secondsSinceLastFreshTargetPose = 0.0;
+        boolean everStalled = false;
+        for (clockSeconds = 0.0; clockSeconds <= 2.0 + 1e-9; clockSeconds += 0.02) {
+            double x = clockSeconds <= 1.0 ? clockSeconds : 2.0 - clockSeconds;
+            measuredPose = new Pose2d(x, 0.0, measuredPose.getRotation());
+            monitor.update();
+            everStalled |= monitor.isStalled();
+        }
+
+        assertFalse(everStalled, "a direction reversal is motion, not a stall");
+    }
+
+    @Test
+    void stalledWhenOnlyPoseNoiseAccumulatesDuringPathFollowing() {
+        // Guards the cost of summing consecutive samples: pose noise integrates too. Per-sample
+        // steps at or below kStallSampleNoiseFloorMeters contribute nothing, so a motionless but
+        // noisy robot cannot accumulate its way out of a genuine stall.
+        secondsSinceLastFreshTargetPose = 0.0;
+        double amplitude = AutonomousHealthMonitor.kStallSampleNoiseFloorMeters / 4.0;
+        int tick = 0;
+        for (clockSeconds = 0.0; clockSeconds <= AutonomousHealthMonitor.kStallWindowSeconds + 0.5;
+                clockSeconds += 0.02, tick++) {
+            measuredPose = new Pose2d(1.0 + (tick % 2 == 0 ? amplitude : -amplitude), 1.0,
+                    measuredPose.getRotation());
+            monitor.update();
+        }
+
+        assertTrue(monitor.isStalled(),
+                "pose noise below the per-sample floor must not be mistaken for travel");
+        assertEquals(AutonomousHealthMonitor.RecoveryReason.STALLED, monitor.getRecoveryReason());
+    }
+
     // ---- VisionUnhealthy ----
 
     @Test

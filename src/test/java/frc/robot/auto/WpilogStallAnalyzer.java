@@ -33,6 +33,16 @@ final class WpilogStallAnalyzer {
     private static final String kPoseType = "struct:Pose2d";
     private static final String kBooleanType = "boolean";
 
+    /**
+     * Pose-noise floor for {@link #accumulatedPathLengthMeters}. Mirrors
+     * {@code AutonomousHealthMonitor.kStallSampleNoiseFloorMeters}, and is re-declared here for the
+     * same reason the window/threshold are passed in rather than imported: this analyzer grades a
+     * recorded run, so it must be able to state the rule it applied without reaching into
+     * production constants. The two values must stay equal -- {@code StallDetectorMirroringTest}
+     * asserts it.
+     */
+    static final double kStallSampleNoiseFloorMeters = 1.0e-4;
+
     record Result(boolean stalled, String diagnostic) {}
 
     private WpilogStallAnalyzer() {}
@@ -160,14 +170,13 @@ final class WpilogStallAnalyzer {
             if (lastInactiveIndex >= windowStart) {
                 continue; // window overlaps a stretch with no path driving -- stationary is expected
             }
-            double dx = trace.get(i)[1] - trace.get(windowStart)[1];
-            double dy = trace.get(i)[2] - trace.get(windowStart)[2];
-            double moved = Math.hypot(dx, dy);
+            double moved = accumulatedPathLengthMeters(trace, windowStart, i);
             if (moved < stallThresholdMeters) {
                 double windowSpan = tI - trace.get(windowStart)[0];
                 return new Result(true, String.format(
-                        "stalled at t=%.2fs: moved %.3fm over the preceding %.2fs (threshold %.3fm), "
-                                + "with a path actively driving throughout that window "
+                        "stalled at t=%.2fs: travelled %.3fm of path length over the preceding "
+                                + "%.2fs (threshold %.3fm), with a path actively driving throughout "
+                                + "that window "
                                 + "(most recent SetpointFresh transition t=%.2fs, grace %.2fs)",
                         tI, moved, windowSpan, stallThresholdMeters, fresh.get(freshCursor)[0],
                         graceSeconds));
@@ -175,5 +184,34 @@ final class WpilogStallAnalyzer {
         }
 
         return new Result(false, "no stall detected");
+    }
+
+    /**
+     * Translation actually travelled between {@code trace[fromIndex]} and {@code trace[toIndex]},
+     * summed consecutive pair by consecutive pair.
+     *
+     * <p>Deliberately NOT {@code hypot(trace[toIndex] - trace[fromIndex])}. Endpoint displacement
+     * asks "is the robot somewhere else than it was a second ago", which is a different question
+     * from "is the robot moving" and answers it wrongly whenever a route reverses direction inside
+     * one window. Measured on RB Neutral, which decelerates to rest at Neutral Position 3 and
+     * immediately drives back the other way: at t = 2.980 s the endpoint rule saw 0.0486 m (under
+     * the 0.05 m threshold, so it reported a stall) while the robot had in fact covered 0.744 m of
+     * path -- 14x the threshold.
+     *
+     * <p>{@link #kStallSampleNoiseFloorMeters} keeps the sum from integrating pose noise into
+     * fictitious travel; see {@code AutonomousHealthMonitor}'s copy of this constant for how it is
+     * sized and for the limit it cannot fix.
+     */
+    private static double accumulatedPathLengthMeters(List<double[]> trace, int fromIndex,
+            int toIndex) {
+        double total = 0.0;
+        for (int k = fromIndex + 1; k <= toIndex; k++) {
+            double step = Math.hypot(trace.get(k)[1] - trace.get(k - 1)[1],
+                    trace.get(k)[2] - trace.get(k - 1)[2]);
+            if (step > kStallSampleNoiseFloorMeters) {
+                total += step;
+            }
+        }
+        return total;
     }
 }

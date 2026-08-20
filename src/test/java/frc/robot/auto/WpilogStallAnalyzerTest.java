@@ -92,6 +92,76 @@ class WpilogStallAnalyzerTest {
             + result.diagnostic());
   }
 
+  @Test
+  void directionReversalWithRealTravelIsNotAStall() {
+    // The RB Neutral shape: drive out, decelerate to rest, drive straight back. Endpoint
+    // displacement across the window collapses toward zero even though the robot never stopped
+    // for longer than the turnaround itself. Measured instance and its exact samples live in
+    // StallDetectorMirroringTest; this is the same shape in clean synthetic form.
+    List<double[]> fresh = levels(0.0);
+    List<double[]> trace = new ArrayList<>();
+    appendMoving(trace, 0.0, 1.0, 0.0); // out to x = 1.0
+    appendReversing(trace, 1.0, 2.0, 1.0); // back to x = 0.0
+
+    WpilogStallAnalyzer.Result result =
+        WpilogStallAnalyzer.checkForStall(trace, fresh, kWindowSeconds, kThresholdMeters,
+            kGraceSeconds);
+
+    assertFalse(result.stalled(),
+        "reversing direction is motion, not a stall -- the robot covered ~2 m of path here: "
+            + result.diagnostic());
+  }
+
+  @Test
+  void poseNoiseWhileStationaryStillCountsAsAStall() {
+    // Summing consecutive samples integrates pose noise as well as travel, so a motionless but
+    // noisy robot could otherwise accumulate its way out of a genuine stall. Per-sample steps at
+    // or below kStallSampleNoiseFloorMeters contribute nothing, which is what keeps this a stall.
+    List<double[]> fresh = levels(0.0);
+    List<double[]> trace = new ArrayList<>();
+    appendJittering(trace, 0.0, 3.0, 1.0,
+        WpilogStallAnalyzer.kStallSampleNoiseFloorMeters / 4.0);
+
+    WpilogStallAnalyzer.Result result =
+        WpilogStallAnalyzer.checkForStall(trace, fresh, kWindowSeconds, kThresholdMeters,
+            kGraceSeconds);
+
+    assertTrue(result.stalled(),
+        "pose noise below the per-sample floor must not be mistaken for travel");
+  }
+
+  @Test
+  void slowMonotonicMovementAboveTheThresholdIsNotAStall() {
+    // 0.08 m/s clears 0.08 m per 1.0 s window, just over the 0.05 m threshold. Accumulated length
+    // and endpoint displacement agree here -- monotonic motion must be unaffected by the change.
+    List<double[]> fresh = levels(0.0);
+    List<double[]> trace = new ArrayList<>();
+    appendCrawling(trace, 0.0, 3.0, 0.0, 0.08);
+
+    WpilogStallAnalyzer.Result result =
+        WpilogStallAnalyzer.checkForStall(trace, fresh, kWindowSeconds, kThresholdMeters,
+            kGraceSeconds);
+
+    assertFalse(result.stalled(),
+        "0.08 m per window is above the 0.05 m threshold: " + result.diagnostic());
+  }
+
+  @Test
+  void slowMonotonicMovementBelowTheThresholdIsStillAStall() {
+    // The other side of the same boundary: 0.02 m/s covers 0.02 m per window, under the threshold.
+    // Switching to accumulated length must not have quietly made the detector more permissive.
+    List<double[]> fresh = levels(0.0);
+    List<double[]> trace = new ArrayList<>();
+    appendCrawling(trace, 0.0, 3.0, 0.0, 0.02);
+
+    WpilogStallAnalyzer.Result result =
+        WpilogStallAnalyzer.checkForStall(trace, fresh, kWindowSeconds, kThresholdMeters,
+            kGraceSeconds);
+
+    assertTrue(result.stalled(),
+        "0.02 m per window is below the 0.05 m threshold and must still be reported");
+  }
+
   /**
    * Builds {@code {timestamp, 1|0}} level transitions from alternating rising/falling edge times,
    * mirroring how WPILOG stores the de-duplicated {@code Trajectory/SetpointFresh} entry.
@@ -117,6 +187,31 @@ class WpilogStallAnalyzerTest {
       double endSeconds, double x) {
     for (double t = startSeconds; t < endSeconds - 1e-9; t += 0.02) {
       trace.add(new double[] {t, x, 0.0});
+    }
+  }
+
+  /** Appends 50 Hz samples retreating 1 m/s in -x, starting from xStart. */
+  private static void appendReversing(List<double[]> trace, double startSeconds, double endSeconds,
+      double xStart) {
+    for (double t = startSeconds; t < endSeconds - 1e-9; t += 0.02) {
+      trace.add(new double[] {t, xStart - (t - startSeconds), 0.0});
+    }
+  }
+
+  /** Appends 50 Hz samples advancing at an arbitrary constant speed. */
+  private static void appendCrawling(List<double[]> trace, double startSeconds, double endSeconds,
+      double xStart, double metersPerSecond) {
+    for (double t = startSeconds; t < endSeconds - 1e-9; t += 0.02) {
+      trace.add(new double[] {t, xStart + (t - startSeconds) * metersPerSecond, 0.0});
+    }
+  }
+
+  /** Appends 50 Hz samples that hold position but wobble by +/- amplitude each tick. */
+  private static void appendJittering(List<double[]> trace, double startSeconds, double endSeconds,
+      double x, double amplitudeMeters) {
+    int tick = 0;
+    for (double t = startSeconds; t < endSeconds - 1e-9; t += 0.02, tick++) {
+      trace.add(new double[] {t, x + (tick % 2 == 0 ? amplitudeMeters : -amplitudeMeters), 0.0});
     }
   }
 }
