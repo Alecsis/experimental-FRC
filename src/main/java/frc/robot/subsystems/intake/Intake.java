@@ -54,6 +54,9 @@ public class Intake extends SubsystemBase {
   private double testJamStatorCurrentAmps;
   private double testJamVelocityRadsPerSec;
 
+  private boolean pivotCurrentOverrideActive = false;
+  private double pivotCurrentOverrideAmps;
+
   public enum Roller {
     STOP(0),
     INTAKE(800),
@@ -264,13 +267,70 @@ public class Intake extends SubsystemBase {
             .until(this::hardstop)
             .withTimeout(1),
         Commands.runOnce(() -> {
-          io.setPivotEncoderPosition(0.0);
           io.setPivotVoltage(0.0);
-          homed = true;
-          deploy = false;
-          SmartDashboard.putBoolean("Intake/Zeroed", true);
+          // Only a DETECTED hardstop is a home. Reaching this stage by timeout instead means the
+          // seek never found the stop, and re-zeroing here would install a zero reference at an
+          // arbitrary angle -- every later setPivotPosition() would then target the wrong physical
+          // position, which is a worse failure than simply not being homed. Leaving the previous
+          // reference alone keeps a good earlier home if there was one, and leaving homed false
+          // lets a retry (teleop's RobotModeTriggers.teleop().onTrue(homing())) run again.
+          if (hardstop()) {
+            io.setPivotEncoderPosition(0.0);
+            homed = true;
+            deploy = false;
+          }
+          SmartDashboard.putBoolean("Intake/Zeroed", homed);
         }, this),
-        Commands.runOnce(() -> goTo(PivotState.DOWN), this));
+        Commands.runOnce(() -> goTo(PivotState.DOWN), this))
+        .finallyDo(interrupted -> {
+          // Whole-sequence finalizer. Interrupting during the seek stage above skips the zeroing
+          // stage entirely, leaving the last setPivotVoltage(kHomingVoltage) request LATCHED:
+          // CTRE control requests persist until superseded, and IntakeIOSim models that faithfully
+          // (setPivotVoltage leaves pivotClosedLoop false, so updateInputs keeps re-applying the
+          // stored volts every tick). "Home Intake" is the first command in all 15 autos, so any
+          // cancel inside its first second -- teleopInit(), a disable, a test cancel -- lands
+          // exactly in that window, and Superstructure cannot rescue it: it starts in OFF, and OFF
+          // is the one state whose periodic() never calls setIntakePivot().
+          //
+          // Deliberately conditional on interruption: on normal completion the stage above has
+          // already handed the pivot to setPivotPosition(DOWN), and an unconditional zero here
+          // would supersede that MotionMagic request and drop the pivot limp.
+          if (interrupted) {
+            io.setPivotVoltage(0.0);
+          }
+        });
+  }
+
+  /**
+   * Test-only: the pivot voltage the IO layer most recently reported applying, as of the last
+   * {@link #periodic()}. Package-private and read-only -- same seam style as
+   * {@link #forceJamConditionForTest}, and the only way a test can prove {@link #homing()} leaves
+   * no latched voltage request behind without reaching into the private IO.
+   */
+  double pivotAppliedVoltsForTest() {
+    return inputs.pivotAppliedVolts;
+  }
+
+  /** Test-only: whether a hardstop-detected home has been recorded. Package-private, read-only. */
+  boolean homedForTest() {
+    return homed;
+  }
+
+  /**
+   * Test-only: forces {@link #hardstop()}'s input. IntakeIOSim's arm physics always reaches the
+   * hardstop current within a few ticks and cannot be steered away from it on demand, so the
+   * timeout branch of {@link #homing()} is otherwise unreachable in simulation. Same seam style as
+   * {@link #forceJamConditionForTest} -- overrides a sensor reading only, and is inert unless a
+   * test switches it on.
+   */
+  void forcePivotStatorCurrentForTest(double statorCurrentAmps) {
+    pivotCurrentOverrideActive = true;
+    pivotCurrentOverrideAmps = statorCurrentAmps;
+  }
+
+  /** Test-only: stops overriding the pivot current, resuming real IntakeIOSim physics. */
+  void clearPivotCurrentOverrideForTest() {
+    pivotCurrentOverrideActive = false;
   }
 
   public Command stopRoller() {
@@ -283,6 +343,9 @@ public class Intake extends SubsystemBase {
     if (testJamOverrideActive) {
       inputs.rollerStatorCurrentAmps = testJamStatorCurrentAmps;
       inputs.rollerVelocityRadsPerSec = testJamVelocityRadsPerSec;
+    }
+    if (pivotCurrentOverrideActive) {
+      inputs.pivotStatorCurrentAmps = pivotCurrentOverrideAmps;
     }
     Logger.processInputs("Intake", inputs);
 
