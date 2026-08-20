@@ -33,7 +33,6 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
@@ -64,12 +63,29 @@ import frc.robot.utility.simulation.MapleSimSwerveDrivetrain;
  * https://v6.docs.ctr-electronics.com/en/stable/docs/tuner/tuner-swerve/index.html
  */
 public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Subsystem {
-    // 5 ms (200 Hz). This drives BOTH the notifier and maple-sim's SimulatedArena timing. It must stay
-    // well below the 20 ms main-loop period: the steer gains regulateModuleConstantsForSimulation()
-    // installs (kP=70) go numerically unstable at 20 ms, diverging at gain ~= -2 and flinging the pose.
+    // maple-sim's PHYSICS INTEGRATION SUB-STEP, unchanged at 5 ms (200 Hz). It must stay well below
+    // the 20 ms main-loop period: the steer gains regulateModuleConstantsForSimulation() installs
+    // (kP=70) go numerically unstable at 20 ms, diverging at gain ~= -2 and flinging the pose.
     // Matches Team 254's reference integration; maple-sim's own default is 250 Hz.
-    private static final double kSimLoopPeriod = 0.005;
-    // Sim-only signal-frequency mitigation (see startSimThread()): matches this drivetrain's own
+    //
+    // This used to be the period of a background Notifier that called SimulatedArena
+    // .simulationPeriodic() directly. It is no longer a thread period: the arena is now advanced
+    // once per robot loop from Robot.simulationPeriodic(), as maple-sim's own javadoc requires
+    // ("This method should be called ONCE in TimedRobot#simulationPeriodic()"). The library ships no
+    // thread of its own, and stepping it off-thread made every robot-periodic mutation of the dyn4j
+    // world -- IntakeSimulation.startIntake()/stopIntake(), setSimulationWorldPose() -- race the
+    // physics step, throwing ConcurrentModificationException out of either side. See
+    // MapleSimIntakeToggleRaceTest.
+    //
+    // The integration sub-step is preserved by splitting the 20 ms robot period into 4 sub-ticks
+    // below, so physics still advances in 5 ms increments -- only the OWNING THREAD changed.
+    private static final double kSimPhysicsSubStepSeconds = 0.005;
+    /** Robot loop period; the outer window maple-sim divides into {@link #kSimPhysicsSubTicks}. */
+    private static final double kSimArenaPeriodSeconds = 0.020;
+    /** 0.020 / 0.005 -- keeps the integration step at 5 ms while stepping once per robot loop. */
+    private static final int kSimPhysicsSubTicks =
+            (int) Math.round(kSimArenaPeriodSeconds / kSimPhysicsSubStepSeconds);
+    // Sim-only signal-frequency mitigation (see initSimPhysics()): matches this drivetrain's own
     // configured CAN-FD odometry rate (TunerConstants' default of 250 Hz -- see
     // createDrivetrain()'s javadoc), not an arbitrary maximum.
     private static final double kSimOdometrySignalHz = 250.0;
@@ -77,7 +93,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     // signal. Generous relative to the 250 Hz signal rate (4 ms) and the 5 ms sim notifier period;
     // waitForUpdate returns as soon as a fresh value arrives, so this is a ceiling, not a sleep.
     private static final double kSimGyroSettleSeconds = 0.1;
-    private Notifier m_simNotifier = null;
     private SwerveModuleConstants<?, ?, ?>[] moduleConstantsForSim;
     private MapleSimSwerveDrivetrain mapleSim;
     private Alliance m_lastAppliedAlliance;
@@ -203,7 +218,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         moduleConstantsForSim = modules;
         logCancoderBootReadings();
         if (Utils.isSimulation()) {
-            startSimThread();
+            initSimPhysics();
         }
         configureAutoBuilder();
     }
@@ -232,7 +247,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         moduleConstantsForSim = modules;
         logCancoderBootReadings();
         if (Utils.isSimulation()) {
-            startSimThread();
+            initSimPhysics();
         }
         configureAutoBuilder();
     }
@@ -275,7 +290,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         moduleConstantsForSim = modules;
         logCancoderBootReadings();
         if (Utils.isSimulation()) {
-            startSimThread();
+            initSimPhysics();
         }
         configureAutoBuilder();
     }
@@ -601,7 +616,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         // periodic() tick while disabled -- DriverStation.getAlliance() can flip/settle over several
         // ticks after a DS reconnect, and re-applying on every tick caused a spurious mid-match pi
         // reference flip. This entire block runs on the main robot thread only (Subsystem.periodic());
-        // do not move any of this logic into m_simNotifier or any other background thread.
+        // do not move any of this logic onto any background thread.
         if (!m_hasAppliedOperatorPerspective || DriverStation.isDisabled()) {
             DriverStation.getAlliance().ifPresent(allianceColor -> {
                 if (allianceColor != m_lastAppliedAlliance) {
@@ -687,7 +702,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             return;
         }
         // Needs the alliance, which is empty until the DS connects -- so this cannot move to
-        // startSimThread()/simulationInit(), it has to poll until the alliance resolves.
+        // initSimPhysics()/simulationInit(), it has to poll until the alliance resolves.
         DriverStation.getAlliance().ifPresent(allianceColor -> {
             Pose2d spawnPose = FieldConstants.simPracticeSpawn(allianceColor);
             resetPose(spawnPose);
@@ -696,10 +711,16 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         });
     }
 
-    private void startSimThread() {
+    /**
+     * Builds the maple-sim physics drivetrain. Deliberately does NOT start a stepping thread --
+     * {@link #updateSimulation()} is driven from {@code Robot.simulationPeriodic()} instead, so the
+     * dyn4j world has exactly one owning thread. See {@link #kSimPhysicsSubStepSeconds}.
+     */
+    private void initSimPhysics() {
         // TODO: confirm actual drive/steer motors -- assumed Kraken X60
         mapleSim = new MapleSimSwerveDrivetrain(
-                Seconds.of(kSimLoopPeriod),
+                Seconds.of(kSimArenaPeriodSeconds),
+                kSimPhysicsSubTicks,
                 Kilograms.of(Constants.kRobotMassWithBumpersKg),
                 Meters.of(Constants.kBumperLengthXMeters),
                 Meters.of(Constants.kBumperWidthYMeters),
@@ -710,10 +731,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 getPigeon2(),
                 getModules(),
                 moduleConstantsForSim);
-
-        /* Run simulation at a faster rate so PID gains behave more reasonably */
-        m_simNotifier = new Notifier(mapleSim::update);
-        m_simNotifier.startPeriodic(kSimLoopPeriod);
 
         // Sim-only, CTRE-recommended mitigation (Phoenix 6 docs, "High Fidelity CAN Bus
         // Simulation"): the simulated CAN bus models real signal latency, which can leave stale
@@ -781,12 +798,29 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     /** Stops the MapleSim notifier before the Phoenix drivetrain's own odometry thread closes. */
     @Override
     public void close() {
-        if (m_simNotifier != null) {
-            m_simNotifier.stop();
-            m_simNotifier.close();
-            m_simNotifier = null;
-        }
+        // No sim notifier to stop any more -- the maple-sim arena is advanced from
+        // Robot.simulationPeriodic() on the robot loop, which has already ended by the time a test
+        // or sim session calls close(). super.close() releases Phoenix's native odometry thread,
+        // which is the remaining non-daemon thread that would otherwise keep a forked JVM alive.
         super.close();
+    }
+
+    /**
+     * Advances the maple-sim physics world by exactly one robot period.
+     *
+     * <p>Called from {@code Robot.simulationPeriodic()} -- the location maple-sim's own
+     * {@code SimulatedArena.simulationPeriodic()} javadoc requires ("This method should be called
+     * ONCE in {@code TimedRobot#simulationPeriodic()}"). Running it here rather than on a Notifier
+     * is what gives the dyn4j world a single owning thread: {@code Intake.periodic()} and this both
+     * execute on the robot loop, so a mechanism can add or remove a physics fixture without racing
+     * the step that walks it.
+     *
+     * <p>No-op on real hardware, where {@code mapleSim} is never constructed.
+     */
+    public void updateSimulation() {
+        if (mapleSim != null) {
+            mapleSim.update();
+        }
     }
 
     /** Returns the maple-sim drivetrain simulation, or null on real hardware / before the sim thread starts. */

@@ -9,6 +9,7 @@ import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Radians;
 
 import org.ironmaple.simulation.IntakeSimulation;
+import org.ironmaple.simulation.SimulatedArena;
 import org.ironmaple.simulation.drivesims.AbstractDriveTrainSimulation;
 
 import edu.wpi.first.math.MathUtil;
@@ -107,24 +108,50 @@ public class IntakeIOSim implements IntakeIO {
     inputs.rollerSupplyCurrentAmps = rollerSim.getCurrentDrawAmps();
     inputs.rollerTempCelsius = 0.0;
 
-    if (intakeSimulation == null) {
-      AbstractDriveTrainSimulation driveSim = RobotContainer.drivetrain.getMapleSimDrive();
-      if (driveSim != null) {
-        Distance width = Meters.of(Constants.kIntakeSimWidthMeters);
-        intakeSimulation = IntakeSimulation.InTheFrameIntake(
-            "Fuel", driveSim, width, IntakeSimulation.IntakeSide.FRONT, Constants.kIntakeSimCapacity);
-      }
-    }
+    // The drive sim reference is read BEFORE any SimulatedArena.getInstance() call on purpose:
+    // getInstance() CONSTRUCTS the default arena if none has been installed yet, and the default is
+    // exactly the one whose hub/ramp collider MapleSimSwerveDrivetrain deliberately overrides away.
+    // A non-null drive sim proves that override already ran, so reaching for the arena is safe.
+    AbstractDriveTrainSimulation driveSim =
+        intakeSimulation == null ? RobotContainer.drivetrain.getMapleSimDrive() : null;
 
-    if (intakeSimulation != null) {
-      if (intakeRunning && !intakeSimulation.isRunning()) {
-        intakeSimulation.startIntake();
-      } else if (!intakeRunning && intakeSimulation.isRunning()) {
-        intakeSimulation.stopIntake();
-      }
-    }
+    if (intakeSimulation != null || driveSim != null) {
+      // maple-sim mutates the shared dyn4j world from TWO threads here: this one (the robot loop,
+      // via Intake.periodic()) and the 5 ms sim Notifier that runs SimulatedArena.simulationPeriodic().
+      // Every world-mutating entry point the library owns -- simulationPeriodic(), addGamePiece(),
+      // removeGamePiece(), addIntakeSimulation(), addDriveTrainSimulation() -- is `synchronized` on
+      // the arena instance. That monitor IS the library's threading contract.
+      //
+      // IntakeSimulation.startIntake()/stopIntake() do NOT take it for us, and they are not
+      // incidental: IntakeSimulation extends dyn4j's BodyFixture, so those two calls add and remove
+      // a fixture on the drivetrain's physics body, mutating the broadphase and contact structures
+      // the Notifier thread is walking. Unguarded, that threw ConcurrentModificationException from
+      // whichever side happened to be iterating -- either out of Intake.periodic() (killing the
+      // robot program for the rest of the session) or out of the Notifier (killing the physics
+      // thread, so the world silently stopped advancing while the robot code kept running and
+      // reporting). Measured at 2 of 6 runs of OperatorBoxMaintainedSwitchLifecycleTest.
+      //
+      // Taking the same monitor closes both directions. The cost is bounded: the robot thread waits
+      // at most one physics step, and simulationPeriodic() runs a single sub-tick per 5 ms period
+      // (MapleSimSwerveDrivetrain's overrideSimulationTimings(simPeriod, 1)).
+      synchronized (SimulatedArena.getInstance()) {
+        if (intakeSimulation == null) {
+          Distance width = Meters.of(Constants.kIntakeSimWidthMeters);
+          intakeSimulation = IntakeSimulation.InTheFrameIntake(
+              "Fuel", driveSim, width, IntakeSimulation.IntakeSide.FRONT, Constants.kIntakeSimCapacity);
+        }
 
-    inputs.hasGamePiece = intakeSimulation != null && intakeSimulation.getGamePiecesAmount() > 0;
+        if (intakeRunning && !intakeSimulation.isRunning()) {
+          intakeSimulation.startIntake();
+        } else if (!intakeRunning && intakeSimulation.isRunning()) {
+          intakeSimulation.stopIntake();
+        }
+
+        inputs.hasGamePiece = intakeSimulation.getGamePiecesAmount() > 0;
+      }
+    } else {
+      inputs.hasGamePiece = false;
+    }
   }
 
   @Override
@@ -164,6 +191,14 @@ public class IntakeIOSim implements IntakeIO {
    *  yet (RobotContainer.drivetrain's MapleSim drive wasn't available on any prior
    *  updateInputs() tick). Package-private -- only for JUnit tests in this package. */
   boolean addGamePieceForTest() {
-    return intakeSimulation != null && intakeSimulation.addGamePieceToIntake();
+    if (intakeSimulation == null) {
+      return false;
+    }
+    // Called from a JUnit test thread, i.e. a THIRD thread reaching into the same world. Same
+    // monitor, same reason as updateInputs() above; addGamePieceToIntake() mutates the piece list
+    // the physics step walks.
+    synchronized (SimulatedArena.getInstance()) {
+      return intakeSimulation.addGamePieceToIntake();
+    }
   }
 }
