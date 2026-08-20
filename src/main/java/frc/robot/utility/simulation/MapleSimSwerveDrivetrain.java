@@ -48,8 +48,17 @@ public class MapleSimSwerveDrivetrain {
   private final Pigeon2SimState pigeonSim;
   public final SwerveDriveSimulation mapleSimDrive;
 
+  /**
+   * @param simPeriod the OUTER stepping period -- how much simulated time one {@link #update()}
+   *     advances. This is the robot loop period, because {@code update()} is driven from
+   *     {@code Robot.simulationPeriodic()} rather than from a background Notifier.
+   * @param simSubTicksPerPeriod how many physics integration steps maple-sim takes inside that
+   *     window. {@code simPeriod / simSubTicksPerPeriod} is the integration timestep, which must
+   *     stay small for the simulated steer gains to remain numerically stable.
+   */
   public MapleSimSwerveDrivetrain(
       Time simPeriod,
+      int simSubTicksPerPeriod,
       Mass robotMassWithBumpers,
       Distance bumperLengthX,
       Distance bumperWidthY,
@@ -93,7 +102,7 @@ public class MapleSimSwerveDrivetrain {
     // AddRampCollider=false drops that collider so PathPlanner autos crossing the Bump can be
     // developed/tested in sim.
     SimulatedArena.overrideInstance(new Arena2026Rebuilt(false));
-    SimulatedArena.overrideSimulationTimings(simPeriod, 1);
+    SimulatedArena.overrideSimulationTimings(simPeriod, simSubTicksPerPeriod);
     SimulatedArena.getInstance().addDriveTrainSimulation(mapleSimDrive);
   }
 
@@ -111,7 +120,14 @@ public class MapleSimSwerveDrivetrain {
     pigeonSim.setRawYaw(mapleSimDrive.getSimulatedDriveTrainPose().getRotation().getMeasure());
   }
 
-  /** Advances the physics simulation one tick and injects the results into the CTRE sim devices. */
+  /**
+   * Advances the physics simulation one robot period and injects the results into the CTRE sim
+   * devices.
+   *
+   * <p><b>Must be called from the robot loop</b> ({@code Robot.simulationPeriodic()}), never from a
+   * background thread. maple-sim ships no thread of its own and documents this as the caller's
+   * responsibility; stepping the dyn4j world off-thread races every robot-periodic mutation of it.
+   */
   public void update() {
     SimulatedArena.getInstance().simulationPeriodic();
     pigeonSim.setRawYaw(mapleSimDrive.getSimulatedDriveTrainPose().getRotation().getMeasure());

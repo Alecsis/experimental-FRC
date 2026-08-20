@@ -273,9 +273,24 @@ public void autonomousInit() {
   @Override
   public void simulationInit() {}
 
-  /** This function is called periodically whilst in simulation. */
+  /**
+   * Advances the maple-sim physics world, once per robot loop, in simulation only.
+   *
+   * <p>This is the location maple-sim's {@code SimulatedArena.simulationPeriodic()} javadoc
+   * mandates: <em>"This method should be called ONCE in {@code TimedRobot#simulationPeriodic()}"</em>.
+   * The library ships no thread of its own, so whoever calls it owns the dyn4j world. Driving it
+   * here -- after {@code robotPeriodic()} has run the CommandScheduler and applied this loop's
+   * motor outputs -- means mechanism simulations that mutate the world (notably
+   * {@code IntakeSimulation.startIntake()/stopIntake()}, which add and remove a physics fixture)
+   * run on the SAME thread as the step that walks it, so they cannot race it.
+   *
+   * <p>{@code IterativeRobotBase} only calls this in simulation, so real-robot behavior is
+   * untouched.
+   */
   @Override
-  public void simulationPeriodic() {}
+  public void simulationPeriodic() {
+    m_robotContainer.drivetrain.updateSimulation();
+  }
 
   /** Stops simulation-owned background resources before AdvantageKit and HAL shutdown. */
   @Override
