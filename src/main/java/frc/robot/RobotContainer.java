@@ -97,6 +97,11 @@ public class RobotContainer {
                 drivetrain.setTrajectoryErrorTracker(trajectoryErrorTracker);
                 RobotModeTriggers.teleop().onTrue(intake.homing()); // if commented out its temp removed for testing
                                                                     // since intake is not chained
+                // NOTE: no teleop-start stow command here on purpose. STOWED is the zero-active-
+                // control teleop intent produced by Superstructure's default operator-policy
+                // command, so adding one here would create a second command competing for
+                // Superstructure at the teleop edge and make correctness depend on the order these
+                // RobotModeTriggers happen to be registered in.
                 NamedCommands.registerCommand(
                                 "Home Intake", intake.homing());
                 // trackHub(..., finishOnAlign=true) only self-finishes once heading error drops
@@ -150,6 +155,24 @@ public class RobotContainer {
          */
         public void periodic() {
                 operatorControls.periodic(MaxSpeed, MaxAngularRate);
+        }
+
+        /**
+         * Called from {@link Robot#teleopExit()} -- the WPILib lifecycle hook that runs on EVERY
+         * exit from teleop, before the next mode's {@code xxxInit()}.
+         *
+         * <p>This exists because the operator policy stores a persistent wanted state that
+         * {@link Superstructure#periodic()} keeps applying in every mode, while the policy's own
+         * body is teleop-gated. Relying on the default command being interrupted is not enough:
+         * on a direct teleop-&gt;autonomous transition, autonomous begins with whatever the
+         * operator last asked for still latched. Hooking the mode exit makes the invariant --
+         * no operator-derived wanted state survives teleop -- independent of scheduler ownership.
+         *
+         * <p>{@code clearOperatorRequest()} is a one-shot relinquish, and is a no-op unless the
+         * operator policy is the current writer, so it cannot overwrite an autonomous request.
+         */
+        public void teleopExit() {
+                superstructure.clearOperatorRequest();
         }
 
         /**

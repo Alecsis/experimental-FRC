@@ -191,6 +191,18 @@ public class Intake extends SubsystemBase {
     testJamOverrideActive = false;
   }
 
+  /**
+   * Whether a roller SysId routine is currently characterizing the roller. This is the one and
+   * only case where a Command -- not Superstructure -- owns the roller, so Superstructure's direct
+   * {@code periodic()} roller writes must stand down or they would overwrite the characterization
+   * sweep. Every other Intake Command ({@link #homing()}, {@link #agitatePivot()}) drives the pivot
+   * only, which is why roller ownership is deliberately NOT inferred from "some Command requires
+   * Intake": doing that let a stale roller request survive for the whole homing window.
+   */
+  public boolean isRollerSysIdActive() {
+    return sysIdActive;
+  }
+
   public Command rollerSysIdQuasistatic(SysIdRoutine.Direction direction) {
     return Commands.runOnce(() -> sysIdActive = true)
         .andThen(m_rollerSysId.quasistatic(direction))
@@ -220,12 +232,11 @@ public class Intake extends SubsystemBase {
 
   public Command agitatePivot() {
     return Commands.sequence(
-        Commands.sequence(
-            Commands.runOnce(() -> setRoller(Roller.INTAKE)),
-            Commands.runOnce(() -> goTo(PivotState.AGITATE)),
-            Commands.waitSeconds(0.5),
-            Commands.runOnce(() -> goTo(PivotState.DOWN)),
-            Commands.waitSeconds(0.5)).repeatedly())
+        Commands.runOnce(() -> goTo(PivotState.AGITATE), this),
+        Commands.waitSeconds(0.5),
+        Commands.runOnce(() -> goTo(PivotState.DOWN), this),
+        Commands.waitSeconds(0.5))
+        .repeatedly()
         .finallyDo(() -> goTo(PivotState.DOWN));
   }
 

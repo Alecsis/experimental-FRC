@@ -11,6 +11,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import edu.wpi.first.wpilibj.simulation.SimHooks;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.Robot;
 import frc.robot.subsystems.superstructure.Superstructure;
 import org.junit.jupiter.api.AfterEach;
@@ -28,9 +30,15 @@ import org.junit.jupiter.api.Timeout;
  * Superstructure is registered and its periodic() runs every tick regardless (constructed as
  * part of the required Robot boot), and its OFF/STOWED cases unconditionally call
  * intake.setRoller(Roller.STOP) -- a direct-call test that never requests INTAKING would have
- * that call fought/overwritten by Superstructure on every intervening tick. Routing through
- * Superstructure.requestIntake()/requestStow() instead matches the only way this logic is
- * actually driven in production and avoids the race entirely.
+ * that call fought/overwritten by Superstructure on every intervening tick.
+ *
+ * <p>Specifically it schedules {@link Superstructure#intakeCmd()}, not a bare
+ * {@code requestIntake()}. Superstructure's operator policy is its DEFAULT command, so in teleop
+ * it re-applies the live board intent (STOWED, with nothing pressed) on every single tick; a raw
+ * request that holds no Superstructure requirement is overwritten before it can take effect. That
+ * is the intended authority model -- every production caller ("Intake Start Sequence", the
+ * dashboard buttons, the operator board itself) drives the machine through a Command that
+ * requires Superstructure, and this test now does the same.
  */
 class IntakeJamRecoveryTest {
   private Robot robot;
@@ -76,7 +84,10 @@ class IntakeJamRecoveryTest {
     Intake intake = Intake.getInstance();
     Superstructure superstructure = Superstructure.getInstance(null);
 
-    superstructure.requestIntake();
+    // Holds the Superstructure requirement for the whole test, exactly like the production
+    // "Intake Start Sequence" NamedCommand and the operator board's own intake intent do.
+    Command intaking = superstructure.intakeCmd();
+    CommandScheduler.getInstance().schedule(intaking);
     // Longer settle window than the other stepTiming(0.1) calls in this test: IntakeIOSim's roller
     // is closed-loop velocity control over a real DCMotorSim, and a 0->800 RPM spin-up briefly
     // produces high current at low velocity -- the same electrical signature isJammed() looks for.
@@ -118,11 +129,13 @@ class IntakeJamRecoveryTest {
     assertEquals(Intake.Roller.EJECT, intake.getRollerState(),
         "second jam should trigger a new recovery pulse");
 
-    superstructure.requestStow();
+    // Ending the intake command stows, the same way releasing the operator toggle or the auto
+    // sequence timing out does.
+    CommandScheduler.getInstance().cancel(intaking);
     SimHooks.stepTiming(0.1);
 
     assertEquals(Intake.Roller.STOP, intake.getRollerState(),
-        "requestStow() mid-pulse must abort the recovery pulse immediately, not let it finish");
+        "stowing mid-pulse must abort the recovery pulse immediately, not let it finish");
 
     intake.clearJamOverrideForTest();
   }

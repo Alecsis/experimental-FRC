@@ -25,6 +25,12 @@ import org.littletonrobotics.junction.LoggedRobot;
 public class Robot extends LoggedRobot {
   private Command m_autonomousCommand;
 
+  /**
+   * The RAW chooser selection that {@link #m_autonomousCommand} currently wraps, compared by
+   * identity. See {@link #autonomousInit()} for why re-wrapping the same instance is fatal.
+   */
+  private Command m_wrappedAutoSelection;
+
   private final RobotContainer m_robotContainer;
   private final HubActiveState m_hubInstance = HubActiveState.getInstance();
   private final Vision m_vision;
@@ -159,12 +165,40 @@ public void autonomousInit() {
 
     // schedule the autonomous command (example)
     if (selected != null) {
-      m_autonomousCommand = wrapAutonomousForTelemetry(selected);
+      // The chooser hands back the SAME Command instance on every entry into autonomous, and
+      // finallyDo() registers its receiver as composed. Wrapping that instance a second time
+      // therefore throws IllegalArgumentException ("Commands that have been composed may not be
+      // added to another composition or scheduled individually!") straight out of autonomousInit(),
+      // out of loopFunc(), and out of startCompetition() -- killing the robot program for the rest
+      // of the power cycle. That is reachable any time autonomous is entered twice without
+      // restarting robot code (practice mode, pit testing), and it is what wedged
+      // OperatorTeleopExitIsolationTest. Wrap once per DISTINCT selection instead, comparing by
+      // identity so that changing the chooser still gets its own wrapper.
+      if (selected != m_wrappedAutoSelection) {
+        m_wrappedAutoSelection = selected;
+        m_autonomousCommand = wrapAutonomousForTelemetry(selected);
+      } else {
+        // Same selection, new run: the wrapper is already built and already composed, so only the
+        // per-run telemetry needs re-arming. wrapAutonomousForTelemetry() does exactly this at its
+        // top on the first entry, which is what keeps first-entry behavior bit-identical.
+        armAutonomousTelemetry();
+      }
       CommandScheduler.getInstance().schedule(m_autonomousCommand);
     } else {
       Logger.recordOutput("Auto/Running", false);
       Logger.recordOutput("Auto/EndedInterrupted", false);
     }
+  }
+
+  /**
+   * Marks the start of an autonomous run in telemetry: {@code Auto/Running} true, and
+   * {@code Auto/EndedInterrupted} back to false so the previous run's ending cannot be misread as
+   * this one's. Split out of {@link #wrapAutonomousForTelemetry(Command)} so a repeat entry with an
+   * already-wrapped selection re-arms the same two entries without re-composing the Command.
+   */
+  private static void armAutonomousTelemetry() {
+    Logger.recordOutput("Auto/Running", true);
+    Logger.recordOutput("Auto/EndedInterrupted", false);
   }
 
   /**
@@ -179,8 +213,7 @@ public void autonomousInit() {
    * observe -- see {@code AutoRegressionTestBase}'s own comment on why it bypasses the chooser too).
    */
   static Command wrapAutonomousForTelemetry(Command autoCommand) {
-    Logger.recordOutput("Auto/Running", true);
-    Logger.recordOutput("Auto/EndedInterrupted", false);
+    armAutonomousTelemetry();
     return autoCommand.finallyDo(interrupted -> {
       Logger.recordOutput("Auto/Running", false);
       Logger.recordOutput("Auto/EndedInterrupted", interrupted);
@@ -212,6 +245,16 @@ public void autonomousInit() {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {}
+
+  /**
+   * Runs on every exit from teleop, before the next mode's init. Used to neutralize latched
+   * operator intent -- see {@link RobotContainer#teleopExit()} for why the Superstructure default
+   * command's own interruption cleanup does not cover this transition on its own.
+   */
+  @Override
+  public void teleopExit() {
+    m_robotContainer.teleopExit();
+  }
 
   @Override
   public void testInit() {
