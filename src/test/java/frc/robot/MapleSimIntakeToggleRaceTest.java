@@ -7,9 +7,9 @@ package frc.robot;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import edu.wpi.first.hal.HAL;
-import edu.wpi.first.wpilibj.simulation.DriverStationSim;
-import edu.wpi.first.wpilibj.simulation.SimHooks;
+import org.wpilib.hardware.hal.HAL;
+import org.wpilib.simulation.DriverStationSim;
+import org.wpilib.simulation.SimHooks;
 import frc.robot.subsystems.intake.Intake;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -130,7 +130,7 @@ class MapleSimIntakeToggleRaceTest {
 
     // Let teleop's intake.homing() finish so it is not holding the pivot while we hammer the roller.
     SimRobotLoop.stepUntil(
-        () -> edu.wpi.first.wpilibj2.command.CommandScheduler.getInstance().requiring(intake) == null,
+        () -> org.wpilib.command2.CommandScheduler.getInstance().requiring(intake) == null,
         4.0, "intake.homing() should complete and release Intake before the stress loop");
 
     assertTrue(subTicks.get() > 0,

@@ -4,10 +4,10 @@
 
 package frc.robot;
 
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import org.wpilib.driverstation.DriverStation;
+import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.command2.Command;
+import org.wpilib.command2.CommandScheduler;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.utility.HubActiveState;
 import org.littletonrobotics.junction.Logger;
@@ -84,7 +84,7 @@ public class Robot extends LoggedRobot {
     switch (Constants.currentMode) {
       case REAL:
         // Running on a real robot, log to a USB stick ("/U/logs")
-        Logger.addDataReceiver(new WPILOGWriter("media/sda1/logs"));
+        Logger.addDataReceiver(new WPILOGWriter("/U/logs"));
         Logger.addDataReceiver(new NT4Publisher());
         break;
 
@@ -149,10 +149,6 @@ public class Robot extends LoggedRobot {
   }
 
   // This autonomous runs the autonomous command selected by your {@link RobotContainer} class. */
-@Override
-public void robotInit() {
-}
-
 
   @Override
 public void autonomousInit() {

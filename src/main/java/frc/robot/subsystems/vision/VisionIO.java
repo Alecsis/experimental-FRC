@@ -8,7 +8,7 @@ import java.util.Optional;
 
 import org.littletonrobotics.junction.AutoLog;
 
-import edu.wpi.first.math.geometry.Pose2d;
+import org.wpilib.math.geometry.Pose2d;
 
 public interface VisionIO {
   @AutoLog

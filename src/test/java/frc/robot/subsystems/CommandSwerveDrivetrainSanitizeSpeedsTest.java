@@ -4,14 +4,14 @@
 
 package frc.robot.subsystems;
 
-import static edu.wpi.first.units.Units.MetersPerSecond;
+import static org.wpilib.units.Units.MetersPerSecond;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import edu.wpi.first.hal.HAL;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.wpilibj.simulation.DriverStationSim;
-import edu.wpi.first.wpilibj.simulation.SimHooks;
+import org.wpilib.hardware.hal.HAL;
+import org.wpilib.math.kinematics.ChassisSpeeds;
+import org.wpilib.simulation.DriverStationSim;
+import org.wpilib.simulation.SimHooks;
 import frc.robot.generated.TunerConstants;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -88,7 +88,7 @@ class CommandSwerveDrivetrainSanitizeSpeedsTest {
     ChassisSpeeds actual = drivetrain.prepareAutoSpeeds(raw);
 
     ChassisSpeeds expectedDiscretized =
-        ChassisSpeeds.discretize(raw, edu.wpi.first.wpilibj.TimedRobot.kDefaultPeriod);
+        ChassisSpeeds.discretize(raw, org.wpilib.framework.TimedRobot.kDefaultPeriod);
     ChassisSpeeds expected = drivetrain.sanitizeAutoSpeeds(expectedDiscretized);
 
     assertEquals(expected.vxMetersPerSecond, actual.vxMetersPerSecond, 1e-9);

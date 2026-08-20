@@ -6,7 +6,7 @@ package frc.robot.subsystems.vision;
 
 import java.util.Optional;
 
-import edu.wpi.first.math.geometry.Pose2d;
+import org.wpilib.math.geometry.Pose2d;
 import frc.robot.utility.LimelightHelpers;
 import frc.robot.utility.LimelightHelpers.PoseEstimate;
 

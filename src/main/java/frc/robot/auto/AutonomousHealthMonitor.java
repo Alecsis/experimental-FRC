@@ -1,6 +1,6 @@
 package frc.robot.auto;
 
-import edu.wpi.first.math.geometry.Pose2d;
+import org.wpilib.math.geometry.Pose2d;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.function.DoubleSupplier;

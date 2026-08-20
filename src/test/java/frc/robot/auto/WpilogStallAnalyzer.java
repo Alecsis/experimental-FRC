@@ -1,7 +1,7 @@
 package frc.robot.auto;
 
-import edu.wpi.first.util.datalog.DataLogReader;
-import edu.wpi.first.util.datalog.DataLogRecord;
+import org.wpilib.datalog.DataLogReader;
+import org.wpilib.datalog.DataLogRecord;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

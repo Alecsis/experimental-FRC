@@ -4,15 +4,15 @@
 
 package frc.robot.subsystems.shooter;
 
-import static edu.wpi.first.units.Units.RPM;
-import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static org.wpilib.units.Units.RPM;
+import static org.wpilib.units.Units.RadiansPerSecond;
 
-import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.math.system.plant.LinearSystemId;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.simulation.DCMotorSim;
-import edu.wpi.first.wpilibj.simulation.FlywheelSim;
+import org.wpilib.math.util.MathUtil;
+import org.wpilib.math.system.DCMotor;
+import org.wpilib.math.system.plant.LinearSystemId;
+import org.wpilib.driverstation.DriverStation;
+import org.wpilib.simulation.DCMotorSim;
+import org.wpilib.simulation.FlywheelSim;
 import frc.robot.Constants;
 
 /**

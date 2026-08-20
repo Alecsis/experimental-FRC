@@ -6,8 +6,8 @@ package frc.robot.subsystems.vision;
 
 import java.util.function.Supplier;
 
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.wpilibj.Timer;
+import org.wpilib.math.geometry.Pose2d;
+import org.wpilib.system.Timer;
 
 /**
  * VisionIO implementation backed by the drivetrain's simulated ground-truth pose. No

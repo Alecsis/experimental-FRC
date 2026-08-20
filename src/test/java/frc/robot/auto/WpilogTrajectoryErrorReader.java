@@ -1,7 +1,7 @@
 package frc.robot.auto;
 
-import edu.wpi.first.util.datalog.DataLogReader;
-import edu.wpi.first.util.datalog.DataLogRecord;
+import org.wpilib.datalog.DataLogReader;
+import org.wpilib.datalog.DataLogRecord;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -14,7 +14,7 @@ import java.util.Map;
  * of each over the file. Read-only, test-scope only -- never touches TrajectoryErrorTracker or
  * any production file.
  *
- * <p>Built on WPILib's own {@link DataLogReader}/{@link DataLogRecord} (edu.wpi.first.util.
+ * <p>Built on WPILib's own {@link DataLogReader}/{@link DataLogRecord} (org.wpilib.util.
  * datalog, a transitive dependency of wpi.java.deps.wpilib() already present on the test
  * classpath -- the same classes AdvantageKit's own WPILOGReader uses internally), not a
  * hand-rolled binary parser.
