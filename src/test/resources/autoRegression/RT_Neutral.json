@@ -1,18 +1,18 @@
 {
   "autoName" : "RT Neutral",
-  "recordedAtGitSha" : "2ccce0c959512e87d1cf742cf0d2e42f15bfd37b",
-  "completed" : false,
-  "runtimeSeconds" : 15.0173853,
-  "maxLateralErrorMeters" : 0.07768445057915457,
-  "maxLongitudinalErrorMeters" : 0.20271844133680839,
+  "recordedAtGitSha" : "c351c8e2c211c438f285c79799d77bfde7be0403",
+  "completed" : true,
+  "runtimeSeconds" : 14.4688355,
+  "maxLateralErrorMeters" : 0.08345282551871457,
+  "maxLongitudinalErrorMeters" : 0.1703236039438237,
   "diagnosticStartPose" : {
     "xMeters" : 3.6432808988764043,
-    "yMeters" : 0.5,
-    "thetaRadians" : -1.5707963267948966
+    "yMeters" : 0.7,
+    "thetaRadians" : 1.5707963267948966
   },
   "diagnosticFinalPose" : {
-    "xMeters" : 3.170779753070493,
-    "yMeters" : 1.3055934896913406,
-    "thetaRadians" : 0.278992665598969
+    "xMeters" : 3.0999207540656006,
+    "yMeters" : 1.4181132595826467,
+    "thetaRadians" : 0.2642281957605767
   }
 }

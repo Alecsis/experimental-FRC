@@ -11,13 +11,19 @@
           }
         },
         {
+          "type": "path",
+          "data": {
+            "pathName": "Left Trench Start"
+          }
+        },
+        {
           "type": "deadline",
           "data": {
             "commands": [
               {
                 "type": "path",
                 "data": {
-                  "pathName": "Left Bump Depot"
+                  "pathName": "Left Trench Neutral"
                 }
               },
               {
@@ -27,6 +33,43 @@
                 }
               }
             ]
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Left Trench End"
+          }
+        },
+        {
+          "type": "deadline",
+          "data": {
+            "commands": [
+              {
+                "type": "wait",
+                "data": {
+                  "waitTime": 6.0
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "Orbit"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "Shooting Sequence"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Backup into Depot"
           }
         },
         {
@@ -48,19 +91,19 @@
               {
                 "type": "wait",
                 "data": {
-                  "waitTime": 7.0
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "Orbit"
+                  "waitTime": 5.0
                 }
               },
               {
                 "type": "named",
                 "data": {
                   "name": "Shooting Sequence"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "Orbit"
                 }
               }
             ]
@@ -70,6 +113,6 @@
     }
   },
   "resetOdom": true,
-  "folder": "Simple Autos",
+  "folder": "Complex Autos",
   "choreoAuto": false
 }

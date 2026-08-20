@@ -1,18 +1,18 @@
 {
   "autoName" : "LT Depot",
-  "recordedAtGitSha" : "2ccce0c959512e87d1cf742cf0d2e42f15bfd37b",
+  "recordedAtGitSha" : "c351c8e2c211c438f285c79799d77bfde7be0403",
   "completed" : true,
-  "runtimeSeconds" : 14.0885852,
-  "maxLateralErrorMeters" : 0.12806717545988916,
-  "maxLongitudinalErrorMeters" : 0.1952674465821881,
+  "runtimeSeconds" : 12.4414622,
+  "maxLateralErrorMeters" : 0.1355399180792849,
+  "maxLongitudinalErrorMeters" : 0.2158926383346068,
   "diagnosticStartPose" : {
     "xMeters" : 3.7770359848484842,
     "yMeters" : 7.448323863636363,
     "thetaRadians" : 0.0
   },
   "diagnosticFinalPose" : {
-    "xMeters" : 1.858414991712557,
-    "yMeters" : 5.006242545285317,
-    "thetaRadians" : -0.09779127701539705
+    "xMeters" : 1.8906885313495139,
+    "yMeters" : 5.001452066594884,
+    "thetaRadians" : -0.09630523261768685
   }
 }

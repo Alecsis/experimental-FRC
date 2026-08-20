@@ -8,27 +8,31 @@
 
 ## Active handoff
 
-Authoritative status: [`docs/claudex/sessions/2026-07-30.md`](docs/claudex/sessions/2026-07-30.md).
+Authoritative status: [`docs/claudex/sessions/2026-08-03.md`](docs/claudex/sessions/2026-08-03.md).
 
 - Branch: `refactor/hybrid`. The reviewed `codex` work has been fast-forwarded into this branch; the newest source-changing milestone is `253919a` (BoundingCheck shadow removed), and anything after it is documentation. Verify the actual tip and push state with `git log --oneline -5` / `git status -sb` — a SHA recorded in this file is falsified by the commit that records it.
 - The `BoundingCheck` vendor shadow and its fat-JAR exclusion are gone. MapleSim's upstream gear-ratio console warning is expected on startup again — that is intended, not a regression. The real WCP X2S X3 ratio `3.7142857142857144:1` was never changed.
 - `refactor/hybrid` has been fast-forwarded to `codex` (mentor-approved). Both branches point at the same tree; the FF was verified as a direct-ancestor move, so no merge commit exists and no conflict was possible. The merge carried the whole series, including the `resetPose()` item still listed as open below — accepted as a documented tradeoff, not as resolved. `origin/refactor/hybrid` is expected to track the merged branch; check `git status -sb`. Do not record commit counts or tip SHAs for these branches here — the commit that writes the number changes it.
-- The 13-route autonomous regression suite has recorded baselines and the latest full verification run passed: 65 tests, 0 failures, 0 errors, 0 skipped.
+- The autonomous regression suite covers all **15** deployed routes and every one has a recorded golden. Latest full verification run: 181 tests, 0 failures, 0 errors, 0 skipped.
 - Autonomous path following still uses `DriveRequestType.OpenLoopVoltage`.
 - The Autonomous Velocity migration is hardware-gated: real Slot0 characterization must precede any production `Velocity` switch.
 - `RobotMotor` real-hardware behavior and physical measurements (mass, MOI, wheel COF, bumper footprint) remain unverified.
 - A `ResetPoseHeadingSimTest` full-suite race has been observed. A clean rerun does not prove that race is eliminated.
-- The 15-second autonomous cap is a competition-window baseline: all 11 previously incomplete routes finished under a temporary 30-second diagnostic cap. The left neutral paths are the first optimization target because their global `maxVelocity` is `0.85 m/s` while comparable right-side paths use localized slow zones.
+- The 15-second autonomous cap remains the competition-window baseline. The competition PathPlanner set is now committed, and the autonomous policy is frozen for this software baseline: 10 competition autos plus 5 hidden practice/retirement-candidate routes (`RobotContainer.PRACTICE_AUTOS`, chooser-only filtering — every route stays on disk, buildable by name, and owned by a regression test).
+- No competition auto has a shot deadline shorter than the measured 5.16-5.42 s shot block. Two legacy short deadlines remain, both inside hidden practice routes (`LT Neutral Recollect - Depot`'s second shot at 5.0 s, unreachable within 15 s; `LT Neutral Recollect - Trench` at 5.5 s).
+- **Everything above is simulation and software evidence only. No route has physical clearance, pickup, scoring, or timing-margin approval.** RB Neutral in particular is frozen as-is with a measured 0.60 s intake window (about 10% of its drive), explicitly PHYSICAL VALIDATION REQUIRED; recording its golden is not approval of the route.
+- The regression harness now classifies `completed` deterministically: the cap and the command's own timing are read from the same WPILib simulated clock, and the verdict comes from the end timestamp the robot thread records inside the command, not from when the polling loop looked. LT Neutral (command ends 15.02-15.04 s against a 15.0 s cap) previously flipped in 2 of 6 runs and is now stable across 10 isolated runs.
 
 One review finding remains open and needs a mentor decision (detail in the 2026-07-30 note):
 
-- `resetPose()`'s second `syncGyroToSimulationPose()`/`waitForUpdate()` pair is defensive against an unproven race; removing it requires re-recording all 13 goldens.
+- `resetPose()`'s second `syncGyroToSimulationPose()`/`waitForUpdate()` pair is defensive against an unproven race; removing it requires re-recording all 15 goldens.
 
 Next safe actions:
 
 1. Keep the verification gates green for future changes. `build/test-results/*.xml` persists between runs — check mtimes before trusting an aggregate.
-2. Preserve the 13 autonomous goldens; optimize the left neutral PathPlanner constraints in the GUI, then validate with the 30-second diagnostic run and the normal 15-second regression gate before re-recording anything.
-3. Continue simulation-only validation until hardware characterization and bring-up are available.
+2. Hardware-pilot RT Neutral slowly with measured clearance, then at competition speed. Every other route needs the same treatment before it is trusted in a match.
+3. Re-record only the golden of a route you actually change, using both `-DupdateAutoGolden=true` and `-DconfirmGoldenUpdate=true`. Do not re-record the set wholesale for harness changes.
+4. Open follow-ups: RB Neutral's 0.60 s intake window; the accumulated-path-length stall floor is sized for simulation and the monitored pose is vision-fused, so it needs hardware measurement; the three retirement-candidate Recollect routes are hidden but not deleted.
 
 For more detail, read the latest session handoff first, then consult [`docs/claudex/architecture.md`](docs/claudex/architecture.md), [`docs/claudex/verification-loop.md`](docs/claudex/verification-loop.md), or [`docs/claudex/history.md`](docs/claudex/history.md) only as needed. Older session notes are historical evidence, not current status.
 

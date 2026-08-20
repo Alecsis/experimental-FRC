@@ -1,18 +1,18 @@
 {
-  "autoName" : "LT Neutral - Trench Recollect",
-  "recordedAtGitSha" : "2ccce0c959512e87d1cf742cf0d2e42f15bfd37b",
+  "autoName" : "LT Neutral Recollect - Trench",
+  "recordedAtGitSha" : "c351c8e2c211c438f285c79799d77bfde7be0403",
   "completed" : false,
-  "runtimeSeconds" : 15.0090025,
-  "maxLateralErrorMeters" : 0.09218117026572498,
-  "maxLongitudinalErrorMeters" : 0.24137911548239102,
+  "runtimeSeconds" : 15.0187301,
+  "maxLateralErrorMeters" : 0.18223436493140732,
+  "maxLongitudinalErrorMeters" : 0.2971798986688792,
   "diagnosticStartPose" : {
     "xMeters" : 3.6534719101123594,
-    "yMeters" : 7.5,
-    "thetaRadians" : 1.5707963267948966
+    "yMeters" : 7.3,
+    "thetaRadians" : -1.5707963267948966
   },
   "diagnosticFinalPose" : {
-    "xMeters" : 2.972865534700092,
-    "yMeters" : 6.501624738934965,
-    "thetaRadians" : -0.29971830102380304
+    "xMeters" : 3.5852150090013355,
+    "yMeters" : 7.38701276670198,
+    "thetaRadians" : 2.953108063762234
   }
 }
