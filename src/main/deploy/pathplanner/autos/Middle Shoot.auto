@@ -11,40 +11,21 @@
           }
         },
         {
-          "type": "wait",
-          "data": {
-            "waitTime": 0.125
-          }
-        },
-        {
-          "type": "parallel",
-          "data": {
-            "commands": [
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "Right Trench Start"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "Intake Start Sequence"
-                }
-              }
-            ]
-          }
-        },
-        {
           "type": "path",
           "data": {
-            "pathName": "Right Trench End"
+            "pathName": "Middle"
           }
         },
         {
-          "type": "parallel",
+          "type": "deadline",
           "data": {
             "commands": [
+              {
+                "type": "wait",
+                "data": {
+                  "waitTime": 8.0
+                }
+              },
               {
                 "type": "named",
                 "data": {
@@ -59,17 +40,11 @@
               }
             ]
           }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Right Trench Recollect Start"
-          }
         }
       ]
     }
   },
   "resetOdom": true,
-  "folder": "Complex Autos",
+  "folder": "Simple Autos",
   "choreoAuto": false
 }

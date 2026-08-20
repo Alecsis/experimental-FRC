@@ -8,68 +8,41 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.718978081438352,
-        "y": 6.629207656023904
+        "x": 2.2766263434033664,
+        "y": 6.5434760560132
       },
       "isLocked": false,
       "linkedName": "LT Aim"
     },
     {
       "anchor": {
-        "x": 2.4476034236804565,
-        "y": 5.859191011235955
+        "x": 0.9,
+        "y": 6.551392045454545
       },
       "prevControl": {
-        "x": 2.9719440032811155,
-        "y": 6.212116719517125
-      },
-      "nextControl": {
-        "x": 2.2402072497718515,
-        "y": 5.719595785500719
-      },
-      "isLocked": false,
-      "linkedName": null
-    },
-    {
-      "anchor": {
-        "x": 0.5326818830242506,
-        "y": 5.969329529243937
-      },
-      "prevControl": {
-        "x": 0.7756207870862314,
-        "y": 5.905994989631441
+        "x": 1.9971725842930521,
+        "y": 6.545115829545915
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "Depot Start"
     }
   ],
   "rotationTargets": [],
   "constraintZones": [],
-  "pointTowardsZones": [
-    {
-      "fieldPosition": {
-        "x": 4.625,
-        "y": 4.0
-      },
-      "rotationOffset": -10.0,
-      "minWaypointRelativePos": 0.0,
-      "maxWaypointRelativePos": 2.0,
-      "name": "Point Towards Zone"
-    }
-  ],
+  "pointTowardsZones": [],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 0.75,
-    "maxAcceleration": 1.5,
-    "maxAngularVelocity": 540.0,
+    "maxVelocity": 6.0,
+    "maxAcceleration": 5.0,
+    "maxAngularVelocity": 600.0,
     "maxAngularAcceleration": 720.0,
     "nominalVoltage": 12.0,
     "unlimited": false
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -25.0
+    "rotation": 0.0
   },
   "reversed": false,
   "folder": null,
@@ -77,5 +50,5 @@
     "velocity": 0,
     "rotation": -55.47909851067089
   },
-  "useDefaultConstraints": false
+  "useDefaultConstraints": true
 }

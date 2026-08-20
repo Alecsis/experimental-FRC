@@ -11,19 +11,19 @@
           }
         },
         {
-          "type": "wait",
+          "type": "path",
           "data": {
-            "waitTime": 0.125
+            "pathName": "Left Trench Start"
           }
         },
         {
-          "type": "parallel",
+          "type": "deadline",
           "data": {
             "commands": [
               {
                 "type": "path",
                 "data": {
-                  "pathName": "Left Trench Start"
+                  "pathName": "Left Trench Neutral"
                 }
               },
               {
@@ -38,38 +38,38 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Left Trench Neutral"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
             "pathName": "Left Trench End"
           }
         },
         {
-          "type": "named",
-          "data": {
-            "name": "Orbit"
-          }
-        },
-        {
-          "type": "parallel",
+          "type": "deadline",
           "data": {
             "commands": [
+              {
+                "type": "wait",
+                "data": {
+                  "waitTime": 6.0
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "Orbit"
+                }
+              },
               {
                 "type": "named",
                 "data": {
                   "name": "Shooting Sequence"
                 }
-              },
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "Backup into Depot"
-                }
               }
             ]
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Left Bump Recollect Start"
           }
         }
       ]

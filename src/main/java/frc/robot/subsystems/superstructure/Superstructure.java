@@ -403,7 +403,33 @@ public class Superstructure extends SubsystemBase {
   public Command shootingSequence(double timeoutSeconds) {
     return Commands.sequence(
         Commands.runOnce(() -> requestShoot(timeoutSeconds), this),
-        Commands.waitUntil(() -> !mShotInProgress));
+        Commands.waitUntil(() -> !mShotInProgress))
+        .finallyDo(interrupted -> {
+          // Whole-sequence finalizer. Without it, cancelling this command cleans up NOTHING: the
+          // state machine keeps whatever requestShot() wrote, so mWantedState stays ALIGNING,
+          // mSystemState stays SHOOTING and mShotInProgress stays true. periodic() is a subsystem
+          // callback, not a command, so it goes right on feeding -- ensureAgitating(),
+          // indexControl(INDEX), Roller.INTAKE -- until timeInState reaches mFeedTimeoutSeconds.
+          // Nothing else reliably rescues that: disabledInit() only touches vision, and
+          // teleopExit()'s clearOperatorRequest() is a no-op here because requestShot() clears
+          // mOperatorRequestActive. The one incidental rescue is the teleop operator policy
+          // writing STOWED on its first tick, which is owner-dependent by definition.
+          //
+          // requestStow() is the whole cleanup and is deliberately the ONLY call here: it clears
+          // mShotInProgress, writes mWantedState = STOWED, and SHOOTING's own guard
+          // ("if (mWantedState != ALIGNING) setState(mWantedState)") then hands over on the very
+          // next periodic tick, which is what puts the indexer, agitator, shooter and intake roller
+          // into STOWED's safe outputs. Re-stating those outputs here would duplicate STOWED and
+          // could drift from it.
+          //
+          // Conditional on interruption: on normal completion the state machine has ALREADY
+          // stowed -- that is precisely what cleared mShotInProgress and let the waitUntil above
+          // finish -- so an unconditional stow would be redundant, and any future non-stowing
+          // completion path would be silently overridden.
+          if (interrupted) {
+            requestStow();
+          }
+        });
   }
 
   /**

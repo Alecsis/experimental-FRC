@@ -17,7 +17,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "Left Bump Depot"
+                  "pathName": "Right Trench Start"
                 }
               },
               {
@@ -30,25 +30,13 @@
           }
         },
         {
-          "type": "path",
-          "data": {
-            "pathName": "Depot"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Depot - Score"
-          }
-        },
-        {
           "type": "deadline",
           "data": {
             "commands": [
               {
                 "type": "wait",
                 "data": {
-                  "waitTime": 7.0
+                  "waitTime": 6.0
                 }
               },
               {
@@ -65,11 +53,23 @@
               }
             ]
           }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Right Trench Recollect Start"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Right Trench Recollect End"
+          }
         }
       ]
     }
   },
   "resetOdom": true,
-  "folder": "Simple Autos",
+  "folder": "Complex Autos",
   "choreoAuto": false
 }

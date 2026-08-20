@@ -93,6 +93,40 @@ public class RobotContainer {
                         vision::getLastRejectedJumpMeters);
         private SendableChooser<Command> autoChooser;
 
+        /**
+         * Autos that exist on disk and stay fully runnable, but are hidden from the driver-station
+         * chooser so nobody can select them in a match.
+         *
+         * <p>Hidden, deliberately NOT deleted. Two different reasons live in this one set:
+         *
+         * <ul>
+         *   <li><b>Practice / full-cycle rehearsal.</b> "LT Neutral Recollect - Depot" (~25 s, the
+         *       only two-shot route in the set) and "Left Double Swipe Bump" (~24 s) are useful to
+         *       run, just never inside a 15 s match.
+         *   <li><b>Retirement candidates.</b> The three remaining Recollect routes each append a
+         *       leg that carries no "Intake Start Sequence" and no second shot, and that starts
+         *       after the 15 s period has already ended -- so their reachable portion is a
+         *       duplicate of the base route they extend. They are hidden rather than removed
+         *       because deleting a route file is irreversible and the evidence is still under
+         *       review.
+         * </ul>
+         *
+         * <p>Hiding is chooser-only and changes nothing else: PathPlannerLib reads the deploy
+         * directory to enumerate autos and applies this filter afterwards, so every name here is
+         * still loadable by {@code AutoBuilder.buildAuto(name)} and still owned by its regression
+         * test. {@code AutoChooserFilterTest} pins all of that, including that each name here
+         * actually exists on disk -- a typo would otherwise silently un-hide a route.
+         *
+         * <p>Names must match the {@code .auto} filename exactly (minus the extension); that is what
+         * {@code AutoBuilder.getAllAutoNames()} produces and what the chooser labels options with.
+         */
+        public static final Set<String> PRACTICE_AUTOS = Set.of(
+                        "LT Neutral Recollect - Depot",
+                        "Left Double Swipe Bump",
+                        "LT Neutral Recollect - Bump",
+                        "LT Neutral Recollect - Trench",
+                        "RT Neutral Recollect - Trench");
+
         public RobotContainer() {
                 drivetrain.setTrajectoryErrorTracker(trajectoryErrorTracker);
                 RobotModeTriggers.teleop().onTrue(intake.homing()); // if commented out its temp removed for testing
@@ -129,7 +163,8 @@ public class RobotContainer {
                                 "Intake Start Sequence", superstructure.intakeSequence(5.0));
                 NamedCommands.registerCommand(
                                 "Intake Stop", superstructure.stowCmd());
-                autoChooser = AutoBuilder.buildAutoChooser();
+                autoChooser = AutoBuilder.buildAutoChooserWithOptionsModifier(
+                                options -> options.filter(auto -> !PRACTICE_AUTOS.contains(auto.getName())));
                 configureBindings();
                 dashboard();
                 SmartDashboard.putNumber("offset", 0);
