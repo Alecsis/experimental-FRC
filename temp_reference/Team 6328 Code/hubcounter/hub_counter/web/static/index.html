@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hub Counter - Team 6328</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <img src="6328-logo-low-res.png" alt="Team 6328" class="team-logo">
+        <h1>Hub Counter</h1>
+        <nav>
+            <button class="nav-btn active" data-view="dashboard">Dashboard</button>
+            <button class="nav-btn" data-view="config">Config</button>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Dashboard View -->
+        <div id="dashboard-view" class="view active">
+            <div class="total-display">
+                <div class="total-count" id="total-count">0</div>
+                <div class="total-label">Total Balls</div>
+                <div id="paused-count-display" style="display: none;">
+                    <span class="paused-badge">PAUSED</span>
+                    <span class="paused-count-label">Balls while paused: <span id="paused-count">0</span></span>
+                </div>
+            </div>
+
+            <div id="external-banner" class="external-banner" style="display: none;">
+                <div class="external-info">
+                    <span class="external-label">Robot Control Active</span>
+                    <span class="external-details">
+                        Pattern: <span id="external-pattern">-</span> |
+                        Color: <span id="external-color-text">-</span>
+                        <span id="external-color-swatch" class="color-swatch"></span>
+                    </span>
+                </div>
+                <button id="release-control-btn" class="action-btn release-btn">Release Control</button>
+            </div>
+
+            <div class="channel-grid">
+                <div class="channel-card" data-channel="0">
+                    <div class="channel-header">Channel 1</div>
+                    <div class="channel-count" id="channel-0">0</div>
+                    <button class="simulate-btn" data-channel="0">Simulate</button>
+                </div>
+                <div class="channel-card" data-channel="1">
+                    <div class="channel-header">Channel 2</div>
+                    <div class="channel-count" id="channel-1">0</div>
+                    <button class="simulate-btn" data-channel="1">Simulate</button>
+                </div>
+                <div class="channel-card" data-channel="2">
+                    <div class="channel-header">Channel 3</div>
+                    <div class="channel-count" id="channel-2">0</div>
+                    <button class="simulate-btn" data-channel="2">Simulate</button>
+                </div>
+                <div class="channel-card" data-channel="3">
+                    <div class="channel-header">Channel 4</div>
+                    <div class="channel-count" id="channel-3">0</div>
+                    <button class="simulate-btn" data-channel="3">Simulate</button>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button id="reset-btn" class="action-btn danger">Reset Counts</button>
+            </div>
+
+            <div class="status-bar">
+                <span class="status-item">
+                    <span class="status-dot" id="nt-status"></span>
+                    NetworkTables: <span id="nt-status-text">Disconnected</span>
+                </span>
+                <span class="status-item">
+                    <span class="status-dot" id="ws-status"></span>
+                    WebSocket: <span id="ws-status-text">Disconnected</span>
+                </span>
+            </div>
+        </div>
+
+        <!-- Config View -->
+        <div id="config-view" class="view">
+            <form id="config-form">
+                <section class="config-section">
+                    <h2>Network</h2>
+                    <div class="form-group">
+                        <label for="team-number">Team Number</label>
+                        <input type="number" id="team-number" min="1" max="9999" value="6328">
+                    </div>
+                    <div class="form-group">
+                        <label for="robot-address">NetworkTables Server Address</label>
+                        <input type="text" id="robot-address" value="10.63.28.2" placeholder="10.TE.AM.2">
+                    </div>
+                </section>
+
+                <section class="config-section">
+                    <h2>Thresholds</h2>
+                    <div class="form-group">
+                        <label for="threshold-yellow">Yellow Threshold</label>
+                        <input type="number" id="threshold-yellow" min="1" value="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="threshold-blue">Blue Threshold</label>
+                        <input type="number" id="threshold-blue" min="1" value="360">
+                    </div>
+                </section>
+
+                <section class="config-section">
+                    <h2>Colors</h2>
+                    <div class="color-group">
+                        <label>Gold (below yellow threshold)</label>
+                        <div class="color-inputs">
+                            <input type="number" id="color-red-r" min="0" max="255" value="255" placeholder="R">
+                            <input type="number" id="color-red-g" min="0" max="255" value="0" placeholder="G">
+                            <input type="number" id="color-red-b" min="0" max="255" value="0" placeholder="B">
+                            <span class="color-preview" id="preview-red"></span>
+                        </div>
+                    </div>
+                    <div class="color-group">
+                        <label>Yellow (100+ balls)</label>
+                        <div class="color-inputs">
+                            <input type="number" id="color-yellow-r" min="0" max="255" value="255" placeholder="R">
+                            <input type="number" id="color-yellow-g" min="0" max="255" value="200" placeholder="G">
+                            <input type="number" id="color-yellow-b" min="0" max="255" value="0" placeholder="B">
+                            <span class="color-preview" id="preview-yellow"></span>
+                        </div>
+                    </div>
+                    <div class="color-group">
+                        <label>Blue (360+ balls)</label>
+                        <div class="color-inputs">
+                            <input type="number" id="color-blue-r" min="0" max="255" value="0" placeholder="R">
+                            <input type="number" id="color-blue-g" min="0" max="255" value="100" placeholder="G">
+                            <input type="number" id="color-blue-b" min="0" max="255" value="255" placeholder="B">
+                            <span class="color-preview" id="preview-blue"></span>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="form-actions">
+                    <button type="submit" class="action-btn primary">Save Config</button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>

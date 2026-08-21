@@ -1,0 +1,50 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "named",
+          "data": {
+            "name": "Home Intake"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Middle"
+          }
+        },
+        {
+          "type": "deadline",
+          "data": {
+            "commands": [
+              {
+                "type": "wait",
+                "data": {
+                  "waitTime": 8.0
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "Orbit"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "Shooting Sequence"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": "Simple Autos",
+  "choreoAuto": false
+}

@@ -188,3 +188,5 @@ src/main/java/frc/robot/BuildConstants.java
 # Eclipse generated file for annotation processors
 .factorypath
 
+tools/claude-supervisor/config.yaml
+.worktrees/

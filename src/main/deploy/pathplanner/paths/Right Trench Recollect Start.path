@@ -3,13 +3,13 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.137864768683275,
+        "x": 3.138,
         "y": 1.4043772241992882
       },
       "prevControl": null,
       "nextControl": {
-        "x": 3.0033527331242214,
-        "y": 1.1936486967290856
+        "x": 3.0034879644409465,
+        "y": 1.1936486967290847
       },
       "isLocked": false,
       "linkedName": "RT Aim"
@@ -32,27 +32,27 @@
     },
     {
       "anchor": {
-        "x": 6.0,
-        "y": 1.4043772241992882
+        "x": 6.25,
+        "y": 1.404
       },
       "prevControl": {
-        "x": 6.017786516853932,
-        "y": 0.4783370786516844
+        "x": 6.267786516853932,
+        "y": 0.4779598544523961
       },
       "nextControl": {
-        "x": 5.994853920588064,
-        "y": 1.6723035510210835
+        "x": 6.244853920588064,
+        "y": 1.6719263268217952
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 6.0,
+        "x": 6.25,
         "y": 3.922898876404494
       },
       "prevControl": {
-        "x": 6.0,
+        "x": 6.25,
         "y": 4.172898876404494
       },
       "nextControl": null,
@@ -66,7 +66,7 @@
       "rotationDegrees": 180.0
     },
     {
-      "waypointRelativePos": 1.5996070726915526,
+      "waypointRelativePos": 1.4444444444444462,
       "rotationDegrees": 180.0
     },
     {
@@ -80,7 +80,7 @@
       "minWaypointRelativePos": 2.334418604651164,
       "maxWaypointRelativePos": 3.0,
       "constraints": {
-        "maxVelocity": 0.85,
+        "maxVelocity": 1.75,
         "maxAcceleration": 2.0,
         "maxAngularVelocity": 540.0,
         "maxAngularAcceleration": 720.0,
@@ -93,8 +93,8 @@
   "eventMarkers": [],
   "globalConstraints": {
     "maxVelocity": 6.0,
-    "maxAcceleration": 4.5,
-    "maxAngularVelocity": 540.0,
+    "maxAcceleration": 5.0,
+    "maxAngularVelocity": 600.0,
     "maxAngularAcceleration": 720.0,
     "nominalVoltage": 12.0,
     "unlimited": false
@@ -107,7 +107,7 @@
   "folder": "Trench Paths",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 56.8418504966138
+    "rotation": 11.83986331053529
   },
   "useDefaultConstraints": true
 }

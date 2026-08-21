@@ -1,0 +1,18 @@
+{
+  "autoName" : "Left Double Swipe Bump",
+  "recordedAtGitSha" : "c351c8e2c211c438f285c79799d77bfde7be0403",
+  "completed" : false,
+  "runtimeSeconds" : 15.0144837,
+  "maxLateralErrorMeters" : 0.18556127527478863,
+  "maxLongitudinalErrorMeters" : 0.1606216036653655,
+  "diagnosticStartPose" : {
+    "xMeters" : 3.6534719101123594,
+    "yMeters" : 7.3,
+    "thetaRadians" : -1.5707963267948966
+  },
+  "diagnosticFinalPose" : {
+    "xMeters" : 3.7660456029079423,
+    "yMeters" : 5.832788729835475,
+    "thetaRadians" : 0.022469318852585365
+  }
+}

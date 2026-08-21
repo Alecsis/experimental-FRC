@@ -1,0 +1,18 @@
+{
+  "autoName" : "LT Neutral - U Turn",
+  "recordedAtGitSha" : "c351c8e2c211c438f285c79799d77bfde7be0403",
+  "completed" : false,
+  "runtimeSeconds" : 15.0195263,
+  "maxLateralErrorMeters" : 0.21746323890577207,
+  "maxLongitudinalErrorMeters" : 0.29174394121829217,
+  "diagnosticStartPose" : {
+    "xMeters" : 3.6534719101123594,
+    "yMeters" : 7.3,
+    "thetaRadians" : -1.5707963267948966
+  },
+  "diagnosticFinalPose" : {
+    "xMeters" : 2.9209684857058815,
+    "yMeters" : 6.516080982805164,
+    "thetaRadians" : -0.2611122933878864
+  }
+}

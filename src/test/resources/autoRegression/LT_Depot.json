@@ -1,0 +1,18 @@
+{
+  "autoName" : "LT Depot",
+  "recordedAtGitSha" : "c351c8e2c211c438f285c79799d77bfde7be0403",
+  "completed" : true,
+  "runtimeSeconds" : 12.4414622,
+  "maxLateralErrorMeters" : 0.1355399180792849,
+  "maxLongitudinalErrorMeters" : 0.2158926383346068,
+  "diagnosticStartPose" : {
+    "xMeters" : 3.7770359848484842,
+    "yMeters" : 7.448323863636363,
+    "thetaRadians" : 0.0
+  },
+  "diagnosticFinalPose" : {
+    "xMeters" : 1.8906885313495139,
+    "yMeters" : 5.001452066594884,
+    "thetaRadians" : -0.09630523261768685
+  }
+}

@@ -10,6 +10,7 @@ import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
+import java.util.Set;
 import java.util.jar.Attributes.Name;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
@@ -20,43 +21,41 @@ import edu.wpi.first.math.controller.ProfiledPIDController;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
-import edu.wpi.first.wpilibj2.command.button.CommandGenericHID;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.robot.commands.AutoAlignPOI;
-import frc.robot.commands.Intake_Start;
-import frc.robot.commands.Intake_Stop;
-import frc.robot.commands.ShootCmd;
-import frc.robot.commands.Target;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
-import frc.robot.subsystems.PoseHelpers;
-import frc.robot.subsystems.Intake;
-import frc.robot.subsystems.Intake.Roller;
-import frc.robot.subsystems.Intake.PivotState;
-import frc.robot.subsystems.Limelight;
-import frc.robot.subsystems.Shooter;
-import frc.robot.subsystems.Shooter.indexing;
-import frc.robot.subsystems.Shooter.Agitate;
-import frc.robot.commands.AutoAlignPOI;
-import frc.robot.commands.Shooting_Sequence;
-import frc.robot.subsystems.Vision;
-import frc.robot.utility.LimelightHelpers;
-import frc.robot.utility.RoboMath;
+import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.superstructure.Superstructure;
+import frc.robot.subsystems.vision.Vision;
+import frc.robot.utility.TrajectoryErrorTracker;
+import frc.robot.auto.AutonomousHealthMonitor;
 
 @SuppressWarnings("unused")
 
 public class RobotContainer {
+        /**
+         * NamedCommands that are structurally guaranteed to terminate on their own -- checked by
+         * {@code AutoCommandSafetyTest} against every NamedCommand used inside a PathPlanner
+         * "parallel" block (which requires every branch to finish). A NamedCommand belongs here
+         * only once it has a real time bound or self-finishing condition; see
+         * {@link frc.robot.subsystems.superstructure.Superstructure#intakeSequence(double)}'s
+         * javadoc for the bug class this guards against.
+         */
+        public static final Set<String> BOUNDED_NAMED_COMMANDS = Set.of(
+                        "Home Intake", "Orbit", "Shooting Sequence", "Quick Shooting",
+                        "Intake Start Sequence", "Intake Stop");
+
         private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top
                                                                                       // speed
         private double MaxAngularRate = RotationsPerSecond.of(2).in(RadiansPerSecond); // 3/4 of a rotation per
@@ -70,44 +69,102 @@ public class RobotContainer {
         private final ProfiledPIDController hubPID = new ProfiledPIDController(
                         5.0, 0.0, 0.0,
                         new TrapezoidProfile.Constraints(MaxAngularRate, MaxAngularRate * 2));
-        private final CommandXboxController joystick = new CommandXboxController(0);
-        private final CommandGenericHID controlBox = new CommandGenericHID(1);
         private final CommandXboxController sysid = new CommandXboxController(2);
+        private final OperatorControls operatorControls = new OperatorControls();
         public static CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
-        public static Intake intake = new Intake();
-        public static Shooter shooter = new Shooter();
-        private final Limelight limelight = new Limelight("limelight-bow", "limelight-intake");
-        private final AutoAlignPOI aPOI = new AutoAlignPOI(drivetrain, POI.Hub);
-        private final PoseHelpers poseHelpers = new PoseHelpers(drivetrain);
-        private final Vision vision = new Vision(limelight, drivetrain);
-        private boolean ctrlBtn;
-        private final Intake_Start cmd_Intake_Start = new Intake_Start(intake);
-        private final Intake_Stop cmd_Intake_Stop = new Intake_Stop(intake);
-        private final Shooting_Sequence cmd_Normal_Shooting = new Shooting_Sequence(shooter, vision, intake, drivetrain,
-                        5.0);
-        private final Shooting_Sequence cmd_Quick_Shooting = new Shooting_Sequence(shooter, vision, intake, drivetrain,
-                        3.0);
-        private final ShootCmd cmd_ShootCmd = new ShootCmd(shooter, vision, drivetrain, intake);
+        public static Intake intake = Intake.getInstance();
+        public static Shooter shooter = Shooter.getInstance();
+        private final Vision vision = Vision.getInstance(drivetrain);
+        private final Superstructure superstructure = Superstructure.getInstance(drivetrain);
+        // Owned here, not a singleton -- constructed with drivetrain's pose supplier, so it
+        // necessarily postdates drivetrain's own construction above. Injected into drivetrain
+        // below since configureAutoBuilder() already registered its callbacks by this point.
+        private final TrajectoryErrorTracker trajectoryErrorTracker =
+                        new TrajectoryErrorTracker(() -> drivetrain.getState().Pose, Timer::getFPGATimestamp);
+        // Phase 0.5 (Autonomous Observability Layer, docs/Autonomous_Recovery_Readiness_Assessment.md)
+        // -- read-only telemetry aggregation, wired at the same point as trajectoryErrorTracker
+        // (see trajectoryTrackerPeriodic()) since it consumes that tracker's own live outputs.
+        private final AutonomousHealthMonitor autonomousHealthMonitor = new AutonomousHealthMonitor(
+                        trajectoryErrorTracker::getLateralErrorMeters,
+                        trajectoryErrorTracker::getLongitudinalErrorMeters,
+                        () -> drivetrain.getState().Pose,
+                        Timer::getFPGATimestamp,
+                        trajectoryErrorTracker::getSecondsSinceLastFreshTargetPose,
+                        vision::getLastRejectedJumpMeters);
         private SendableChooser<Command> autoChooser;
 
+        /**
+         * Autos that exist on disk and stay fully runnable, but are hidden from the driver-station
+         * chooser so nobody can select them in a match.
+         *
+         * <p>Hidden, deliberately NOT deleted. Two different reasons live in this one set:
+         *
+         * <ul>
+         *   <li><b>Practice / full-cycle rehearsal.</b> "LT Neutral Recollect - Depot" (~25 s, the
+         *       only two-shot route in the set) and "Left Double Swipe Bump" (~24 s) are useful to
+         *       run, just never inside a 15 s match.
+         *   <li><b>Retirement candidates.</b> The three remaining Recollect routes each append a
+         *       leg that carries no "Intake Start Sequence" and no second shot, and that starts
+         *       after the 15 s period has already ended -- so their reachable portion is a
+         *       duplicate of the base route they extend. They are hidden rather than removed
+         *       because deleting a route file is irreversible and the evidence is still under
+         *       review.
+         * </ul>
+         *
+         * <p>Hiding is chooser-only and changes nothing else: PathPlannerLib reads the deploy
+         * directory to enumerate autos and applies this filter afterwards, so every name here is
+         * still loadable by {@code AutoBuilder.buildAuto(name)} and still owned by its regression
+         * test. {@code AutoChooserFilterTest} pins all of that, including that each name here
+         * actually exists on disk -- a typo would otherwise silently un-hide a route.
+         *
+         * <p>Names must match the {@code .auto} filename exactly (minus the extension); that is what
+         * {@code AutoBuilder.getAllAutoNames()} produces and what the chooser labels options with.
+         */
+        public static final Set<String> PRACTICE_AUTOS = Set.of(
+                        "LT Neutral Recollect - Depot",
+                        "Left Double Swipe Bump",
+                        "LT Neutral Recollect - Bump",
+                        "LT Neutral Recollect - Trench",
+                        "RT Neutral Recollect - Trench");
+
         public RobotContainer() {
+                drivetrain.setTrajectoryErrorTracker(trajectoryErrorTracker);
                 RobotModeTriggers.teleop().onTrue(intake.homing()); // if commented out its temp removed for testing
                                                                     // since intake is not chained
+                // NOTE: no teleop-start stow command here on purpose. STOWED is the zero-active-
+                // control teleop intent produced by Superstructure's default operator-policy
+                // command, so adding one here would create a second command competing for
+                // Superstructure at the teleop edge and make correctness depend on the order these
+                // RobotModeTriggers happen to be registered in.
                 NamedCommands.registerCommand(
                                 "Home Intake", intake.homing());
+                // trackHub(..., finishOnAlign=true) only self-finishes once heading error drops
+                // under trackTarget's tolerance -- with no fallback, a stale pose or an
+                // unconverged heading PID hangs this forever. It runs inside a
+                // parallel(Orbit, Shooting Sequence) block in every auto (a ParallelCommandGroup,
+                // which requires every branch to finish), so an unbounded Orbit would silently
+                // stall the whole auto -- the same bug class as the old intakeCmd() hang (see
+                // Superstructure.intakeSequence's javadoc). Bounded here the same way.
                 NamedCommands.registerCommand("Orbit",
-                                new Target(drivetrain, poseHelpers::getHubPosition, 0, () -> 0, () -> 0, true));
+                                drivetrain.trackHub(vision, 0, () -> 0, () -> 0, true).withTimeout(2.0));
                 NamedCommands.registerCommand(
-                                "Shooting Sequence", cmd_Normal_Shooting);
+                                "Shooting Sequence", superstructure.shootingSequence(5.0));
                 NamedCommands.registerCommand(
-                                "Quick Shooting", cmd_Quick_Shooting);
+                                "Quick Shooting", superstructure.shootingSequence(3.0));
+                // Jam recovery now lives inside Intake.setRoller() itself (mechanism-level), so
+                // Superstructure.INTAKING gets it automatically -- routing through the state machine no
+                // longer drops stall protection from autos.
+                //
+                // intakeSequence(5.0), not the raw hold-forever intakeCmd(): every .auto file runs this
+                // inside a PathPlanner "parallel" block (ParallelCommandGroup, waits for every branch),
+                // and intakeCmd() never self-finishes -- discovered via the auto-regression-suite work
+                // stalling every in-scope auto dead after its first path segment.
                 NamedCommands.registerCommand(
-                                "Intake Start Sequence", Commands.parallel(
-                                                intake.intakeJamReverse(),
-                                                Commands.runOnce(() -> shooter.setAgitator(Agitate.IN))));
+                                "Intake Start Sequence", superstructure.intakeSequence(5.0));
                 NamedCommands.registerCommand(
-                                "Intake Stop", cmd_Intake_Stop);
-                autoChooser = AutoBuilder.buildAutoChooser();
+                                "Intake Stop", superstructure.stowCmd());
+                autoChooser = AutoBuilder.buildAutoChooserWithOptionsModifier(
+                                options -> options.filter(auto -> !PRACTICE_AUTOS.contains(auto.getName())));
                 configureBindings();
                 dashboard();
                 SmartDashboard.putNumber("offset", 0);
@@ -116,50 +173,58 @@ public class RobotContainer {
 
         private void dashboard() {
                 SmartDashboard.putData(shooter);
-                SmartDashboard.putData("Index Run", new InstantCommand(() -> shooter.indexControl(indexing.INDEX)));
-                SmartDashboard.putData("Index Stop", new InstantCommand(() -> shooter.indexControl(indexing.STOP)));
-                SmartDashboard.putData("Index Eject", new InstantCommand(() -> shooter.indexControl(indexing.EJECT)));
-                SmartDashboard.putData("Stop Shooter", new InstantCommand(() -> shooter.targetRPMShooter(0)));
-                SmartDashboard.putData("Agitator", new InstantCommand(() -> shooter.setAgitator(Agitate.IN)));
-                SmartDashboard.putData("Agitator Stop", new InstantCommand(() -> shooter.setAgitator(Agitate.STOP)));
-                SmartDashboard.putData("Set Pivot Up", new InstantCommand(() -> intake.goTo(Intake.PivotState.STOW)));
-                SmartDashboard.putData("Set Pivot Down", new InstantCommand(() -> intake.goTo(Intake.PivotState.DOWN)));
-                SmartDashboard.putData("Intake", new InstantCommand(() -> intake.setRoller(Roller.INTAKE)));
-                SmartDashboard.putData("Intake Stop", new InstantCommand(() -> intake.setRoller(Roller.STOP)));
+                // State-machine-respecting dashboard actions only -- these route through Superstructure
+                // so testing from the dashboard can't fight the periodic() arbitration the way raw
+                // subsystem InstantCommands used to (e.g. dashboard "Intake" + operator "Eject" held
+                // at once used to fight over the roller; now both funnel into the same wanted-state).
+                SmartDashboard.putData("State: Intake", superstructure.intakeCmd());
+                SmartDashboard.putData("State: Eject", superstructure.ejectCmd());
+                SmartDashboard.putData("State: Stow", superstructure.stowCmd());
+                SmartDashboard.putData("State: Shoot", superstructure.shootCmd());
                 SmartDashboard.putData("Auto Chooser", autoChooser);
+        }
 
-                SmartDashboard.putNumber("Current Speed Up/Down", -joystick.getLeftY() * MaxSpeed);
-                SmartDashboard.putNumber("Current Speed Right/Left", -joystick.getLeftX() * MaxSpeed);
-                SmartDashboard.putNumber("Current Angle Speed", -joystick.getRightX() * MaxAngularRate);
+        /**
+         * Called every scheduler run from {@link Robot#robotPeriodic()} to publish live
+         * dashboard values.
+         */
+        public void periodic() {
+                operatorControls.periodic(MaxSpeed, MaxAngularRate);
+        }
 
+        /**
+         * Called from {@link Robot#teleopExit()} -- the WPILib lifecycle hook that runs on EVERY
+         * exit from teleop, before the next mode's {@code xxxInit()}.
+         *
+         * <p>This exists because the operator policy stores a persistent wanted state that
+         * {@link Superstructure#periodic()} keeps applying in every mode, while the policy's own
+         * body is teleop-gated. Relying on the default command being interrupted is not enough:
+         * on a direct teleop-&gt;autonomous transition, autonomous begins with whatever the
+         * operator last asked for still latched. Hooking the mode exit makes the invariant --
+         * no operator-derived wanted state survives teleop -- independent of scheduler ownership.
+         *
+         * <p>{@code clearOperatorRequest()} is a one-shot relinquish, and is a no-op unless the
+         * operator policy is the current writer, so it cannot overwrite an autonomous request.
+         */
+        public void teleopExit() {
+                superstructure.clearOperatorRequest();
+        }
+
+        /**
+         * Called after {@link CommandScheduler#run()} from {@link Robot#robotPeriodic()} --
+         * deliberately after, not before. By this point this loop's PathPlanner setpoint (if any)
+         * has already been produced by the scheduler run that just finished, so pairing it with
+         * drivetrain.getState().Pose here reads both halves from the same instant instead of
+         * pairing this loop's pose against last loop's stale setpoint. autonomousHealthMonitor
+         * runs right after for the same reason -- it consumes trajectoryErrorTracker's
+         * just-updated outputs and needs the same same-instant pose pairing.
+         */
+        public void trajectoryTrackerPeriodic() {
+                trajectoryErrorTracker.periodic();
+                autonomousHealthMonitor.periodic();
         }
 
         private void configureBindings() {
-                limelight.setDefaultCommand(updatePose());
-                // Note that X is defined as forward according to WPILib convention,
-                // and Y is defined as to the left according to WPILib convention.
-                drivetrain.setDefaultCommand(
-                                // Drivetrain will execute this command periodically
-                                drivetrain.applyRequest(() -> drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive
-                                                                                                                   // forward
-                                                                                                                   // with
-                                                                                                                   // negative
-                                                                                                                   // Y
-                                                                                                                   // (forward)
-                                                .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with
-                                                                                                // negative X (left)
-                                                .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive
-                                                                                                            // counterclockwise
-                                                                                                            // with
-                                                                                                            // negative
-                                                                                                            // X (left)
-                                ));
-                joystick.rightBumper().whileTrue(
-                                new Target(drivetrain, poseHelpers::getHubPosition, MaxSpeed, joystick::getLeftX,
-                                                joystick::getLeftY, false));
-                joystick.rightTrigger().whileTrue(
-                                new Target(drivetrain, poseHelpers::getPassTargetPosition, MaxSpeed,
-                                                joystick::getLeftX, joystick::getLeftY, false));
                 // Idle while the robot is disabled. This ensures the configured
                 // neutral mode is applied to the drive motors while disabled.
                 final var idle = new SwerveRequest.Idle();
@@ -174,111 +239,49 @@ public class RobotContainer {
 
                 // }
 
-                // run quasistatic sysid routine on button hold, with forward and reverse directions then do dynamic
+                // run quasistatic sysid routine on button hold, with forward and reverse
+                // directions then do dynamic
                 // drivetrain
                 sysid.leftBumper().onTrue(Commands.runOnce(drivetrain::useTranslationSysId));
                 sysid.leftTrigger().onTrue(Commands.runOnce(drivetrain::useSteerSysId));
                 sysid.rightTrigger().onTrue(Commands.runOnce(drivetrain::useRotationSysId));
 
-                sysid.y().and(sysid.leftBumper()).whileTrue(drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
-                sysid.a().and(sysid.leftBumper()).whileTrue(drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
+                sysid.y().and(sysid.leftBumper())
+                                .whileTrue(drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
+                sysid.a().and(sysid.leftBumper())
+                                .whileTrue(drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
                 sysid.b().and(sysid.leftBumper()).whileTrue(drivetrain.sysIdDynamic(SysIdRoutine.Direction.kForward));
                 sysid.x().and(sysid.leftBumper()).whileTrue(drivetrain.sysIdDynamic(SysIdRoutine.Direction.kReverse));
-                // Reset the field-centric headiazng on left bumper press.
-                joystick.leftBumper().onTrue(Commands.runOnce(() -> {
-                        drivetrain.runOnce(drivetrain::seedFieldCentric);
-                        var mt = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight-bow");
-                        if (mt != null && mt.tagCount > 0 && mt.pose.getX() != 0) {
-                                drivetrain.resetPose(mt.pose);
-                        }
-                }));
                 drivetrain.registerTelemetry(logger::telemeterize);
-                // joystick.povUp().whileTrue(new AutoAlignPOI(drivetrain, POI.Hub));
-                // joystick.povLeft().whileTrue(new AutoAlignPOI(drivetrain, POI.poi1));
-                joystick.povRight().whileTrue(new AutoAlignPOI(drivetrain, POI.Right));
-                joystick.povLeft().whileTrue(new AutoAlignPOI(drivetrain, POI.Left));
-                joystick.x().whileTrue(new AutoAlignPOI(drivetrain, POI.LeftStage));
-                joystick.y().whileTrue(new AutoAlignPOI(drivetrain, POI.CenterStage));
-                joystick.b().whileTrue(new AutoAlignPOI(drivetrain, POI.RightStage));
-                controlBox.button(2).whileTrue(new ShootCmd(shooter, vision, drivetrain, intake));
-                controlBox.button(1).onTrue(Commands.runOnce(() -> shooter.targetRPMShooter(1600)));
-                controlBox.button(1)
-                                .whileTrue(Commands.sequence(
-                                                Commands.waitUntil(
-                                                                () -> shooter.shooterAtSpeed(shooter.getTargetRPM())),
-                                                Commands.run(() -> {
-                                                        shooter.indexControl(Shooter.indexing.INDEX);
-                                                        shooter.setAgitator(Shooter.Agitate.IN);
-                                                })));
 
-                controlBox.button(1).onFalse(Commands.runOnce(() -> {
-                        shooter.targetRPMShooter(1000);
-                        shooter.indexControl(Shooter.indexing.STOP);
-                        shooter.setAgitator(Shooter.Agitate.STOP);
-                }));
-                /*
-                 * controlBox.button(2).onFalse(Commands.runOnce(() -> {
-                 * shooter.targetRPMShooter(800);
-                 * shooter.indexControl(Shooter.indexing.STOP);
-                 * shooter.setAgitator(Shooter.Agitate.STOP);
-                 * }));
-                 */
-                controlBox.button(4).whileTrue(Commands.runOnce(() -> {
-                        shooter.indexControl(indexing.EJECT);
-                        shooter.setAgitator(Agitate.OUT);
-                }));
-                controlBox.button(4).onFalse(Commands.runOnce(() -> {
-
-                        shooter.indexControl(indexing.STOP);
-                        shooter.setAgitator(Agitate.STOP);
-
-                }));
-                /*
-                 * 
-                 * controlBox.button(2).whileFalse(
-                 * Commands.sequence(
-                 * Commands.runOnce(() -> shooter.targetRPMShooter(0)),
-                 * Commands.runOnce(() -> shooter.indexControl(indexing.STOP)))
-                 * );
-                 */
-                // operator.a().whileTrue(shooter.index());
-                // operator.b().whileTrue(shooter.indexEject());
-                controlBox.button(3).whileTrue(intake.eject()); // inverted
-                controlBox.button(3).onFalse(Commands.either(intake.intake(), intake.stopRoller(), () -> ctrlBtn));
-
-                controlBox.button(6).whileTrue(intake.intake()); // inverted
-                controlBox.button(6).whileTrue(Commands.run(() -> {
-                        shooter.setAgitator(Agitate.OUT);
-                        ctrlBtn = true;
-                }));
-                controlBox.button(6).onFalse(intake.stopRoller()); // inverted
-                controlBox.button(6).onFalse(Commands.runOnce(() -> {
-                        shooter.setAgitator(Agitate.STOP);
-                        ctrlBtn = false;
-                }));
-                controlBox.button(5).whileTrue(intake.agitatePivot());
-                controlBox.button(5).whileTrue(intake.intake());
-                controlBox.button(5).onFalse(Commands.either(intake.intake(), intake.stopRoller(), () -> ctrlBtn));
+                // Driver, operator, and sim-mirror HID bindings -- see OperatorControls.
+                operatorControls.configureBindings(drivetrain, vision, superstructure, drive, MaxSpeed, MaxAngularRate);
         }
 
         public Command getAutonomousCommand() {
                 return autoChooser.getSelected();
         }
 
-        public Command updatePose() {
-                return limelight.run(() -> {
-                        double omega = drivetrain.getState().Speeds.omegaRadiansPerSecond;
-                        if (Math.abs(omega) > 2 * Math.PI)
-                                return;
-                        final Pose2d currentPose = drivetrain.getState().Pose;
-                        var measurements = limelight.getMeasurement(currentPose);
-                        for (Limelight.Measurement m : measurements) {
-                                drivetrain.addVisionMeasurement(
-                                                m.poseEstimate.pose,
-                                                m.poseEstimate.timestampSeconds,
-                                                m.standardDeviations);
-                        }
-                })
-                                .ignoringDisable(true);
+        /**
+         * Releases drivetrain simulation and Phoenix odometry threads during test/sim shutdown.
+         *
+         * <p><b>This closes a {@code static} field and is therefore one-shot per JVM.</b>
+         * {@link #drivetrain} is initialized once at class-load, so a later {@code new
+         * RobotContainer()} reuses the SAME closed instance -- it re-runs neither the static
+         * initializer nor {@code startSimThread()}. A second {@code Robot} booted in the same JVM
+         * would get a drivetrain whose MapleSim notifier is stopped and nulled, so its physics
+         * would never advance and any assertion about motion would be silently meaningless rather
+         * than failing loudly.
+         *
+         * <p>Nothing hits this today: {@code build.gradle} sets {@code forkEvery = 1} (fresh JVM
+         * per test CLASS) and every test class keeps at most one {@code @Test} that constructs a
+         * {@code Robot} -- see the note in AutonomousHealthMonitorTest, which has 15 tests but
+         * builds a Robot in only one. That convention was already required for the subsystem
+         * singletons; closing this static makes it load-bearing for the drivetrain too. If you
+         * ever need two Robot-booting methods in one class, give {@code drivetrain} a reset hook
+         * first -- do not just delete this call.
+         */
+        public void close() {
+                drivetrain.close();
         }
 }

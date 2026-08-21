@@ -1,0 +1,18 @@
+{
+  "autoName" : "Middle Shoot",
+  "recordedAtGitSha" : "c351c8e2c211c438f285c79799d77bfde7be0403",
+  "completed" : true,
+  "runtimeSeconds" : 9.1252696,
+  "maxLateralErrorMeters" : 0.12298964803392896,
+  "maxLongitudinalErrorMeters" : 0.15985942857432375,
+  "diagnosticStartPose" : {
+    "xMeters" : 3.627547348484848,
+    "yMeters" : 3.97686553030303,
+    "thetaRadians" : 0.0
+  },
+  "diagnosticFinalPose" : {
+    "xMeters" : 2.338235844219655,
+    "yMeters" : 3.975487446974299,
+    "thetaRadians" : 0.012319783426996878
+  }
+}

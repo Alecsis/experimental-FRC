@@ -1,0 +1,7315 @@
+{
+  "version": "1.0.0",
+  "gitCommitHash": "b5676dd63b17ad1ba923d523c52b1ba754ee71ce",
+  "generatedAt": "2026-07-18T08:08:10.310Z",
+  "files": {
+    ".claude/commands/tldr.md": {
+      "filePath": ".claude/commands/tldr.md",
+      "contentHash": "71d3cb9775b03a10dd606954037709e976ec56f074f6e9846a378c671e91cc58",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 102,
+      "hasStructuralAnalysis": true
+    },
+    ".github/workflows/main.yml": {
+      "filePath": ".github/workflows/main.yml",
+      "contentHash": "2c62c8ec9f7e24e3ab24b2075c86a9faf261196c03f6140fc66ad8784f3ba358",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 31,
+      "hasStructuralAnalysis": true
+    },
+    ".ua/.understandignore": {
+      "filePath": ".ua/.understandignore",
+      "contentHash": "8b1a5d2a19b7c03dd346866b9a4b8132d7964036b1ce6db2820b5f4b6ceccd9a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 145,
+      "hasStructuralAnalysis": false
+    },
+    ".wpilib/wpilib_preferences.json": {
+      "filePath": ".wpilib/wpilib_preferences.json",
+      "contentHash": "7fa2d53efcc5f347ed7e8adfa5c043c755909e5a2293599a3f83102a94c7c4ba",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 6,
+      "hasStructuralAnalysis": true
+    },
+    "build.gradle": {
+      "filePath": "build.gradle",
+      "contentHash": "5e50fd56428557f0771b212e6b0e17c76fb55a21198e79042a2f0fe6bf69ae61",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 144,
+      "hasStructuralAnalysis": false
+    },
+    "claude.md": {
+      "filePath": "claude.md",
+      "contentHash": "6a804cc982701cc438d61ed415f20edab594d791e11b8ec76f0452cd0632bcd9",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 95,
+      "hasStructuralAnalysis": true
+    },
+    "docs/claudex/architecture.md": {
+      "filePath": "docs/claudex/architecture.md",
+      "contentHash": "bf433bb42db2bfdc31c316c51d85d7006b41520d5bf0f0f85fe3cd33bf82664c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 29,
+      "hasStructuralAnalysis": true
+    },
+    "docs/claudex/history.md": {
+      "filePath": "docs/claudex/history.md",
+      "contentHash": "7050429244a12f911f8cdfc774fc481eb16e38bdb8fa3e2dc91734fb6b0b7558",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 57,
+      "hasStructuralAnalysis": true
+    },
+    "docs/claudex/verification-loop.md": {
+      "filePath": "docs/claudex/verification-loop.md",
+      "contentHash": "9d4d152baa518421602d4219fb02520bebe383b352e68a31840a803a23466f99",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 36,
+      "hasStructuralAnalysis": true
+    },
+    "docs/superpowers/plans/2026-07-16-maple-sim-physics.md": {
+      "filePath": "docs/superpowers/plans/2026-07-16-maple-sim-physics.md",
+      "contentHash": "b4d70e5441ccc3ec41f30e82f08f6d6da4cc0c8bf2d52b701dff7d9fec33dfeb",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 686,
+      "hasStructuralAnalysis": true
+    },
+    "docs/superpowers/plans/2026-07-16-vision-superstructure-cleanup.md": {
+      "filePath": "docs/superpowers/plans/2026-07-16-vision-superstructure-cleanup.md",
+      "contentHash": "b855e788ba8124d6544377ebf7d8ee828e3fc22feaa093716f51515c998bf631",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 821,
+      "hasStructuralAnalysis": true
+    },
+    "docs/superpowers/plans/2026-07-17-intake-jam-recovery-migration-plan.md": {
+      "filePath": "docs/superpowers/plans/2026-07-17-intake-jam-recovery-migration-plan.md",
+      "contentHash": "56a52297f5f52af8b919ac490cea318da9958eb8d0c600b4866d4c46660efe58",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 512,
+      "hasStructuralAnalysis": true
+    },
+    "docs/superpowers/plans/2026-07-17-phase3-imu-mode-junit-test.md": {
+      "filePath": "docs/superpowers/plans/2026-07-17-phase3-imu-mode-junit-test.md",
+      "contentHash": "b720a01b96ab7c95af94621f9b182088ba716ada6f1cade606099d78f5720409",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 252,
+      "hasStructuralAnalysis": true
+    },
+    "docs/superpowers/plans/2026-07-17-phase3-test-b-ejecting-junit-test.md": {
+      "filePath": "docs/superpowers/plans/2026-07-17-phase3-test-b-ejecting-junit-test.md",
+      "contentHash": "0669b1f729e58153677c67eeff78dc78f8f54edac4be6dae74262d6affd90237",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 385,
+      "hasStructuralAnalysis": true
+    },
+    "docs/superpowers/specs/2026-07-16-maple-sim-physics-design.md": {
+      "filePath": "docs/superpowers/specs/2026-07-16-maple-sim-physics-design.md",
+      "contentHash": "5220c3f7b6b21b68b90d23783a55352a5447fa8f298e3dfbe38ce093845f93c4",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 78,
+      "hasStructuralAnalysis": true
+    },
+    "docs/superpowers/specs/2026-07-16-vision-superstructure-cleanup-design.md": {
+      "filePath": "docs/superpowers/specs/2026-07-16-vision-superstructure-cleanup-design.md",
+      "contentHash": "c5534436da1dfd115c5fb3ea6fc1c209b2e40d5d5659fdc825f53a30d8dec0ad",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 124,
+      "hasStructuralAnalysis": true
+    },
+    "docs/superpowers/specs/2026-07-17-intake-jam-recovery-migration-design.md": {
+      "filePath": "docs/superpowers/specs/2026-07-17-intake-jam-recovery-migration-design.md",
+      "contentHash": "33ab165603a38059d6cb4f6d3cdb130f5a7d69f3815ef36baa83880d93eba2ad",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 128,
+      "hasStructuralAnalysis": true
+    },
+    "gradle/wrapper/gradle-wrapper.jar": {
+      "filePath": "gradle/wrapper/gradle-wrapper.jar",
+      "contentHash": "809f7d03c4b935f944b16736dc7e55390b4bf0da487c2de65a04cb00d603be1b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 152,
+      "hasStructuralAnalysis": false
+    },
+    "gradle/wrapper/gradle-wrapper.properties": {
+      "filePath": "gradle/wrapper/gradle-wrapper.properties",
+      "contentHash": "5690cf600dec1f8a4eee242c779b9899cfc3cc9b8ab9b347df958ca645084725",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 8,
+      "hasStructuralAnalysis": false
+    },
+    "gradlew": {
+      "filePath": "gradlew",
+      "contentHash": "a3648413b47ef77af21d5ebc36c687c7d103aaef3e17f33de7d4f080a6f300a3",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 253,
+      "hasStructuralAnalysis": false
+    },
+    "gradlew.bat": {
+      "filePath": "gradlew.bat",
+      "contentHash": "57931b17dd228e5c24dac90e815d0bf82477e831a4618dfab4136f5446b42a9f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 95,
+      "hasStructuralAnalysis": false
+    },
+    "PLAN.md": {
+      "filePath": "PLAN.md",
+      "contentHash": "6796371deb6ac57db08d80eae1e754613a89d376b893042d065facbba9a97d9e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 62,
+      "hasStructuralAnalysis": true
+    },
+    "README.md": {
+      "filePath": "README.md",
+      "contentHash": "363e79748d79f99a69439e2247df47e2c43946b30efd474a0e000f31a9aa26a9",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 6,
+      "hasStructuralAnalysis": true
+    },
+    "settings.gradle": {
+      "filePath": "settings.gradle",
+      "contentHash": "2c8b28e5cde922abebfef4c2a461416f3cae6ad82ade2d941f85398ca791a406",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 31,
+      "hasStructuralAnalysis": false
+    },
+    "simgui-ds.json": {
+      "filePath": "simgui-ds.json",
+      "contentHash": "b15d1e1df1de815ab875ade00bd3cc2c568b9abf30b3da901724c638b869e6ed",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 109,
+      "hasStructuralAnalysis": true
+    },
+    "SKILLS/parse_akit_log.py": {
+      "filePath": "SKILLS/parse_akit_log.py",
+      "contentHash": "21fbf4071e5a61435fdf344ea98218d5ea1e41cc39b2d8edaa56260c28f1c58f",
+      "functions": [
+        {
+          "name": "read_varint",
+          "params": [
+            "buf",
+            "off",
+            "length"
+          ],
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "read_string4",
+          "params": [
+            "buf",
+            "off"
+          ],
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "parse_log",
+          "params": [
+            "buf"
+          ],
+          "exported": true,
+          "lineCount": 46
+        },
+        {
+          "name": "decode_scalar",
+          "params": [
+            "type_str",
+            "payload"
+          ],
+          "exported": true,
+          "lineCount": 30
+        },
+        {
+          "name": "decode_pose",
+          "params": [
+            "type_str",
+            "payload"
+          ],
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "pose_jump_analysis",
+          "params": [
+            "entry",
+            "threshold"
+          ],
+          "exported": true,
+          "lineCount": 28
+        },
+        {
+          "name": "main",
+          "params": [],
+          "exported": true,
+          "lineCount": 75
+        }
+      ],
+      "classes": [
+        {
+          "name": "Entry",
+          "methods": [
+            "__init__"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 7
+        }
+      ],
+      "imports": [
+        {
+          "source": "argparse",
+          "specifiers": [
+            "argparse"
+          ]
+        },
+        {
+          "source": "math",
+          "specifiers": [
+            "math"
+          ]
+        },
+        {
+          "source": "struct",
+          "specifiers": [
+            "struct"
+          ]
+        },
+        {
+          "source": "sys",
+          "specifiers": [
+            "sys"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        }
+      ],
+      "exports": [
+        "Entry",
+        "read_varint",
+        "read_string4",
+        "parse_log",
+        "decode_scalar",
+        "decode_pose",
+        "pose_jump_analysis",
+        "main"
+      ],
+      "totalLines": 257,
+      "hasStructuralAnalysis": true
+    },
+    "SKILLS/run_headless_sim.py": {
+      "filePath": "SKILLS/run_headless_sim.py",
+      "contentHash": "c809d7a92751f7757c5d02b733286554d3797ec51533cb42bd7a856890c3a07e",
+      "functions": [
+        {
+          "name": "build_env",
+          "params": [],
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "gradle_cmd",
+          "params": [],
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "kill_tree",
+          "params": [
+            "process"
+          ],
+          "exported": true,
+          "lineCount": 13
+        },
+        {
+          "name": "main",
+          "params": [],
+          "exported": true,
+          "lineCount": 99
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "argparse",
+          "specifiers": [
+            "argparse"
+          ]
+        },
+        {
+          "source": "os",
+          "specifiers": [
+            "os"
+          ]
+        },
+        {
+          "source": "queue",
+          "specifiers": [
+            "queue"
+          ]
+        },
+        {
+          "source": "re",
+          "specifiers": [
+            "re"
+          ]
+        },
+        {
+          "source": "subprocess",
+          "specifiers": [
+            "subprocess"
+          ]
+        },
+        {
+          "source": "sys",
+          "specifiers": [
+            "sys"
+          ]
+        },
+        {
+          "source": "threading",
+          "specifiers": [
+            "threading"
+          ]
+        },
+        {
+          "source": "time",
+          "specifiers": [
+            "time"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        }
+      ],
+      "exports": [
+        "build_env",
+        "gradle_cmd",
+        "kill_tree",
+        "main"
+      ],
+      "totalLines": 182,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/deploy/example.txt": {
+      "filePath": "src/main/deploy/example.txt",
+      "contentHash": "559f8c287cbb19cd02e5ca79c0ce0c2e34e374a2555f7eb96d591ab1c51ccbe0",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 3,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/autos/deploy/pathplanner/deploy/pathplanner/navgrid.json": {
+      "filePath": "src/main/deploy/pathplanner/autos/deploy/pathplanner/deploy/pathplanner/navgrid.json",
+      "contentHash": "fd5c3580d0e0af4f29541009bd8114ad682b7a31607e0eab83563ebeeaf01526",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/deploy/pathplanner/autos/deploy/pathplanner/navgrid.json": {
+      "filePath": "src/main/deploy/pathplanner/autos/deploy/pathplanner/navgrid.json",
+      "contentHash": "fd5c3580d0e0af4f29541009bd8114ad682b7a31607e0eab83563ebeeaf01526",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/deploy/pathplanner/autos/LB Depot.auto": {
+      "filePath": "src/main/deploy/pathplanner/autos/LB Depot.auto",
+      "contentHash": "8e64f7087153951d645325f9bc5e35724ed6ee2013e16cce1902810c9f8cda63",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 75,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/autos/LB Neutral.auto": {
+      "filePath": "src/main/deploy/pathplanner/autos/LB Neutral.auto",
+      "contentHash": "befab3e466539d19a3094f38b6412de94797aa6ce03380b0688a15e450ea56d8",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 75,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/autos/LT Depot.auto": {
+      "filePath": "src/main/deploy/pathplanner/autos/LT Depot.auto",
+      "contentHash": "b0282fbe281ba0c47f8ae4f5c24d59c34c16fb35498e5c15a3de2a4c99f8bd3d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 75,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/autos/LT Neutral - Bump Recollect.auto": {
+      "filePath": "src/main/deploy/pathplanner/autos/LT Neutral - Bump Recollect.auto",
+      "contentHash": "808eceb4e0680625dfc5fd2396cb8ce8d5371a8a0151f9d61a29531dcf2cb64b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 81,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/autos/LT Neutral - Bump Route.auto": {
+      "filePath": "src/main/deploy/pathplanner/autos/LT Neutral - Bump Route.auto",
+      "contentHash": "c1f1ab6559fc4a10cca20bd3d4e84c632f637bfe65e3892635e4757fd8878936",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 75,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/autos/LT Neutral - Depot Recollect.auto": {
+      "filePath": "src/main/deploy/pathplanner/autos/LT Neutral - Depot Recollect.auto",
+      "contentHash": "ab76ae9d3497a515b068a801bca8459190113fd64f26aaf5b6b41ac9a27c6fe3",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 81,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/autos/LT Neutral - Trench Recollect.auto": {
+      "filePath": "src/main/deploy/pathplanner/autos/LT Neutral - Trench Recollect.auto",
+      "contentHash": "356054e84a78a0c2fd534eaaeb7271a6f178ccf54050bb1e2666a926b95f827a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 81,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/autos/LT Neutral - U Turn.auto": {
+      "filePath": "src/main/deploy/pathplanner/autos/LT Neutral - U Turn.auto",
+      "contentHash": "30b5c581e9ad384760c780281673a447c463017333efbc9f860bdedbc96c7a4c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 75,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/autos/LT Neutral.auto": {
+      "filePath": "src/main/deploy/pathplanner/autos/LT Neutral.auto",
+      "contentHash": "8e6917bdd3de055ecdbee2cb4638db7b85bbeff5999bca8ab7f65c90774c3ecb",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 75,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/autos/RB Neutral.auto": {
+      "filePath": "src/main/deploy/pathplanner/autos/RB Neutral.auto",
+      "contentHash": "9d6df265a842900af4af780cdc1dbf143058fd6758dc2c26504a2a412647f28c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 75,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/autos/RT Neutral - Trench Recollect.auto": {
+      "filePath": "src/main/deploy/pathplanner/autos/RT Neutral - Trench Recollect.auto",
+      "contentHash": "bb17a8f482a5bfad52455684a9598d0e74a6373f58b5fe992e12514c7a51e48f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 75,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/autos/RT Neutral - U Turn.auto": {
+      "filePath": "src/main/deploy/pathplanner/autos/RT Neutral - U Turn.auto",
+      "contentHash": "61794880a48db380f1085495fb62243f69f0c353b38eec08d7784d8b6ed9a38d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 69,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/autos/RT Neutral.auto": {
+      "filePath": "src/main/deploy/pathplanner/autos/RT Neutral.auto",
+      "contentHash": "6f63ee3597e31c1e1fc90cba9bfddb020d78ca2fc61f76179984d7cbf0d92b7e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 69,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/navgrid.json": {
+      "filePath": "src/main/deploy/pathplanner/navgrid.json",
+      "contentHash": "cefa06f2fbf6f5f993d21485bd3ae8128fc5993fa727f6e3dc4b5b744953de35",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/deploy/pathplanner/paths/Backup into Depot.path": {
+      "filePath": "src/main/deploy/pathplanner/paths/Backup into Depot.path",
+      "contentHash": "4c8bcd32445eb80be05c423cd1d3fb8a122bc0385fc5c68c63a724647e050c1b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 81,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/paths/Bump Neutral Left.path": {
+      "filePath": "src/main/deploy/pathplanner/paths/Bump Neutral Left.path",
+      "contentHash": "0c496170566dc86c70c85597bb37ba98b06a51d0c0a53edcb6aa21b169f9d49f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 95,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/paths/Bump Neutral Right.path": {
+      "filePath": "src/main/deploy/pathplanner/paths/Bump Neutral Right.path",
+      "contentHash": "7aa3dbe8e1e0c3f7c239af58d180fea1943bc0dba459854e0d473d111449a406",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 68,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/paths/Depot - Score.path": {
+      "filePath": "src/main/deploy/pathplanner/paths/Depot - Score.path",
+      "contentHash": "c845e6bf1152ec3cc2dd30ceb6282a6b79815111dd91b65d7ee5836aa26d4166",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 65,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/paths/Depot.path": {
+      "filePath": "src/main/deploy/pathplanner/paths/Depot.path",
+      "contentHash": "07f80330bfdd3129d9aead88414e79d2b58903bd6ca4626fcfe4e440d8944b53",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 116,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/paths/Human-Shoot.path": {
+      "filePath": "src/main/deploy/pathplanner/paths/Human-Shoot.path",
+      "contentHash": "8123b5ed8f425a10932aa603988b32979ef49e79ff6de9dd3d689d75799cedc4",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 54,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/paths/Left Bump Depot.path": {
+      "filePath": "src/main/deploy/pathplanner/paths/Left Bump Depot.path",
+      "contentHash": "6b4de22533c3f9572708c7034299ff37a5d6b14d5dd3706b437531d2a3e7847d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 54,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/paths/Left Bump End.path": {
+      "filePath": "src/main/deploy/pathplanner/paths/Left Bump End.path",
+      "contentHash": "92258761e8bc6e551e0310b52805fbf60cbe4757a4a37380ac08bd467d8036a4",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 75,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/paths/Left Bump Recollect End.path": {
+      "filePath": "src/main/deploy/pathplanner/paths/Left Bump Recollect End.path",
+      "contentHash": "e4c682c02f5e70ba3650f216804cb511a27fc33e03e632622a5b78e56a339b01",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 95,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/paths/Left Bump Recollect Start.path": {
+      "filePath": "src/main/deploy/pathplanner/paths/Left Bump Recollect Start.path",
+      "contentHash": "afc608fa642e6d13f4e4e66f5dc5d502150c46499327181d278117a6c7984512",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 113,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/paths/Left Bump Start.path": {
+      "filePath": "src/main/deploy/pathplanner/paths/Left Bump Start.path",
+      "contentHash": "fc79b8e5f20acbd160b549b22e772610a3c4641c74136cfcecb3ff97cb26c089",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 75,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/paths/Left Trench End.path": {
+      "filePath": "src/main/deploy/pathplanner/paths/Left Trench End.path",
+      "contentHash": "f06ed1eda79fe80516ce1fbbd3e01109e4e6461e4568726f63e336d4eb5e4c70",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 75,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/paths/Left Trench Neutral - U Turn.path": {
+      "filePath": "src/main/deploy/pathplanner/paths/Left Trench Neutral - U Turn.path",
+      "contentHash": "608b1e5462796c88329e9716b1913216e9c71e84bb23baca54691811fc6c8b98",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 169,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/paths/Left Trench Neutral.path": {
+      "filePath": "src/main/deploy/pathplanner/paths/Left Trench Neutral.path",
+      "contentHash": "355e545c1af457aff21530768e013ee2d310ca3461b7f775d9a898104907d67f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 155,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/paths/Left Trench Recollect End.path": {
+      "filePath": "src/main/deploy/pathplanner/paths/Left Trench Recollect End.path",
+      "contentHash": "db2d3c1711f1b97a40ed00fe5fc0609a965c40475a13b356fc78fafdcdea35f9",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 79,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/paths/Left Trench Recollect Start.path": {
+      "filePath": "src/main/deploy/pathplanner/paths/Left Trench Recollect Start.path",
+      "contentHash": "fe07e6c2c592649026e1f4a3808f33ef2e2b81fe7dfb15bdc8a9cf2f9020aa75",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 113,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/paths/Left Trench Start.path": {
+      "filePath": "src/main/deploy/pathplanner/paths/Left Trench Start.path",
+      "contentHash": "9e5316f3dd5f06daba4b1ff94511599638442f2d3b51c2c2fc2be902991b22db",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 105,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/paths/Left Trench to Depot.path": {
+      "filePath": "src/main/deploy/pathplanner/paths/Left Trench to Depot.path",
+      "contentHash": "ca2a888f4537b961c2d551c76b584f6675468b8a981260f11b2364b6f5bea864",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 54,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/paths/Right Bump End.path": {
+      "filePath": "src/main/deploy/pathplanner/paths/Right Bump End.path",
+      "contentHash": "499e56f5263aa73ca708b63d8c19c42bbdb925f90c7eeb461ad6be96efa7eb7f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 97,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/paths/Right Bump Start.path": {
+      "filePath": "src/main/deploy/pathplanner/paths/Right Bump Start.path",
+      "contentHash": "e51d687a83a264e5fb19f5c534977f23254a7b559005e546b98593710cb4b8c2",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 75,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/paths/Right Trench End.path": {
+      "filePath": "src/main/deploy/pathplanner/paths/Right Trench End.path",
+      "contentHash": "f3aaac319c72caaab8e40b96f52853ab88f8c8a020f5ee2a02ab3cafc704d91d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 75,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/paths/Right Trench Recollect End.path": {
+      "filePath": "src/main/deploy/pathplanner/paths/Right Trench Recollect End.path",
+      "contentHash": "67ac8aa3227874331d838caeda6c229c47392931ef969669e062fb44aaf4f50f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 79,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/paths/Right Trench Recollect Start.path": {
+      "filePath": "src/main/deploy/pathplanner/paths/Right Trench Recollect Start.path",
+      "contentHash": "e481dc42957a1fedb210620a1edc7945c4018dfa6918da4f27c32edb70b0417b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 113,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/paths/Right Trench Start - U Turn.path": {
+      "filePath": "src/main/deploy/pathplanner/paths/Right Trench Start - U Turn.path",
+      "contentHash": "4088dd420c2dc3ab1b6db2a1ad60c9835eab6decea22dcc4769575894a47b7fe",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 160,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/paths/Right Trench Start.path": {
+      "filePath": "src/main/deploy/pathplanner/paths/Right Trench Start.path",
+      "contentHash": "05e86ba4d326b16265eee7828e14372ad479e0a2c2b96028a03a6518c332efd5",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 175,
+      "hasStructuralAnalysis": false
+    },
+    "src/main/deploy/pathplanner/settings.json": {
+      "filePath": "src/main/deploy/pathplanner/settings.json",
+      "contentHash": "ed6f833247557a422f7a65909ebb04dab1fc67d90f9cd29ad9a3e8e099876389",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 38,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/java/frc/robot/Constants.java": {
+      "filePath": "src/main/java/frc/robot/Constants.java",
+      "contentHash": "81470e6d8ab7ff9180660eefc29aa33d828b28dbfab2e852b241e9bf68b9c155",
+      "functions": [],
+      "classes": [
+        {
+          "name": "Constants",
+          "methods": [],
+          "properties": [
+            "simMode",
+            "currentMode",
+            "intakePivot",
+            "roller",
+            "shootMotor",
+            "indexMotor",
+            "agitator",
+            "visionCameraNames",
+            "kVisionMaxTagDistMeters",
+            "kVisionStdDevCoefficient",
+            "kMaxVisionJumpMeters",
+            "kVisionStdDevMinMeters",
+            "kIntakePivotReduction",
+            "kIntakePivotMassKg",
+            "kIntakePivotLengthMeters",
+            "kIntakePivotMinAngleDeg",
+            "kIntakePivotMaxAngleDeg",
+            "kIntakeRollerReduction",
+            "kIntakeRollerMOI",
+            "kShooterReduction",
+            "kShooterFlywheelMOI",
+            "kIndexReduction",
+            "kIndexMOI",
+            "kAgitatorReduction",
+            "kAgitatorMOI",
+            "kRobotMassWithBumpersKg",
+            "kBumperLengthXMeters",
+            "kBumperWidthYMeters",
+            "kWheelCOF",
+            "kIntakeSimWidthMeters",
+            "kIntakeSimCapacity"
+          ],
+          "exported": true,
+          "lineCount": 59
+        }
+      ],
+      "imports": [
+        {
+          "source": "edu.wpi.first.wpilibj.RobotBase",
+          "specifiers": [
+            "RobotBase"
+          ]
+        }
+      ],
+      "exports": [
+        "simMode",
+        "currentMode",
+        "intakePivot",
+        "roller",
+        "shootMotor",
+        "indexMotor",
+        "agitator",
+        "visionCameraNames",
+        "kVisionMaxTagDistMeters",
+        "kVisionStdDevCoefficient",
+        "kMaxVisionJumpMeters",
+        "kVisionStdDevMinMeters",
+        "kIntakePivotReduction",
+        "kIntakePivotMassKg",
+        "kIntakePivotLengthMeters",
+        "kIntakePivotMinAngleDeg",
+        "kIntakePivotMaxAngleDeg",
+        "kIntakeRollerReduction",
+        "kIntakeRollerMOI",
+        "kShooterReduction",
+        "kShooterFlywheelMOI",
+        "kIndexReduction",
+        "kIndexMOI",
+        "kAgitatorReduction",
+        "kAgitatorMOI",
+        "kRobotMassWithBumpersKg",
+        "kBumperLengthXMeters",
+        "kBumperWidthYMeters",
+        "kWheelCOF",
+        "kIntakeSimWidthMeters",
+        "kIntakeSimCapacity",
+        "Constants"
+      ],
+      "totalLines": 75,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/java/frc/robot/FieldConstants.java": {
+      "filePath": "src/main/java/frc/robot/FieldConstants.java",
+      "contentHash": "ca0e315b13ebbbec23ee5b96dfc1b1be1dc84bf174244c1573da978802580ebe",
+      "functions": [
+        {
+          "name": "middleStartFor",
+          "params": [
+            "alliance"
+          ],
+          "returnType": "Pose2d",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "FieldConstants",
+          "params": [],
+          "exported": true,
+          "lineCount": 1
+        }
+      ],
+      "classes": [
+        {
+          "name": "FieldConstants",
+          "methods": [
+            "middleStartFor",
+            "FieldConstants"
+          ],
+          "properties": [
+            "layout",
+            "fieldLengthMeters",
+            "fieldWidthMeters",
+            "blueMiddleStart",
+            "redMiddleStart"
+          ],
+          "exported": true,
+          "lineCount": 29
+        }
+      ],
+      "imports": [
+        {
+          "source": "edu.wpi.first.apriltag.AprilTagFieldLayout",
+          "specifiers": [
+            "AprilTagFieldLayout"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.apriltag.AprilTagFields",
+          "specifiers": [
+            "AprilTagFields"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.geometry.Pose2d",
+          "specifiers": [
+            "Pose2d"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.geometry.Rotation2d",
+          "specifiers": [
+            "Rotation2d"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.DriverStation.Alliance",
+          "specifiers": [
+            "Alliance"
+          ]
+        }
+      ],
+      "exports": [
+        "fieldLengthMeters",
+        "fieldWidthMeters",
+        "blueMiddleStart",
+        "redMiddleStart",
+        "middleStartFor",
+        "FieldConstants"
+      ],
+      "totalLines": 47,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/java/frc/robot/generated/AdvantageScope Swerve Calibration.json": {
+      "filePath": "src/main/java/frc/robot/generated/AdvantageScope Swerve Calibration.json",
+      "contentHash": "572f961454624eac79962a4ea6595c6e72a2a1131d82a1b43024eee0510de7e9",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 462,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/java/frc/robot/generated/tuner-swerve-project.json": {
+      "filePath": "src/main/java/frc/robot/generated/tuner-swerve-project.json",
+      "contentHash": "1dd76e2ac3570c37c1719072e4aa9e666fac4027da82dddeb909036787e8fd37",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 232,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/java/frc/robot/generated/TunerConstants.java": {
+      "filePath": "src/main/java/frc/robot/generated/TunerConstants.java",
+      "contentHash": "bb0f7a96617cd3405a0010bd7162304774aa82f244e799974c064455844e3244",
+      "functions": [
+        {
+          "name": "createDrivetrain",
+          "params": [],
+          "returnType": "CommandSwerveDrivetrain",
+          "exported": true,
+          "lineCount": 5
+        }
+      ],
+      "classes": [
+        {
+          "name": "TunerConstants",
+          "methods": [
+            "createDrivetrain"
+          ],
+          "properties": [
+            "steerGains",
+            "driveGains",
+            "kSteerClosedLoopOutput",
+            "kDriveClosedLoopOutput",
+            "kDriveMotorType",
+            "kSteerMotorType",
+            "kSteerFeedbackType",
+            "kSlipCurrent",
+            "driveInitialConfigs",
+            "steerInitialConfigs",
+            "encoderInitialConfigs",
+            "pigeonConfigs",
+            "kCANBus",
+            "kSpeedAt12Volts",
+            "kCoupleRatio",
+            "kDriveGearRatio",
+            "kSteerGearRatio",
+            "kWheelRadius",
+            "kInvertLeftSide",
+            "kInvertRightSide",
+            "kPigeonId",
+            "kSteerInertia",
+            "kDriveInertia",
+            "kSteerFrictionVoltage",
+            "kDriveFrictionVoltage",
+            "DrivetrainConstants",
+            "ConstantCreator",
+            "kFrontLeftDriveMotorId",
+            "kFrontLeftSteerMotorId",
+            "kFrontLeftEncoderId",
+            "kFrontLeftEncoderOffset",
+            "kFrontLeftSteerMotorInverted",
+            "kFrontLeftEncoderInverted",
+            "kFrontLeftXPos",
+            "kFrontLeftYPos",
+            "kFrontRightDriveMotorId",
+            "kFrontRightSteerMotorId",
+            "kFrontRightEncoderId",
+            "kFrontRightEncoderOffset",
+            "kFrontRightSteerMotorInverted",
+            "kFrontRightEncoderInverted",
+            "kFrontRightXPos",
+            "kFrontRightYPos",
+            "kBackLeftDriveMotorId",
+            "kBackLeftSteerMotorId",
+            "kBackLeftEncoderId",
+            "kBackLeftEncoderOffset",
+            "kBackLeftSteerMotorInverted",
+            "kBackLeftEncoderInverted",
+            "kBackLeftXPos",
+            "kBackLeftYPos",
+            "kBackRightDriveMotorId",
+            "kBackRightSteerMotorId",
+            "kBackRightEncoderId",
+            "kBackRightEncoderOffset",
+            "kBackRightSteerMotorInverted",
+            "kBackRightEncoderInverted",
+            "kBackRightXPos",
+            "kBackRightYPos",
+            "FrontLeft",
+            "FrontRight",
+            "BackLeft",
+            "BackRight"
+          ],
+          "exported": true,
+          "lineCount": 268
+        }
+      ],
+      "imports": [
+        {
+          "source": "edu.wpi.first.units.Units",
+          "specifiers": [
+            "*"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.CANBus",
+          "specifiers": [
+            "CANBus"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.configs",
+          "specifiers": [
+            "*"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.hardware",
+          "specifiers": [
+            "*"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.signals",
+          "specifiers": [
+            "*"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.swerve",
+          "specifiers": [
+            "*"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.swerve.SwerveModuleConstants",
+          "specifiers": [
+            "*"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.Matrix",
+          "specifiers": [
+            "Matrix"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.numbers.N1",
+          "specifiers": [
+            "N1"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.numbers.N3",
+          "specifiers": [
+            "N3"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.measure",
+          "specifiers": [
+            "*"
+          ]
+        },
+        {
+          "source": "frc.robot.subsystems.CommandSwerveDrivetrain",
+          "specifiers": [
+            "CommandSwerveDrivetrain"
+          ]
+        }
+      ],
+      "exports": [
+        "kCANBus",
+        "kSpeedAt12Volts",
+        "DrivetrainConstants",
+        "FrontLeft",
+        "FrontRight",
+        "BackLeft",
+        "BackRight",
+        "createDrivetrain",
+        "TunerConstants"
+      ],
+      "totalLines": 289,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/java/frc/robot/Main.java": {
+      "filePath": "src/main/java/frc/robot/Main.java",
+      "contentHash": "08b56bf82010d27ab0b4ece75b5f2971bdc75cc3e5f0173d443bc1f16893ebca",
+      "functions": [
+        {
+          "name": "Main",
+          "params": [],
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "main",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        }
+      ],
+      "classes": [
+        {
+          "name": "Main",
+          "methods": [
+            "Main",
+            "main"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 12
+        }
+      ],
+      "imports": [
+        {
+          "source": "edu.wpi.first.wpilibj.RobotBase",
+          "specifiers": [
+            "RobotBase"
+          ]
+        }
+      ],
+      "exports": [
+        "main",
+        "Main"
+      ],
+      "totalLines": 26,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/java/frc/robot/OperatorControls.java": {
+      "filePath": "src/main/java/frc/robot/OperatorControls.java",
+      "contentHash": "f52fd2cd36a0f447f2dd76310e7bf48c12f84bba782e116e7903778a9630178d",
+      "functions": [
+        {
+          "name": "configureBindings",
+          "params": [
+            "drivetrain",
+            "vision",
+            "superstructure",
+            "drive",
+            "maxSpeed",
+            "maxAngularRate"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 62
+        },
+        {
+          "name": "periodic",
+          "params": [
+            "maxSpeed",
+            "maxAngularRate"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 5
+        }
+      ],
+      "classes": [
+        {
+          "name": "OperatorControls",
+          "methods": [
+            "configureBindings",
+            "periodic"
+          ],
+          "properties": [
+            "joystick",
+            "controlBox",
+            "simController"
+          ],
+          "exported": true,
+          "lineCount": 76
+        }
+      ],
+      "imports": [
+        {
+          "source": "com.ctre.phoenix6.swerve.SwerveRequest",
+          "specifiers": [
+            "SwerveRequest"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.RobotBase",
+          "specifiers": [
+            "RobotBase"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.smartdashboard.SmartDashboard",
+          "specifiers": [
+            "SmartDashboard"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj2.command.Commands",
+          "specifiers": [
+            "Commands"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj2.command.button.CommandGenericHID",
+          "specifiers": [
+            "CommandGenericHID"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj2.command.button.CommandXboxController",
+          "specifiers": [
+            "CommandXboxController"
+          ]
+        },
+        {
+          "source": "frc.robot.subsystems.CommandSwerveDrivetrain",
+          "specifiers": [
+            "CommandSwerveDrivetrain"
+          ]
+        },
+        {
+          "source": "frc.robot.subsystems.superstructure.Superstructure",
+          "specifiers": [
+            "Superstructure"
+          ]
+        },
+        {
+          "source": "frc.robot.subsystems.vision.Vision",
+          "specifiers": [
+            "Vision"
+          ]
+        }
+      ],
+      "exports": [
+        "configureBindings",
+        "periodic",
+        "OperatorControls"
+      ],
+      "totalLines": 99,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/java/frc/robot/POI.java": {
+      "filePath": "src/main/java/frc/robot/POI.java",
+      "contentHash": "c0236cff96d8199351cf1a2fca4ce71f2f62ec06c9026db93e195b21a9a81567",
+      "functions": [
+        {
+          "name": "POI",
+          "params": [
+            "bluePose",
+            "redPose",
+            "blueRot",
+            "redRot"
+          ],
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "get",
+          "params": [],
+          "returnType": "Translation2d",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "getTargetRotation",
+          "params": [],
+          "returnType": "Rotation2d",
+          "exported": true,
+          "lineCount": 7
+        }
+      ],
+      "classes": [
+        {
+          "name": "POI",
+          "methods": [
+            "POI",
+            "get",
+            "getTargetRotation"
+          ],
+          "properties": [
+            "bluePose",
+            "redPose",
+            "blueRot",
+            "redRot"
+          ],
+          "exported": true,
+          "lineCount": 59
+        }
+      ],
+      "imports": [
+        {
+          "source": "edu.wpi.first.units.Units.Meters",
+          "specifiers": [
+            "Meters"
+          ]
+        },
+        {
+          "source": "java.util.Optional",
+          "specifiers": [
+            "Optional"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.geometry.Rotation2d",
+          "specifiers": [
+            "Rotation2d"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.geometry.Translation2d",
+          "specifiers": [
+            "Translation2d"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.DriverStation",
+          "specifiers": [
+            "DriverStation"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.DriverStation.Alliance",
+          "specifiers": [
+            "Alliance"
+          ]
+        }
+      ],
+      "exports": [
+        "get",
+        "getTargetRotation",
+        "POI"
+      ],
+      "totalLines": 68,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/java/frc/robot/Robot.java": {
+      "filePath": "src/main/java/frc/robot/Robot.java",
+      "contentHash": "c6d20f75e2339e2429e79dbcc12b532a0453e2320ba448333b995c75c20c363e",
+      "functions": [
+        {
+          "name": "Robot",
+          "params": [],
+          "exported": true,
+          "lineCount": 46
+        },
+        {
+          "name": "robotPeriodic",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "disabledInit",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "disabledPeriodic",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "robotInit",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "autonomousInit",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 14
+        },
+        {
+          "name": "autonomousPeriodic",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "teleopInit",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 13
+        },
+        {
+          "name": "teleopPeriodic",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "testInit",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "testPeriodic",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "simulationInit",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "simulationPeriodic",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 2
+        }
+      ],
+      "classes": [
+        {
+          "name": "Robot",
+          "methods": [
+            "Robot",
+            "robotPeriodic",
+            "disabledInit",
+            "disabledPeriodic",
+            "robotInit",
+            "autonomousInit",
+            "autonomousPeriodic",
+            "teleopInit",
+            "teleopPeriodic",
+            "testInit",
+            "testPeriodic",
+            "simulationInit",
+            "simulationPeriodic"
+          ],
+          "properties": [
+            "m_autonomousCommand",
+            "m_robotContainer",
+            "m_hubInstance",
+            "m_vision"
+          ],
+          "exported": true,
+          "lineCount": 154
+        }
+      ],
+      "imports": [
+        {
+          "source": "edu.wpi.first.wpilibj.DriverStation",
+          "specifiers": [
+            "DriverStation"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.smartdashboard.SmartDashboard",
+          "specifiers": [
+            "SmartDashboard"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj2.command.Command",
+          "specifiers": [
+            "Command"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj2.command.CommandScheduler",
+          "specifiers": [
+            "CommandScheduler"
+          ]
+        },
+        {
+          "source": "frc.robot.subsystems.vision.Vision",
+          "specifiers": [
+            "Vision"
+          ]
+        },
+        {
+          "source": "frc.robot.utility.HubActiveState",
+          "specifiers": [
+            "HubActiveState"
+          ]
+        },
+        {
+          "source": "org.littletonrobotics.junction.Logger",
+          "specifiers": [
+            "Logger"
+          ]
+        },
+        {
+          "source": "org.littletonrobotics.junction.networktables.NT4Publisher",
+          "specifiers": [
+            "NT4Publisher"
+          ]
+        },
+        {
+          "source": "org.littletonrobotics.junction.wpilog.WPILOGReader",
+          "specifiers": [
+            "WPILOGReader"
+          ]
+        },
+        {
+          "source": "org.littletonrobotics.junction.wpilog.WPILOGWriter",
+          "specifiers": [
+            "WPILOGWriter"
+          ]
+        },
+        {
+          "source": "org.littletonrobotics.junction.LogFileUtil",
+          "specifiers": [
+            "LogFileUtil"
+          ]
+        },
+        {
+          "source": "org.littletonrobotics.junction.LoggedRobot",
+          "specifiers": [
+            "LoggedRobot"
+          ]
+        }
+      ],
+      "exports": [
+        "Robot",
+        "robotPeriodic",
+        "disabledInit",
+        "disabledPeriodic",
+        "robotInit",
+        "autonomousInit",
+        "autonomousPeriodic",
+        "teleopInit",
+        "teleopPeriodic",
+        "testInit",
+        "testPeriodic",
+        "simulationInit",
+        "simulationPeriodic",
+        "Robot"
+      ],
+      "totalLines": 179,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/java/frc/robot/RobotContainer.java": {
+      "filePath": "src/main/java/frc/robot/RobotContainer.java",
+      "contentHash": "8ec5551a48c742cbc9eb0a0d8c068c25cef7a7ae03c1deffdfc40b31c969100b",
+      "functions": [
+        {
+          "name": "RobotContainer",
+          "params": [],
+          "exported": true,
+          "lineCount": 24
+        },
+        {
+          "name": "dashboard",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 12
+        },
+        {
+          "name": "periodic",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "configureBindings",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 33
+        },
+        {
+          "name": "getAutonomousCommand",
+          "params": [],
+          "returnType": "Command",
+          "exported": true,
+          "lineCount": 3
+        }
+      ],
+      "classes": [
+        {
+          "name": "RobotContainer",
+          "methods": [
+            "RobotContainer",
+            "dashboard",
+            "periodic",
+            "configureBindings",
+            "getAutonomousCommand"
+          ],
+          "properties": [
+            "MaxSpeed",
+            "MaxAngularRate",
+            "drive",
+            "logger",
+            "hubPID",
+            "sysid",
+            "operatorControls",
+            "drivetrain",
+            "intake",
+            "shooter",
+            "vision",
+            "superstructure",
+            "autoChooser"
+          ],
+          "exported": true,
+          "lineCount": 109
+        }
+      ],
+      "imports": [
+        {
+          "source": "edu.wpi.first.wpilibj2.command.CommandScheduler",
+          "specifiers": [
+            "CommandScheduler"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.Units.MetersPerSecond",
+          "specifiers": [
+            "MetersPerSecond"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.Units.RPM",
+          "specifiers": [
+            "RPM"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.Units.RadiansPerSecond",
+          "specifiers": [
+            "RadiansPerSecond"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.Units.RotationsPerSecond",
+          "specifiers": [
+            "RotationsPerSecond"
+          ]
+        },
+        {
+          "source": "java.util.jar.Attributes.Name",
+          "specifiers": [
+            "Name"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType",
+          "specifiers": [
+            "DriveRequestType"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.SignalLogger",
+          "specifiers": [
+            "SignalLogger"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.swerve.SwerveRequest",
+          "specifiers": [
+            "SwerveRequest"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.controller.ProfiledPIDController",
+          "specifiers": [
+            "ProfiledPIDController"
+          ]
+        },
+        {
+          "source": "com.pathplanner.lib.auto.AutoBuilder",
+          "specifiers": [
+            "AutoBuilder"
+          ]
+        },
+        {
+          "source": "com.pathplanner.lib.auto.NamedCommands",
+          "specifiers": [
+            "NamedCommands"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.geometry.Rotation2d",
+          "specifiers": [
+            "Rotation2d"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.trajectory.TrapezoidProfile",
+          "specifiers": [
+            "TrapezoidProfile"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.smartdashboard.SendableChooser",
+          "specifiers": [
+            "SendableChooser"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.smartdashboard.SmartDashboard",
+          "specifiers": [
+            "SmartDashboard"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj2.command.Command",
+          "specifiers": [
+            "Command"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj2.command.Commands",
+          "specifiers": [
+            "Commands"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj2.command.WaitCommand",
+          "specifiers": [
+            "WaitCommand"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj2.command.button.CommandXboxController",
+          "specifiers": [
+            "CommandXboxController"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj2.command.button.RobotModeTriggers",
+          "specifiers": [
+            "RobotModeTriggers"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine",
+          "specifiers": [
+            "SysIdRoutine"
+          ]
+        },
+        {
+          "source": "frc.robot.generated.TunerConstants",
+          "specifiers": [
+            "TunerConstants"
+          ]
+        },
+        {
+          "source": "frc.robot.subsystems.CommandSwerveDrivetrain",
+          "specifiers": [
+            "CommandSwerveDrivetrain"
+          ]
+        },
+        {
+          "source": "frc.robot.subsystems.intake.Intake",
+          "specifiers": [
+            "Intake"
+          ]
+        },
+        {
+          "source": "frc.robot.subsystems.shooter.Shooter",
+          "specifiers": [
+            "Shooter"
+          ]
+        },
+        {
+          "source": "frc.robot.subsystems.superstructure.Superstructure",
+          "specifiers": [
+            "Superstructure"
+          ]
+        },
+        {
+          "source": "frc.robot.subsystems.vision.Vision",
+          "specifiers": [
+            "Vision"
+          ]
+        }
+      ],
+      "exports": [
+        "drivetrain",
+        "intake",
+        "shooter",
+        "RobotContainer",
+        "periodic",
+        "getAutonomousCommand",
+        "RobotContainer"
+      ],
+      "totalLines": 149,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/java/frc/robot/subsystems/CommandSwerveDrivetrain.java": {
+      "filePath": "src/main/java/frc/robot/subsystems/CommandSwerveDrivetrain.java",
+      "contentHash": "2ea69419d57402fe7a6fe4d8534c6659e0c897bf8c446a76b8cb4cb809ccfd25",
+      "functions": [
+        {
+          "name": "setSysIdRoutine",
+          "params": [
+            "routine"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "useTranslationSysId",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "useSteerSysId",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "useRotationSysId",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "CommandSwerveDrivetrain",
+          "params": [
+            "drivetrainConstants"
+          ],
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "CommandSwerveDrivetrain",
+          "params": [
+            "drivetrainConstants",
+            "odometryUpdateFrequency"
+          ],
+          "exported": true,
+          "lineCount": 13
+        },
+        {
+          "name": "CommandSwerveDrivetrain",
+          "params": [
+            "drivetrainConstants",
+            "odometryUpdateFrequency",
+            "odometryStandardDeviation",
+            "visionStandardDeviation"
+          ],
+          "exported": true,
+          "lineCount": 15
+        },
+        {
+          "name": "logCancoderBootReadings",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 31
+        },
+        {
+          "name": "configureAutoBuilder",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 40
+        },
+        {
+          "name": "applyRequest",
+          "params": [
+            "request"
+          ],
+          "returnType": "Command",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "sysIdQuasistatic",
+          "params": [
+            "direction"
+          ],
+          "returnType": "Command",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "sysIdDynamic",
+          "params": [
+            "direction"
+          ],
+          "returnType": "Command",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "driveToPOI",
+          "params": [
+            "targetPOI"
+          ],
+          "returnType": "Command",
+          "exported": true,
+          "lineCount": 49
+        },
+        {
+          "name": "trackHub",
+          "params": [
+            "vision",
+            "maxSpeed",
+            "xSupplier",
+            "ySupplier",
+            "finishOnAlign"
+          ],
+          "returnType": "Command",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "trackPassTarget",
+          "params": [
+            "vision",
+            "maxSpeed",
+            "xSupplier",
+            "ySupplier",
+            "finishOnAlign"
+          ],
+          "returnType": "Command",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "trackTarget",
+          "params": [
+            "targetSupplier",
+            "maxSpeed",
+            "xSupplier",
+            "ySupplier",
+            "finishOnAlign"
+          ],
+          "returnType": "Command",
+          "exported": false,
+          "lineCount": 50
+        },
+        {
+          "name": "trackingAngle",
+          "params": [
+            "targetPos",
+            "robotPose"
+          ],
+          "returnType": "double",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "periodic",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 52
+        },
+        {
+          "name": "startSimThread",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 19
+        },
+        {
+          "name": "resetPose",
+          "params": [
+            "pose"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "getMapleSimDrive",
+          "params": [],
+          "returnType": "AbstractDriveTrainSimulation",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getSimulatedGroundTruthPose",
+          "params": [],
+          "returnType": "Pose2d",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getRawGyroYawDegrees",
+          "params": [],
+          "returnType": "double",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "addVisionMeasurement",
+          "params": [
+            "visionRobotPoseMeters",
+            "timestampSeconds"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "addVisionMeasurement",
+          "params": [
+            "visionRobotPoseMeters",
+            "timestampSeconds",
+            "visionMeasurementStdDevs"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "samplePoseAt",
+          "params": [
+            "timestampSeconds"
+          ],
+          "returnType": "Optional<Pose2d>",
+          "exported": true,
+          "lineCount": 4
+        }
+      ],
+      "classes": [
+        {
+          "name": "CommandSwerveDrivetrain",
+          "methods": [
+            "setSysIdRoutine",
+            "useTranslationSysId",
+            "useSteerSysId",
+            "useRotationSysId",
+            "CommandSwerveDrivetrain",
+            "CommandSwerveDrivetrain",
+            "CommandSwerveDrivetrain",
+            "logCancoderBootReadings",
+            "configureAutoBuilder",
+            "applyRequest",
+            "sysIdQuasistatic",
+            "sysIdDynamic",
+            "driveToPOI",
+            "trackHub",
+            "trackPassTarget",
+            "trackTarget",
+            "trackingAngle",
+            "periodic",
+            "startSimThread",
+            "resetPose",
+            "getMapleSimDrive",
+            "getSimulatedGroundTruthPose",
+            "getRawGyroYawDegrees",
+            "addVisionMeasurement",
+            "addVisionMeasurement",
+            "samplePoseAt"
+          ],
+          "properties": [
+            "kSimLoopPeriod",
+            "m_simNotifier",
+            "moduleConstantsForSim",
+            "mapleSim",
+            "m_lastAppliedAlliance",
+            "kBlueAlliancePerspectiveRotation",
+            "kRedAlliancePerspectiveRotation",
+            "m_hasAppliedOperatorPerspective",
+            "m_pathApplyRobotSpeeds",
+            "m_translationCharacterization",
+            "m_steerCharacterization",
+            "m_rotationCharacterization",
+            "m_sysIdRoutineTranslation",
+            "m_sysIdRoutineSteer",
+            "m_sysIdRoutineRotation",
+            "m_sysIdRoutineToApply",
+            "kAlignTolerance",
+            "kAlignRotationTolerance",
+            "kAlignMaxSpeed",
+            "kAlignMaxRotationalSpeed",
+            "kTrackHeadingToleranceRad"
+          ],
+          "exported": true,
+          "lineCount": 606
+        }
+      ],
+      "imports": [
+        {
+          "source": "edu.wpi.first.units.Units",
+          "specifiers": [
+            "*"
+          ]
+        },
+        {
+          "source": "frc.robot.RobotContainer",
+          "specifiers": [
+            "RobotContainer"
+          ]
+        },
+        {
+          "source": "java.util.Optional",
+          "specifiers": [
+            "Optional"
+          ]
+        },
+        {
+          "source": "java.util.function.DoubleSupplier",
+          "specifiers": [
+            "DoubleSupplier"
+          ]
+        },
+        {
+          "source": "java.util.function.Supplier",
+          "specifiers": [
+            "Supplier"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.BaseStatusSignal",
+          "specifiers": [
+            "BaseStatusSignal"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.SignalLogger",
+          "specifiers": [
+            "SignalLogger"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.Utils",
+          "specifiers": [
+            "Utils"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.swerve.SwerveDrivetrainConstants",
+          "specifiers": [
+            "SwerveDrivetrainConstants"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.swerve.SwerveModuleConstants",
+          "specifiers": [
+            "SwerveModuleConstants"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType",
+          "specifiers": [
+            "DriveRequestType"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.swerve.SwerveRequest",
+          "specifiers": [
+            "SwerveRequest"
+          ]
+        },
+        {
+          "source": "com.pathplanner.lib.auto.AutoBuilder",
+          "specifiers": [
+            "AutoBuilder"
+          ]
+        },
+        {
+          "source": "com.pathplanner.lib.config.PIDConstants",
+          "specifiers": [
+            "PIDConstants"
+          ]
+        },
+        {
+          "source": "com.pathplanner.lib.config.RobotConfig",
+          "specifiers": [
+            "RobotConfig"
+          ]
+        },
+        {
+          "source": "com.pathplanner.lib.controllers.PPHolonomicDriveController",
+          "specifiers": [
+            "PPHolonomicDriveController"
+          ]
+        },
+        {
+          "source": "com.pathplanner.lib.util.PathPlannerLogging",
+          "specifiers": [
+            "PathPlannerLogging"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.smartdashboard.SmartDashboard",
+          "specifiers": [
+            "SmartDashboard"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.MathUtil",
+          "specifiers": [
+            "MathUtil"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.Matrix",
+          "specifiers": [
+            "Matrix"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.controller.PIDController",
+          "specifiers": [
+            "PIDController"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.geometry.Pose2d",
+          "specifiers": [
+            "Pose2d"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.geometry.Rotation2d",
+          "specifiers": [
+            "Rotation2d"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.geometry.Translation2d",
+          "specifiers": [
+            "Translation2d"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.kinematics.SwerveModuleState",
+          "specifiers": [
+            "SwerveModuleState"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.numbers.N1",
+          "specifiers": [
+            "N1"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.numbers.N3",
+          "specifiers": [
+            "N3"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.DriverStation",
+          "specifiers": [
+            "DriverStation"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.DriverStation.Alliance",
+          "specifiers": [
+            "Alliance"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.Notifier",
+          "specifiers": [
+            "Notifier"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj2.command.Command",
+          "specifiers": [
+            "Command"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj2.command.FunctionalCommand",
+          "specifiers": [
+            "FunctionalCommand"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj2.command.Subsystem",
+          "specifiers": [
+            "Subsystem"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine",
+          "specifiers": [
+            "SysIdRoutine"
+          ]
+        },
+        {
+          "source": "org.littletonrobotics.junction.Logger",
+          "specifiers": [
+            "Logger"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.system.plant.DCMotor",
+          "specifiers": [
+            "DCMotor"
+          ]
+        },
+        {
+          "source": "org.ironmaple.simulation.drivesims.AbstractDriveTrainSimulation",
+          "specifiers": [
+            "AbstractDriveTrainSimulation"
+          ]
+        },
+        {
+          "source": "frc.robot.Constants",
+          "specifiers": [
+            "Constants"
+          ]
+        },
+        {
+          "source": "frc.robot.FieldConstants",
+          "specifiers": [
+            "FieldConstants"
+          ]
+        },
+        {
+          "source": "frc.robot.POI",
+          "specifiers": [
+            "POI"
+          ]
+        },
+        {
+          "source": "frc.robot.generated.TunerConstants",
+          "specifiers": [
+            "TunerConstants"
+          ]
+        },
+        {
+          "source": "frc.robot.generated.TunerConstants.TunerSwerveDrivetrain",
+          "specifiers": [
+            "TunerSwerveDrivetrain"
+          ]
+        },
+        {
+          "source": "frc.robot.subsystems.vision.Vision",
+          "specifiers": [
+            "Vision"
+          ]
+        },
+        {
+          "source": "frc.robot.utility.simulation.MapleSimSwerveDrivetrain",
+          "specifiers": [
+            "MapleSimSwerveDrivetrain"
+          ]
+        }
+      ],
+      "exports": [
+        "setSysIdRoutine",
+        "useTranslationSysId",
+        "useSteerSysId",
+        "useRotationSysId",
+        "CommandSwerveDrivetrain",
+        "CommandSwerveDrivetrain",
+        "CommandSwerveDrivetrain",
+        "applyRequest",
+        "sysIdQuasistatic",
+        "sysIdDynamic",
+        "driveToPOI",
+        "trackHub",
+        "trackPassTarget",
+        "periodic",
+        "resetPose",
+        "getMapleSimDrive",
+        "getSimulatedGroundTruthPose",
+        "getRawGyroYawDegrees",
+        "addVisionMeasurement",
+        "addVisionMeasurement",
+        "samplePoseAt",
+        "CommandSwerveDrivetrain"
+      ],
+      "totalLines": 658,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/java/frc/robot/subsystems/intake/Intake.java": {
+      "filePath": "src/main/java/frc/robot/subsystems/intake/Intake.java",
+      "contentHash": "5cceb61238eaa1e99c2b070d44c9a8607acab3b1b9cd579f211f95d56d9ba947",
+      "functions": [
+        {
+          "name": "getInstance",
+          "params": [],
+          "returnType": "Intake",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "Intake",
+          "params": [
+            "io"
+          ],
+          "exported": true,
+          "lineCount": 19
+        },
+        {
+          "name": "setRoller",
+          "params": [
+            "state"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 31
+        },
+        {
+          "name": "applyRoller",
+          "params": [
+            "state"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "getRollerState",
+          "params": [],
+          "returnType": "Roller",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "isJammed",
+          "params": [],
+          "returnType": "boolean",
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "forceJamConditionForTest",
+          "params": [
+            "statorCurrentAmps",
+            "velocityRadsPerSec"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "clearJamOverrideForTest",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "rollerSysIdQuasistatic",
+          "params": [
+            "direction"
+          ],
+          "returnType": "Command",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "rollerSysIdDynamic",
+          "params": [
+            "direction"
+          ],
+          "returnType": "Command",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "goTo",
+          "params": [
+            "pos"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "goToDegrees",
+          "params": [
+            "deg"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "agitatePivot",
+          "params": [],
+          "returnType": "Command",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "eject",
+          "params": [],
+          "returnType": "Command",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "startRoller",
+          "params": [],
+          "returnType": "Command",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "hardstop",
+          "params": [],
+          "returnType": "boolean",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "homing",
+          "params": [],
+          "returnType": "Command",
+          "exported": true,
+          "lineCount": 14
+        },
+        {
+          "name": "stopRoller",
+          "params": [],
+          "returnType": "Command",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "periodic",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 12
+        }
+      ],
+      "classes": [
+        {
+          "name": "Intake",
+          "methods": [
+            "getInstance",
+            "Intake",
+            "setRoller",
+            "applyRoller",
+            "getRollerState",
+            "isJammed",
+            "forceJamConditionForTest",
+            "clearJamOverrideForTest",
+            "rollerSysIdQuasistatic",
+            "rollerSysIdDynamic",
+            "goTo",
+            "goToDegrees",
+            "agitatePivot",
+            "eject",
+            "startRoller",
+            "hardstop",
+            "homing",
+            "stopRoller",
+            "periodic"
+          ],
+          "properties": [
+            "kJamStatorCurrentAmps",
+            "kJamVelocityThresholdRadPerSec",
+            "kJamRecoveryPulseSeconds",
+            "kJamRecoveryCooldownSeconds",
+            "kHardstopStatorCurrentAmps",
+            "kHomingVoltage",
+            "instance",
+            "io",
+            "inputs",
+            "homed",
+            "deploy",
+            "sysIdActive",
+            "currentRoller",
+            "jamRecoveryActive",
+            "jamRecoveryStartTimestamp",
+            "jamRecoveryCooldownUntilTimestamp",
+            "testJamOverrideActive",
+            "testJamStatorCurrentAmps",
+            "testJamVelocityRadsPerSec",
+            "m_rollerSysId"
+          ],
+          "exported": true,
+          "lineCount": 243
+        }
+      ],
+      "imports": [
+        {
+          "source": "edu.wpi.first.units.Units.Degrees",
+          "specifiers": [
+            "Degrees"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.Units.Radians",
+          "specifiers": [
+            "Radians"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.Units.RadiansPerSecond",
+          "specifiers": [
+            "RadiansPerSecond"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.Units.RotationsPerSecond",
+          "specifiers": [
+            "RotationsPerSecond"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.Units.Volts",
+          "specifiers": [
+            "Volts"
+          ]
+        },
+        {
+          "source": "org.littletonrobotics.junction.Logger",
+          "specifiers": [
+            "Logger"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.measure.Angle",
+          "specifiers": [
+            "Angle"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.Timer",
+          "specifiers": [
+            "Timer"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.smartdashboard.SmartDashboard",
+          "specifiers": [
+            "SmartDashboard"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj2.command.Command",
+          "specifiers": [
+            "Command"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj2.command.Commands",
+          "specifiers": [
+            "Commands"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj2.command.SubsystemBase",
+          "specifiers": [
+            "SubsystemBase"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine",
+          "specifiers": [
+            "SysIdRoutine"
+          ]
+        },
+        {
+          "source": "frc.robot.Constants",
+          "specifiers": [
+            "Constants"
+          ]
+        }
+      ],
+      "exports": [
+        "getInstance",
+        "setRoller",
+        "getRollerState",
+        "rollerSysIdQuasistatic",
+        "rollerSysIdDynamic",
+        "goTo",
+        "goToDegrees",
+        "agitatePivot",
+        "eject",
+        "startRoller",
+        "hardstop",
+        "homing",
+        "stopRoller",
+        "periodic",
+        "Intake"
+      ],
+      "totalLines": 267,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/java/frc/robot/subsystems/intake/IntakeIO.java": {
+      "filePath": "src/main/java/frc/robot/subsystems/intake/IntakeIO.java",
+      "contentHash": "6eee818a9037f04b0ef6beb76332b995578ae0db755a7ceff1d69baa21c3a3ae",
+      "functions": [],
+      "classes": [
+        {
+          "name": "IntakeIO",
+          "methods": [
+            "updateInputs",
+            "setPivotVoltage",
+            "setPivotPosition",
+            "setPivotEncoderPosition",
+            "setRollerVoltage",
+            "setRollerVelocity"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 40
+        }
+      ],
+      "imports": [
+        {
+          "source": "org.littletonrobotics.junction.AutoLog",
+          "specifiers": [
+            "AutoLog"
+          ]
+        }
+      ],
+      "exports": [
+        "IntakeIO"
+      ],
+      "totalLines": 49,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/java/frc/robot/subsystems/intake/IntakeIOReal.java": {
+      "filePath": "src/main/java/frc/robot/subsystems/intake/IntakeIOReal.java",
+      "contentHash": "26f0077b5e119d328e2cf27b7190d99cf55a645829e78842cfa8da3264a4dae4",
+      "functions": [
+        {
+          "name": "IntakeIOReal",
+          "params": [],
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "configurePivot",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 29
+        },
+        {
+          "name": "configureRoller",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 19
+        },
+        {
+          "name": "updateInputs",
+          "params": [
+            "inputs"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 18
+        },
+        {
+          "name": "setPivotVoltage",
+          "params": [
+            "volts"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "setPivotPosition",
+          "params": [
+            "positionRads"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "setPivotEncoderPosition",
+          "params": [
+            "positionRads"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "setRollerVoltage",
+          "params": [
+            "volts"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "setRollerVelocity",
+          "params": [
+            "velocityRadPerSec"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 4
+        }
+      ],
+      "classes": [
+        {
+          "name": "IntakeIOReal",
+          "methods": [
+            "IntakeIOReal",
+            "configurePivot",
+            "configureRoller",
+            "updateInputs",
+            "setPivotVoltage",
+            "setPivotPosition",
+            "setPivotEncoderPosition",
+            "setRollerVoltage",
+            "setRollerVelocity"
+          ],
+          "properties": [
+            "intakePivot",
+            "roller",
+            "pivotVoltageOut",
+            "pivotPositionOut",
+            "rollerVoltageOut",
+            "rollerVelocityOut"
+          ],
+          "exported": true,
+          "lineCount": 108
+        }
+      ],
+      "imports": [
+        {
+          "source": "edu.wpi.first.units.Units.Amps",
+          "specifiers": [
+            "Amps"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.Units.RPM",
+          "specifiers": [
+            "RPM"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.Units.Radians",
+          "specifiers": [
+            "Radians"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.Units.RadiansPerSecond",
+          "specifiers": [
+            "RadiansPerSecond"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.Units.RotationsPerSecond",
+          "specifiers": [
+            "RotationsPerSecond"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.Units.Second",
+          "specifiers": [
+            "Second"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.Units.Volts",
+          "specifiers": [
+            "Volts"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.configs.CurrentLimitsConfigs",
+          "specifiers": [
+            "CurrentLimitsConfigs"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.configs.FeedbackConfigs",
+          "specifiers": [
+            "FeedbackConfigs"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.configs.MotionMagicConfigs",
+          "specifiers": [
+            "MotionMagicConfigs"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.configs.MotorOutputConfigs",
+          "specifiers": [
+            "MotorOutputConfigs"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.configs.Slot0Configs",
+          "specifiers": [
+            "Slot0Configs"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.configs.TalonFXConfiguration",
+          "specifiers": [
+            "TalonFXConfiguration"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.controls.MotionMagicVoltage",
+          "specifiers": [
+            "MotionMagicVoltage"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.controls.VelocityVoltage",
+          "specifiers": [
+            "VelocityVoltage"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.controls.VoltageOut",
+          "specifiers": [
+            "VoltageOut"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.hardware.TalonFX",
+          "specifiers": [
+            "TalonFX"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.signals.FeedbackSensorSourceValue",
+          "specifiers": [
+            "FeedbackSensorSourceValue"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.signals.InvertedValue",
+          "specifiers": [
+            "InvertedValue"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.signals.NeutralModeValue",
+          "specifiers": [
+            "NeutralModeValue"
+          ]
+        },
+        {
+          "source": "frc.robot.Constants",
+          "specifiers": [
+            "Constants"
+          ]
+        }
+      ],
+      "exports": [
+        "IntakeIOReal",
+        "updateInputs",
+        "setPivotVoltage",
+        "setPivotPosition",
+        "setPivotEncoderPosition",
+        "setRollerVoltage",
+        "setRollerVelocity",
+        "IntakeIOReal"
+      ],
+      "totalLines": 140,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/java/frc/robot/subsystems/intake/IntakeIOSim.java": {
+      "filePath": "src/main/java/frc/robot/subsystems/intake/IntakeIOSim.java",
+      "contentHash": "545215eb63a119cc3ba659ac18e61f8cb643a3fe962e30d5fe3ca206a2628f01",
+      "functions": [
+        {
+          "name": "updateInputs",
+          "params": [
+            "inputs"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 60
+        },
+        {
+          "name": "setPivotVoltage",
+          "params": [
+            "volts"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "setPivotPosition",
+          "params": [
+            "positionRads"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "setPivotEncoderPosition",
+          "params": [
+            "positionRads"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "setRollerVoltage",
+          "params": [
+            "volts"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "setRollerVelocity",
+          "params": [
+            "velocityRadPerSec"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 6
+        }
+      ],
+      "classes": [
+        {
+          "name": "IntakeIOSim",
+          "methods": [
+            "updateInputs",
+            "setPivotVoltage",
+            "setPivotPosition",
+            "setPivotEncoderPosition",
+            "setRollerVoltage",
+            "setRollerVelocity"
+          ],
+          "properties": [
+            "pivotGearbox",
+            "rollerGearbox",
+            "kSimLoopPeriodSecs",
+            "kStartingAngleDeg",
+            "kPivotKP",
+            "kPivotKD",
+            "kRollerKP",
+            "pivotSim",
+            "rollerSim",
+            "pivotAppliedVolts",
+            "pivotClosedLoop",
+            "pivotPositionSetpointRads",
+            "rollerAppliedVolts",
+            "rollerClosedLoop",
+            "rollerVelocitySetpointRadPerSec",
+            "intakeSimulation",
+            "intakeRunning"
+          ],
+          "exported": true,
+          "lineCount": 134
+        }
+      ],
+      "imports": [
+        {
+          "source": "edu.wpi.first.units.Units.Degrees",
+          "specifiers": [
+            "Degrees"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.Units.Meters",
+          "specifiers": [
+            "Meters"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.Units.Radians",
+          "specifiers": [
+            "Radians"
+          ]
+        },
+        {
+          "source": "org.ironmaple.simulation.IntakeSimulation",
+          "specifiers": [
+            "IntakeSimulation"
+          ]
+        },
+        {
+          "source": "org.ironmaple.simulation.drivesims.AbstractDriveTrainSimulation",
+          "specifiers": [
+            "AbstractDriveTrainSimulation"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.MathUtil",
+          "specifiers": [
+            "MathUtil"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.system.plant.DCMotor",
+          "specifiers": [
+            "DCMotor"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.system.plant.LinearSystemId",
+          "specifiers": [
+            "LinearSystemId"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.measure.Distance",
+          "specifiers": [
+            "Distance"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.DriverStation",
+          "specifiers": [
+            "DriverStation"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.simulation.DCMotorSim",
+          "specifiers": [
+            "DCMotorSim"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.simulation.SingleJointedArmSim",
+          "specifiers": [
+            "SingleJointedArmSim"
+          ]
+        },
+        {
+          "source": "frc.robot.Constants",
+          "specifiers": [
+            "Constants"
+          ]
+        },
+        {
+          "source": "frc.robot.RobotContainer",
+          "specifiers": [
+            "RobotContainer"
+          ]
+        }
+      ],
+      "exports": [
+        "updateInputs",
+        "setPivotVoltage",
+        "setPivotPosition",
+        "setPivotEncoderPosition",
+        "setRollerVoltage",
+        "setRollerVelocity",
+        "IntakeIOSim"
+      ],
+      "totalLines": 162,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/java/frc/robot/subsystems/shooter/Shooter.java": {
+      "filePath": "src/main/java/frc/robot/subsystems/shooter/Shooter.java",
+      "contentHash": "2c0db957368c8ce518bc3f571d4ef6eafea9ca63c34457c32ac258d7a718a3c0",
+      "functions": [
+        {
+          "name": "getInstance",
+          "params": [],
+          "returnType": "Shooter",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "Shooter",
+          "params": [
+            "io"
+          ],
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "setAgitator",
+          "params": [
+            "state"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "getAgitateState",
+          "params": [],
+          "returnType": "Agitate",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "agitate",
+          "params": [],
+          "returnType": "Command",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "agitateReverse",
+          "params": [],
+          "returnType": "Command",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "agitateStop",
+          "params": [],
+          "returnType": "Command",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "isJammed",
+          "params": [],
+          "returnType": "boolean",
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "indexJam",
+          "params": [],
+          "returnType": "Command",
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "setRPMShooter",
+          "params": [
+            "rpm"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "targetRPMShooter",
+          "params": [
+            "rpm"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getTargetRPM",
+          "params": [],
+          "returnType": "double",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "setOutputShooter",
+          "params": [
+            "percent"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "stopShooter",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "spin",
+          "params": [
+            "rpm"
+          ],
+          "returnType": "Command",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "dashSpin",
+          "params": [],
+          "returnType": "Command",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "shooterAtSpeed",
+          "params": [
+            "targetRPM"
+          ],
+          "returnType": "boolean",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "indexControl",
+          "params": [
+            "state"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "getIndexerState",
+          "params": [],
+          "returnType": "indexing",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "index",
+          "params": [],
+          "returnType": "Command",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "indexEject",
+          "params": [],
+          "returnType": "Command",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "initSendable",
+          "params": [
+            "builder"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 30
+        },
+        {
+          "name": "periodic",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 16
+        }
+      ],
+      "classes": [
+        {
+          "name": "Shooter",
+          "methods": [
+            "getInstance",
+            "Shooter",
+            "setAgitator",
+            "getAgitateState",
+            "agitate",
+            "agitateReverse",
+            "agitateStop",
+            "isJammed",
+            "indexJam",
+            "setRPMShooter",
+            "targetRPMShooter",
+            "getTargetRPM",
+            "setOutputShooter",
+            "stopShooter",
+            "spin",
+            "dashSpin",
+            "shooterAtSpeed",
+            "indexControl",
+            "getIndexerState",
+            "index",
+            "indexEject",
+            "initSendable",
+            "periodic"
+          ],
+          "properties": [
+            "kFreeSpeed",
+            "tolerance",
+            "kJamStatorCurrentAmps",
+            "kJamVelocityThresholdRadPerSec",
+            "instance",
+            "io",
+            "inputs",
+            "targetRPM",
+            "shooterTuningModeEnable",
+            "currentAgitate",
+            "currentIndexing"
+          ],
+          "exported": true,
+          "lineCount": 213
+        }
+      ],
+      "imports": [
+        {
+          "source": "edu.wpi.first.units.Units.Amps",
+          "specifiers": [
+            "Amps"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.Units.RPM",
+          "specifiers": [
+            "RPM"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.Units.RadiansPerSecond",
+          "specifiers": [
+            "RadiansPerSecond"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.Units.RotationsPerSecond",
+          "specifiers": [
+            "RotationsPerSecond"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.Units.Volts",
+          "specifiers": [
+            "Volts"
+          ]
+        },
+        {
+          "source": "org.littletonrobotics.junction.Logger",
+          "specifiers": [
+            "Logger"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.measure.AngularVelocity",
+          "specifiers": [
+            "AngularVelocity"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.measure.Voltage",
+          "specifiers": [
+            "Voltage"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.util.sendable.SendableBuilder",
+          "specifiers": [
+            "SendableBuilder"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.smartdashboard.SmartDashboard",
+          "specifiers": [
+            "SmartDashboard"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj2.command.Command",
+          "specifiers": [
+            "Command"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj2.command.Commands",
+          "specifiers": [
+            "Commands"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj2.command.SubsystemBase",
+          "specifiers": [
+            "SubsystemBase"
+          ]
+        },
+        {
+          "source": "frc.robot.Constants",
+          "specifiers": [
+            "Constants"
+          ]
+        }
+      ],
+      "exports": [
+        "kFreeSpeed",
+        "getInstance",
+        "targetRPM",
+        "shooterTuningModeEnable",
+        "setAgitator",
+        "getAgitateState",
+        "agitate",
+        "agitateReverse",
+        "agitateStop",
+        "indexJam",
+        "setRPMShooter",
+        "targetRPMShooter",
+        "getTargetRPM",
+        "setOutputShooter",
+        "stopShooter",
+        "spin",
+        "dashSpin",
+        "shooterAtSpeed",
+        "indexControl",
+        "getIndexerState",
+        "index",
+        "indexEject",
+        "initSendable",
+        "periodic",
+        "Shooter"
+      ],
+      "totalLines": 237,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/java/frc/robot/subsystems/shooter/ShooterIO.java": {
+      "filePath": "src/main/java/frc/robot/subsystems/shooter/ShooterIO.java",
+      "contentHash": "68e631ccd87de39959a0c2bbd3aded954e623f4c429013cd286f75ee70616b19",
+      "functions": [],
+      "classes": [
+        {
+          "name": "ShooterIO",
+          "methods": [
+            "updateInputs",
+            "setShootVelocity",
+            "setShootVoltage",
+            "setIndexVoltage",
+            "setAgitatorVoltage"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 43
+        }
+      ],
+      "imports": [
+        {
+          "source": "org.littletonrobotics.junction.AutoLog",
+          "specifiers": [
+            "AutoLog"
+          ]
+        }
+      ],
+      "exports": [
+        "ShooterIO"
+      ],
+      "totalLines": 52,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/java/frc/robot/subsystems/shooter/ShooterIOReal.java": {
+      "filePath": "src/main/java/frc/robot/subsystems/shooter/ShooterIOReal.java",
+      "contentHash": "29059d96243bb9c8c6a109c1b73b753c309f552f0f1d3f58b7c6750cf1effbf2",
+      "functions": [
+        {
+          "name": "ShooterIOReal",
+          "params": [],
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "configureShoot",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 21
+        },
+        {
+          "name": "configureIndex",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 14
+        },
+        {
+          "name": "configureAgitator",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 17
+        },
+        {
+          "name": "updateInputs",
+          "params": [
+            "inputs"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 26
+        },
+        {
+          "name": "setShootVelocity",
+          "params": [
+            "velocityRadPerSec"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "setShootVoltage",
+          "params": [
+            "volts"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "setIndexVoltage",
+          "params": [
+            "volts"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "setAgitatorVoltage",
+          "params": [
+            "volts"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 4
+        }
+      ],
+      "classes": [
+        {
+          "name": "ShooterIOReal",
+          "methods": [
+            "ShooterIOReal",
+            "configureShoot",
+            "configureIndex",
+            "configureAgitator",
+            "updateInputs",
+            "setShootVelocity",
+            "setShootVoltage",
+            "setIndexVoltage",
+            "setAgitatorVoltage"
+          ],
+          "properties": [
+            "shootMotor",
+            "indexMotor",
+            "agitator",
+            "shootVelocityOut",
+            "shootVoltageOut",
+            "indexVoltageOut",
+            "agitatorVoltageOut"
+          ],
+          "exported": true,
+          "lineCount": 118
+        }
+      ],
+      "imports": [
+        {
+          "source": "edu.wpi.first.units.Units.Amps",
+          "specifiers": [
+            "Amps"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.Units.Radians",
+          "specifiers": [
+            "Radians"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.Units.RadiansPerSecond",
+          "specifiers": [
+            "RadiansPerSecond"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.Units.Volts",
+          "specifiers": [
+            "Volts"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.configs.CommutationConfigs",
+          "specifiers": [
+            "CommutationConfigs"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.configs.CurrentLimitsConfigs",
+          "specifiers": [
+            "CurrentLimitsConfigs"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.configs.MotorOutputConfigs",
+          "specifiers": [
+            "MotorOutputConfigs"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.configs.Slot0Configs",
+          "specifiers": [
+            "Slot0Configs"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.configs.TalonFXConfiguration",
+          "specifiers": [
+            "TalonFXConfiguration"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.configs.TalonFXSConfiguration",
+          "specifiers": [
+            "TalonFXSConfiguration"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC",
+          "specifiers": [
+            "VelocityTorqueCurrentFOC"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.controls.VoltageOut",
+          "specifiers": [
+            "VoltageOut"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.hardware.TalonFX",
+          "specifiers": [
+            "TalonFX"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.hardware.TalonFXS",
+          "specifiers": [
+            "TalonFXS"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.signals.InvertedValue",
+          "specifiers": [
+            "InvertedValue"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.signals.MotorArrangementValue",
+          "specifiers": [
+            "MotorArrangementValue"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.signals.NeutralModeValue",
+          "specifiers": [
+            "NeutralModeValue"
+          ]
+        },
+        {
+          "source": "frc.robot.Constants",
+          "specifiers": [
+            "Constants"
+          ]
+        }
+      ],
+      "exports": [
+        "ShooterIOReal",
+        "updateInputs",
+        "setShootVelocity",
+        "setShootVoltage",
+        "setIndexVoltage",
+        "setAgitatorVoltage",
+        "ShooterIOReal"
+      ],
+      "totalLines": 147,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/java/frc/robot/subsystems/shooter/ShooterIOSim.java": {
+      "filePath": "src/main/java/frc/robot/subsystems/shooter/ShooterIOSim.java",
+      "contentHash": "074e7e70ddc635ee552ae686c6701b3b58e8bd411ea6681660d06f4dbc31996a",
+      "functions": [
+        {
+          "name": "updateInputs",
+          "params": [
+            "inputs"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 46
+        },
+        {
+          "name": "setShootVelocity",
+          "params": [
+            "velocityRadPerSec"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "setShootVoltage",
+          "params": [
+            "volts"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "setIndexVoltage",
+          "params": [
+            "volts"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "setAgitatorVoltage",
+          "params": [
+            "volts"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 4
+        }
+      ],
+      "classes": [
+        {
+          "name": "ShooterIOSim",
+          "methods": [
+            "updateInputs",
+            "setShootVelocity",
+            "setShootVoltage",
+            "setIndexVoltage",
+            "setAgitatorVoltage"
+          ],
+          "properties": [
+            "shootGearbox",
+            "indexGearbox",
+            "agitatorGearbox",
+            "kSimLoopPeriodSecs",
+            "kShootKP",
+            "shootSim",
+            "indexSim",
+            "agitatorSim",
+            "shootAppliedVolts",
+            "shootClosedLoop",
+            "shootVelocitySetpointRadPerSec",
+            "indexAppliedVolts",
+            "agitatorAppliedVolts"
+          ],
+          "exported": true,
+          "lineCount": 101
+        }
+      ],
+      "imports": [
+        {
+          "source": "edu.wpi.first.units.Units.RPM",
+          "specifiers": [
+            "RPM"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.Units.RadiansPerSecond",
+          "specifiers": [
+            "RadiansPerSecond"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.MathUtil",
+          "specifiers": [
+            "MathUtil"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.system.plant.DCMotor",
+          "specifiers": [
+            "DCMotor"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.system.plant.LinearSystemId",
+          "specifiers": [
+            "LinearSystemId"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.DriverStation",
+          "specifiers": [
+            "DriverStation"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.simulation.DCMotorSim",
+          "specifiers": [
+            "DCMotorSim"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.simulation.FlywheelSim",
+          "specifiers": [
+            "FlywheelSim"
+          ]
+        },
+        {
+          "source": "frc.robot.Constants",
+          "specifiers": [
+            "Constants"
+          ]
+        }
+      ],
+      "exports": [
+        "updateInputs",
+        "setShootVelocity",
+        "setShootVoltage",
+        "setIndexVoltage",
+        "setAgitatorVoltage",
+        "ShooterIOSim"
+      ],
+      "totalLines": 123,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/java/frc/robot/subsystems/superstructure/Superstructure.java": {
+      "filePath": "src/main/java/frc/robot/subsystems/superstructure/Superstructure.java",
+      "contentHash": "607307f846c31c1cb75c0ee1d15d05e06c8c3a048ebc57573d2c7eb55fb96b34",
+      "functions": [
+        {
+          "name": "getInstance",
+          "params": [
+            "drivetrain"
+          ],
+          "returnType": "Superstructure",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "Superstructure",
+          "params": [
+            "drivetrain"
+          ],
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "requestShoot",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "requestShoot",
+          "params": [
+            "timeoutSeconds"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "requestIntake",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "requestEject",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "requestStow",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "getSystemState",
+          "params": [],
+          "returnType": "SuperstructureState",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "setState",
+          "params": [
+            "state"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "ensureAgitating",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "updateShooterRPM",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "shootCmd",
+          "params": [],
+          "returnType": "Command",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "intakeCmd",
+          "params": [],
+          "returnType": "Command",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "ejectCmd",
+          "params": [],
+          "returnType": "Command",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "stowCmd",
+          "params": [],
+          "returnType": "Command",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "shootingSequence",
+          "params": [
+            "timeoutSeconds"
+          ],
+          "returnType": "Command",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "periodic",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 69
+        }
+      ],
+      "classes": [
+        {
+          "name": "Superstructure",
+          "methods": [
+            "getInstance",
+            "Superstructure",
+            "requestShoot",
+            "requestShoot",
+            "requestIntake",
+            "requestEject",
+            "requestStow",
+            "getSystemState",
+            "setState",
+            "ensureAgitating",
+            "updateShooterRPM",
+            "shootCmd",
+            "intakeCmd",
+            "ejectCmd",
+            "stowCmd",
+            "shootingSequence",
+            "periodic"
+          ],
+          "properties": [
+            "kIdleRPM",
+            "instance",
+            "shooter",
+            "intake",
+            "vision",
+            "mSystemState",
+            "mWantedState",
+            "mStateStartTimestamp",
+            "mShotInProgress",
+            "mAlignTimeoutSeconds",
+            "mSettleDelaySeconds",
+            "mFeedTimeoutSeconds",
+            "mAgitateCommand"
+          ],
+          "exported": true,
+          "lineCount": 203
+        }
+      ],
+      "imports": [
+        {
+          "source": "org.littletonrobotics.junction.Logger",
+          "specifiers": [
+            "Logger"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.Timer",
+          "specifiers": [
+            "Timer"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj2.command.Command",
+          "specifiers": [
+            "Command"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj2.command.CommandScheduler",
+          "specifiers": [
+            "CommandScheduler"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj2.command.Commands",
+          "specifiers": [
+            "Commands"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj2.command.SubsystemBase",
+          "specifiers": [
+            "SubsystemBase"
+          ]
+        },
+        {
+          "source": "frc.robot.subsystems.CommandSwerveDrivetrain",
+          "specifiers": [
+            "CommandSwerveDrivetrain"
+          ]
+        },
+        {
+          "source": "frc.robot.subsystems.intake.Intake",
+          "specifiers": [
+            "Intake"
+          ]
+        },
+        {
+          "source": "frc.robot.subsystems.intake.Intake.Roller",
+          "specifiers": [
+            "Roller"
+          ]
+        },
+        {
+          "source": "frc.robot.subsystems.shooter.Shooter",
+          "specifiers": [
+            "Shooter"
+          ]
+        },
+        {
+          "source": "frc.robot.subsystems.vision.Vision",
+          "specifiers": [
+            "Vision"
+          ]
+        }
+      ],
+      "exports": [
+        "getInstance",
+        "requestShoot",
+        "requestShoot",
+        "requestIntake",
+        "requestEject",
+        "requestStow",
+        "getSystemState",
+        "shootCmd",
+        "intakeCmd",
+        "ejectCmd",
+        "stowCmd",
+        "shootingSequence",
+        "periodic",
+        "Superstructure"
+      ],
+      "totalLines": 231,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/java/frc/robot/subsystems/vision/Vision.java": {
+      "filePath": "src/main/java/frc/robot/subsystems/vision/Vision.java",
+      "contentHash": "078ca1cedc2add0d91171b28c30c8d0d5f859014a16f510b1ca3859bbcdaa0a2",
+      "functions": [
+        {
+          "name": "getInstance",
+          "params": [
+            "drivetrain"
+          ],
+          "returnType": "Vision",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "Vision",
+          "params": [
+            "io",
+            "drivetrain"
+          ],
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "getHubPosition",
+          "params": [],
+          "returnType": "Optional<Translation2d>",
+          "exported": true,
+          "lineCount": 22
+        },
+        {
+          "name": "getHubHeading",
+          "params": [],
+          "returnType": "Optional<Rotation2d>",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "getPassTargetPosition",
+          "params": [],
+          "returnType": "Optional<Translation2d>",
+          "exported": true,
+          "lineCount": 19
+        },
+        {
+          "name": "getPassHeading",
+          "params": [],
+          "returnType": "Optional<Rotation2d>",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "getPoseResetEstimate",
+          "params": [],
+          "returnType": "Optional<Pose2d>",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "setIMUMode",
+          "params": [
+            "mode"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "getIMUMode",
+          "params": [],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "setIMUAssistAlpha",
+          "params": [
+            "alpha"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "getVisionPose",
+          "params": [
+            "currentRobotPose"
+          ],
+          "returnType": "Optional<Pose2d>",
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "hubDistanceMeters",
+          "params": [
+            "currentRobotPose"
+          ],
+          "returnType": "OptionalDouble",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "calculateRPM",
+          "params": [],
+          "returnType": "OptionalDouble",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "interpolateRPM",
+          "params": [
+            "distanceFeet"
+          ],
+          "returnType": "double",
+          "exported": false,
+          "lineCount": 12
+        },
+        {
+          "name": "fuseMeasurements",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 45
+        },
+        {
+          "name": "periodic",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 29
+        }
+      ],
+      "classes": [
+        {
+          "name": "Vision",
+          "methods": [
+            "getInstance",
+            "Vision",
+            "getHubPosition",
+            "getHubHeading",
+            "getPassTargetPosition",
+            "getPassHeading",
+            "getPoseResetEstimate",
+            "setIMUMode",
+            "getIMUMode",
+            "setIMUAssistAlpha",
+            "getVisionPose",
+            "hubDistanceMeters",
+            "calculateRPM",
+            "interpolateRPM",
+            "fuseMeasurements",
+            "periodic"
+          ],
+          "properties": [
+            "kMaxOmegaRadPerSec",
+            "fieldLayout",
+            "redHubIds",
+            "blueHubIds",
+            "redPassIds",
+            "bluePassIds",
+            "RPMLUT",
+            "instance",
+            "io",
+            "inputs",
+            "drivetrain",
+            "currentIMUMode",
+            "currentIMUAssistAlpha"
+          ],
+          "exported": true,
+          "lineCount": 242
+        }
+      ],
+      "imports": [
+        {
+          "source": "java.util.Optional",
+          "specifiers": [
+            "Optional"
+          ]
+        },
+        {
+          "source": "java.util.OptionalDouble",
+          "specifiers": [
+            "OptionalDouble"
+          ]
+        },
+        {
+          "source": "java.util.TreeMap",
+          "specifiers": [
+            "TreeMap"
+          ]
+        },
+        {
+          "source": "org.littletonrobotics.junction.Logger",
+          "specifiers": [
+            "Logger"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.apriltag.AprilTagFieldLayout",
+          "specifiers": [
+            "AprilTagFieldLayout"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.apriltag.AprilTagFields",
+          "specifiers": [
+            "AprilTagFields"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.MathUtil",
+          "specifiers": [
+            "MathUtil"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.VecBuilder",
+          "specifiers": [
+            "VecBuilder"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.geometry.Pose2d",
+          "specifiers": [
+            "Pose2d"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.geometry.Rotation2d",
+          "specifiers": [
+            "Rotation2d"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.geometry.Translation2d",
+          "specifiers": [
+            "Translation2d"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.util.Units",
+          "specifiers": [
+            "Units"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.DriverStation",
+          "specifiers": [
+            "DriverStation"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.smartdashboard.SmartDashboard",
+          "specifiers": [
+            "SmartDashboard"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj2.command.SubsystemBase",
+          "specifiers": [
+            "SubsystemBase"
+          ]
+        },
+        {
+          "source": "frc.robot.Constants",
+          "specifiers": [
+            "Constants"
+          ]
+        },
+        {
+          "source": "frc.robot.subsystems.CommandSwerveDrivetrain",
+          "specifiers": [
+            "CommandSwerveDrivetrain"
+          ]
+        }
+      ],
+      "exports": [
+        "getInstance",
+        "getHubPosition",
+        "getHubHeading",
+        "getPassTargetPosition",
+        "getPassHeading",
+        "getPoseResetEstimate",
+        "setIMUMode",
+        "getIMUMode",
+        "setIMUAssistAlpha",
+        "hubDistanceMeters",
+        "calculateRPM",
+        "periodic",
+        "Vision"
+      ],
+      "totalLines": 273,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/java/frc/robot/subsystems/vision/VisionIO.java": {
+      "filePath": "src/main/java/frc/robot/subsystems/vision/VisionIO.java",
+      "contentHash": "23a2325ab58c71ed7b71a3bad3a709b8f184cd34a1a44de25a220571b5e1ff5c",
+      "functions": [],
+      "classes": [
+        {
+          "name": "VisionIO",
+          "methods": [
+            "updateInputs",
+            "setRobotOrientation",
+            "setIMUMode",
+            "setIMUAssistAlpha",
+            "getPoseResetEstimate"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 34
+        }
+      ],
+      "imports": [
+        {
+          "source": "java.util.Optional",
+          "specifiers": [
+            "Optional"
+          ]
+        },
+        {
+          "source": "org.littletonrobotics.junction.AutoLog",
+          "specifiers": [
+            "AutoLog"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.geometry.Pose2d",
+          "specifiers": [
+            "Pose2d"
+          ]
+        }
+      ],
+      "exports": [
+        "VisionIO"
+      ],
+      "totalLines": 47,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/java/frc/robot/subsystems/vision/VisionIOReal.java": {
+      "filePath": "src/main/java/frc/robot/subsystems/vision/VisionIOReal.java",
+      "contentHash": "df8a5546834e9ab6febafd5e9841809358c850fba127a145e081247f6cbac9ab",
+      "functions": [
+        {
+          "name": "VisionIOReal",
+          "params": [
+            "cameraNames"
+          ],
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "setRobotOrientation",
+          "params": [
+            "yawDegrees"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "setIMUMode",
+          "params": [
+            "mode"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "setIMUAssistAlpha",
+          "params": [
+            "alpha"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "updateInputs",
+          "params": [
+            "inputs"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 25
+        },
+        {
+          "name": "getPoseResetEstimate",
+          "params": [],
+          "returnType": "Optional<Pose2d>",
+          "exported": true,
+          "lineCount": 11
+        }
+      ],
+      "classes": [
+        {
+          "name": "VisionIOReal",
+          "methods": [
+            "VisionIOReal",
+            "setRobotOrientation",
+            "setIMUMode",
+            "setIMUAssistAlpha",
+            "updateInputs",
+            "getPoseResetEstimate"
+          ],
+          "properties": [
+            "kIMUCameraName",
+            "cameraNames"
+          ],
+          "exported": true,
+          "lineCount": 65
+        }
+      ],
+      "imports": [
+        {
+          "source": "java.util.Optional",
+          "specifiers": [
+            "Optional"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.geometry.Pose2d",
+          "specifiers": [
+            "Pose2d"
+          ]
+        },
+        {
+          "source": "frc.robot.utility.LimelightHelpers",
+          "specifiers": [
+            "LimelightHelpers"
+          ]
+        },
+        {
+          "source": "frc.robot.utility.LimelightHelpers.PoseEstimate",
+          "specifiers": [
+            "PoseEstimate"
+          ]
+        }
+      ],
+      "exports": [
+        "VisionIOReal",
+        "setRobotOrientation",
+        "setIMUMode",
+        "setIMUAssistAlpha",
+        "updateInputs",
+        "getPoseResetEstimate",
+        "VisionIOReal"
+      ],
+      "totalLines": 79,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/java/frc/robot/subsystems/vision/VisionIOSim.java": {
+      "filePath": "src/main/java/frc/robot/subsystems/vision/VisionIOSim.java",
+      "contentHash": "17f9a1fb3fcd4682c90438670cc17de5e90a64b4681c51f4864a7cf057b5b868",
+      "functions": [
+        {
+          "name": "VisionIOSim",
+          "params": [
+            "groundTruthPoseSupplier"
+          ],
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "updateInputs",
+          "params": [
+            "inputs"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 27
+        }
+      ],
+      "classes": [
+        {
+          "name": "VisionIOSim",
+          "methods": [
+            "VisionIOSim",
+            "updateInputs"
+          ],
+          "properties": [
+            "groundTruthPoseSupplier"
+          ],
+          "exported": true,
+          "lineCount": 35
+        }
+      ],
+      "imports": [
+        {
+          "source": "java.util.function.Supplier",
+          "specifiers": [
+            "Supplier"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.geometry.Pose2d",
+          "specifiers": [
+            "Pose2d"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.Timer",
+          "specifiers": [
+            "Timer"
+          ]
+        }
+      ],
+      "exports": [
+        "VisionIOSim",
+        "updateInputs",
+        "VisionIOSim"
+      ],
+      "totalLines": 52,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/java/frc/robot/Telemetry.java": {
+      "filePath": "src/main/java/frc/robot/Telemetry.java",
+      "contentHash": "b0d79c4c619d5cd79811d6e59f86dbd2498924bab7f6af6dcc1d70a1dbf34a8b",
+      "functions": [
+        {
+          "name": "Telemetry",
+          "params": [
+            "maxSpeed"
+          ],
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "telemeterize",
+          "params": [
+            "state"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 46
+        }
+      ],
+      "classes": [
+        {
+          "name": "Telemetry",
+          "methods": [
+            "Telemetry",
+            "telemeterize"
+          ],
+          "properties": [
+            "MaxSpeed",
+            "m_lastState",
+            "inst",
+            "driveStateTable",
+            "drivePose",
+            "driveSpeeds",
+            "driveModuleStates",
+            "driveModuleTargets",
+            "driveModulePositions",
+            "driveTimestamp",
+            "driveOdometryFrequency",
+            "table",
+            "fieldPub",
+            "fieldTypePub",
+            "m_moduleMechanisms",
+            "m_moduleSpeeds",
+            "m_moduleDirections",
+            "m_poseArray",
+            "m_moduleStatesArray",
+            "m_moduleTargetsArray"
+          ],
+          "exported": true,
+          "lineCount": 157
+        }
+      ],
+      "imports": [
+        {
+          "source": "org.littletonrobotics.junction.Logger",
+          "specifiers": [
+            "Logger"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.SignalLogger",
+          "specifiers": [
+            "SignalLogger"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState",
+          "specifiers": [
+            "SwerveDriveState"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.geometry.Pose2d",
+          "specifiers": [
+            "Pose2d"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.kinematics.ChassisSpeeds",
+          "specifiers": [
+            "ChassisSpeeds"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.kinematics.SwerveModulePosition",
+          "specifiers": [
+            "SwerveModulePosition"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.kinematics.SwerveModuleState",
+          "specifiers": [
+            "SwerveModuleState"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.networktables.DoubleArrayPublisher",
+          "specifiers": [
+            "DoubleArrayPublisher"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.networktables.DoublePublisher",
+          "specifiers": [
+            "DoublePublisher"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.networktables.NetworkTable",
+          "specifiers": [
+            "NetworkTable"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.networktables.NetworkTableInstance",
+          "specifiers": [
+            "NetworkTableInstance"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.networktables.StringPublisher",
+          "specifiers": [
+            "StringPublisher"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.networktables.StructArrayPublisher",
+          "specifiers": [
+            "StructArrayPublisher"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.networktables.StructPublisher",
+          "specifiers": [
+            "StructPublisher"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.util.sendable.Sendable",
+          "specifiers": [
+            "Sendable"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.util.sendable.SendableBuilder",
+          "specifiers": [
+            "SendableBuilder"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.smartdashboard.Mechanism2d",
+          "specifiers": [
+            "Mechanism2d"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d",
+          "specifiers": [
+            "MechanismLigament2d"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.smartdashboard.SmartDashboard",
+          "specifiers": [
+            "SmartDashboard"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.util.Color",
+          "specifiers": [
+            "Color"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.util.Color8Bit",
+          "specifiers": [
+            "Color8Bit"
+          ]
+        }
+      ],
+      "exports": [
+        "Telemetry",
+        "telemeterize",
+        "Telemetry"
+      ],
+      "totalLines": 182,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/java/frc/robot/utility/HootReplayBridge.java": {
+      "filePath": "src/main/java/frc/robot/utility/HootReplayBridge.java",
+      "contentHash": "08a458cbdda61df1601f9dbaa0e90d76c2e813771908d8c7ad04a24d35ecd0a0",
+      "functions": [
+        {
+          "name": "HootReplayBridge",
+          "params": [
+            "hubActiveGet",
+            "hubActiveSet",
+            "timeUntilSwapGet",
+            "timeUntilSwapSet"
+          ],
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "isReplay",
+          "params": [],
+          "returnType": "boolean",
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "update",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 3
+        }
+      ],
+      "classes": [
+        {
+          "name": "HootReplayBridge",
+          "methods": [
+            "HootReplayBridge",
+            "isReplay",
+            "update"
+          ],
+          "properties": [
+            "autoReplay"
+          ],
+          "exported": false,
+          "lineCount": 19
+        }
+      ],
+      "imports": [
+        {
+          "source": "java.util.function.BooleanSupplier",
+          "specifiers": [
+            "BooleanSupplier"
+          ]
+        },
+        {
+          "source": "java.util.function.Consumer",
+          "specifiers": [
+            "Consumer"
+          ]
+        },
+        {
+          "source": "java.util.function.DoubleConsumer",
+          "specifiers": [
+            "DoubleConsumer"
+          ]
+        },
+        {
+          "source": "java.util.function.DoubleSupplier",
+          "specifiers": [
+            "DoubleSupplier"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.HootAutoReplay",
+          "specifiers": [
+            "HootAutoReplay"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.Utils",
+          "specifiers": [
+            "Utils"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 34,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/java/frc/robot/utility/HubActiveState.java": {
+      "filePath": "src/main/java/frc/robot/utility/HubActiveState.java",
+      "contentHash": "10125600ea18ccf079da668f9cb10302e98c1cb5fcfec91488f8cbe1733e5538",
+      "functions": [
+        {
+          "name": "HubActiveState",
+          "params": [],
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "getInstance",
+          "params": [],
+          "returnType": "HubActiveState",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "updateStatesForTeleop",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 52
+        },
+        {
+          "name": "fetchInputs",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 18
+        },
+        {
+          "name": "periodic",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "isOurHubActive",
+          "params": [],
+          "returnType": "boolean",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "timeUntilTransition",
+          "params": [],
+          "returnType": "double",
+          "exported": true,
+          "lineCount": 3
+        }
+      ],
+      "classes": [
+        {
+          "name": "HubActiveState",
+          "methods": [
+            "HubActiveState",
+            "getInstance",
+            "updateStatesForTeleop",
+            "fetchInputs",
+            "periodic",
+            "isOurHubActive",
+            "timeUntilTransition"
+          ],
+          "properties": [
+            "_inst",
+            "TeleopHubActiveTimesForAutoWinner",
+            "TeleopHubActiveTimesForAutoLoser",
+            "isHubActive",
+            "timeUntilTransition",
+            "inst",
+            "isHubActivePublisher",
+            "timeUntilSwapPublisher",
+            "replay"
+          ],
+          "exported": true,
+          "lineCount": 133
+        }
+      ],
+      "imports": [
+        {
+          "source": "edu.wpi.first.networktables.BooleanPublisher",
+          "specifiers": [
+            "BooleanPublisher"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.networktables.DoublePublisher",
+          "specifiers": [
+            "DoublePublisher"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.networktables.NetworkTable",
+          "specifiers": [
+            "NetworkTable"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.networktables.NetworkTableInstance",
+          "specifiers": [
+            "NetworkTableInstance"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.DriverStation",
+          "specifiers": [
+            "DriverStation"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.DriverStation.Alliance",
+          "specifiers": [
+            "Alliance"
+          ]
+        }
+      ],
+      "exports": [
+        "getInstance",
+        "periodic",
+        "isOurHubActive",
+        "timeUntilTransition",
+        "HubActiveState"
+      ],
+      "totalLines": 141,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/java/frc/robot/utility/LimelightHelpers.java": {
+      "filePath": "src/main/java/frc/robot/utility/LimelightHelpers.java",
+      "contentHash": "a5fe16486e688035460eb902b3539f0ff038d8f32cb005969d505ac39a919238",
+      "functions": [
+        {
+          "name": "sanitizeName",
+          "params": [
+            "name"
+          ],
+          "returnType": "String",
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "toPose3D",
+          "params": [
+            "inData"
+          ],
+          "returnType": "Pose3d",
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "toPose2D",
+          "params": [
+            "inData"
+          ],
+          "returnType": "Pose2d",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "pose3dToArray",
+          "params": [
+            "pose"
+          ],
+          "returnType": "double[]",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "pose2dToArray",
+          "params": [
+            "pose"
+          ],
+          "returnType": "double[]",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "extractArrayEntry",
+          "params": [
+            "inData",
+            "position"
+          ],
+          "returnType": "double",
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "getBotPoseEstimate",
+          "params": [
+            "limelightName",
+            "entryName",
+            "isMegaTag2"
+          ],
+          "returnType": "PoseEstimate",
+          "exported": false,
+          "lineCount": 46
+        },
+        {
+          "name": "getRawFiducials",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "RawFiducial[]",
+          "exported": true,
+          "lineCount": 26
+        },
+        {
+          "name": "getRawDetections",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "RawDetection[]",
+          "exported": true,
+          "lineCount": 31
+        },
+        {
+          "name": "getRawTargets",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "RawTarget[]",
+          "exported": true,
+          "lineCount": 22
+        },
+        {
+          "name": "getCornerCoordinates",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "double[]",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "printPoseEstimate",
+          "params": [
+            "pose"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 35
+        },
+        {
+          "name": "validPoseEstimate",
+          "params": [
+            "pose"
+          ],
+          "returnType": "Boolean",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getLimelightNTTable",
+          "params": [
+            "tableName"
+          ],
+          "returnType": "NetworkTable",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "Flush",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getLimelightNTTableEntry",
+          "params": [
+            "tableName",
+            "entryName"
+          ],
+          "returnType": "NetworkTableEntry",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getLimelightDoubleArrayEntry",
+          "params": [
+            "tableName",
+            "entryName"
+          ],
+          "returnType": "DoubleArrayEntry",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "getLimelightNTDouble",
+          "params": [
+            "tableName",
+            "entryName"
+          ],
+          "returnType": "double",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "setLimelightNTDouble",
+          "params": [
+            "tableName",
+            "entryName",
+            "val"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "setLimelightNTDoubleArray",
+          "params": [
+            "tableName",
+            "entryName",
+            "val"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getLimelightNTDoubleArray",
+          "params": [
+            "tableName",
+            "entryName"
+          ],
+          "returnType": "double[]",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getLimelightNTString",
+          "params": [
+            "tableName",
+            "entryName"
+          ],
+          "returnType": "String",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getLimelightNTStringArray",
+          "params": [
+            "tableName",
+            "entryName"
+          ],
+          "returnType": "String[]",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getTV",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "boolean",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getTX",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "double",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getTY",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "double",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getTXNC",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "double",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getTYNC",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "double",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getTA",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "double",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getT2DArray",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "double[]",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getTargetCount",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "getClassifierClassIndex",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "getDetectorClassIndex",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "getClassifierClass",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "String",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getDetectorClass",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "String",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getLatency_Pipeline",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "double",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getLatency_Capture",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "double",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getCurrentPipelineIndex",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "double",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getCurrentPipelineType",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "String",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getJSONDump",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "String",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getBotpose",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "double[]",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "getBotpose_wpiRed",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "double[]",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "getBotpose_wpiBlue",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "double[]",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "getBotPose",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "double[]",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getBotPose_wpiRed",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "double[]",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getBotPose_wpiBlue",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "double[]",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getBotPose_TargetSpace",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "double[]",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getCameraPose_TargetSpace",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "double[]",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getTargetPose_CameraSpace",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "double[]",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getTargetPose_RobotSpace",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "double[]",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getTargetColor",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "double[]",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getFiducialID",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "double",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getHeartbeat",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "double",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getNeuralClassID",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "String",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getRawBarcodeData",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "String[]",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getBotPose3d",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "Pose3d",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "getBotPose3d_wpiRed",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "Pose3d",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "getBotPose3d_wpiBlue",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "Pose3d",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "getBotPose3d_TargetSpace",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "Pose3d",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "getCameraPose3d_TargetSpace",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "Pose3d",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "getTargetPose3d_CameraSpace",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "Pose3d",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "getTargetPose3d_RobotSpace",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "Pose3d",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "getCameraPose3d_RobotSpace",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "Pose3d",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "getBotPose2d_wpiBlue",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "Pose2d",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "getBotPoseEstimate_wpiBlue",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "PoseEstimate",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getBotPoseEstimate_wpiBlue_MegaTag2",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "PoseEstimate",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getBotPose2d_wpiRed",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "Pose2d",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "getBotPoseEstimate_wpiRed",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "PoseEstimate",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getBotPoseEstimate_wpiRed_MegaTag2",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "PoseEstimate",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getBotPose2d",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "Pose2d",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "getIMUData",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "IMUData",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "setPipelineIndex",
+          "params": [
+            "limelightName",
+            "pipelineIndex"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "setPriorityTagID",
+          "params": [
+            "limelightName",
+            "ID"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "setLEDMode_PipelineControl",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "setLEDMode_ForceOff",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "setLEDMode_ForceBlink",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "setLEDMode_ForceOn",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "setStreamMode_Standard",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "setStreamMode_PiPMain",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "setStreamMode_PiPSecondary",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "setCropWindow",
+          "params": [
+            "limelightName",
+            "cropXMin",
+            "cropXMax",
+            "cropYMin",
+            "cropYMax"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "setKeystone",
+          "params": [
+            "limelightName",
+            "horizontal",
+            "vertical"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "setFiducial3DOffset",
+          "params": [
+            "limelightName",
+            "offsetX",
+            "offsetY",
+            "offsetZ"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "SetRobotOrientation",
+          "params": [
+            "limelightName",
+            "yaw",
+            "yawRate",
+            "pitch",
+            "pitchRate",
+            "roll",
+            "rollRate"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "SetRobotOrientation_NoFlush",
+          "params": [
+            "limelightName",
+            "yaw",
+            "yawRate",
+            "pitch",
+            "pitchRate",
+            "roll",
+            "rollRate"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "SetRobotOrientation_INTERNAL",
+          "params": [
+            "limelightName",
+            "yaw",
+            "yawRate",
+            "pitch",
+            "pitchRate",
+            "roll",
+            "rollRate",
+            "flush"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 17
+        },
+        {
+          "name": "SetIMUMode",
+          "params": [
+            "limelightName",
+            "mode"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "SetIMUAssistAlpha",
+          "params": [
+            "limelightName",
+            "alpha"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "SetThrottle",
+          "params": [
+            "limelightName",
+            "throttle"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "SetFiducialIDFiltersOverride",
+          "params": [
+            "limelightName",
+            "validIDs"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "SetFiducialDownscalingOverride",
+          "params": [
+            "limelightName",
+            "downscale"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 25
+        },
+        {
+          "name": "setCameraPose_RobotSpace",
+          "params": [
+            "limelightName",
+            "forward",
+            "side",
+            "up",
+            "roll",
+            "pitch",
+            "yaw"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "setPythonScriptData",
+          "params": [
+            "limelightName",
+            "outgoingPythonData"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getPythonScriptData",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "double[]",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "triggerSnapshot",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "setRewindEnabled",
+          "params": [
+            "limelightName",
+            "enabled"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "triggerRewindCapture",
+          "params": [
+            "limelightName",
+            "durationSeconds"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "getLatestResults",
+          "params": [
+            "limelightName"
+          ],
+          "returnType": "LimelightResults",
+          "exported": true,
+          "lineCount": 31
+        },
+        {
+          "name": "setupPortForwardingUSB",
+          "params": [
+            "usbIndex"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 8
+        }
+      ],
+      "classes": [
+        {
+          "name": "LimelightHelpers",
+          "methods": [
+            "sanitizeName",
+            "toPose3D",
+            "toPose2D",
+            "pose3dToArray",
+            "pose2dToArray",
+            "extractArrayEntry",
+            "getBotPoseEstimate",
+            "getRawFiducials",
+            "getRawDetections",
+            "getRawTargets",
+            "getCornerCoordinates",
+            "printPoseEstimate",
+            "validPoseEstimate",
+            "getLimelightNTTable",
+            "Flush",
+            "getLimelightNTTableEntry",
+            "getLimelightDoubleArrayEntry",
+            "getLimelightNTDouble",
+            "setLimelightNTDouble",
+            "setLimelightNTDoubleArray",
+            "getLimelightNTDoubleArray",
+            "getLimelightNTString",
+            "getLimelightNTStringArray",
+            "getTV",
+            "getTX",
+            "getTY",
+            "getTXNC",
+            "getTYNC",
+            "getTA",
+            "getT2DArray",
+            "getTargetCount",
+            "getClassifierClassIndex",
+            "getDetectorClassIndex",
+            "getClassifierClass",
+            "getDetectorClass",
+            "getLatency_Pipeline",
+            "getLatency_Capture",
+            "getCurrentPipelineIndex",
+            "getCurrentPipelineType",
+            "getJSONDump",
+            "getBotpose",
+            "getBotpose_wpiRed",
+            "getBotpose_wpiBlue",
+            "getBotPose",
+            "getBotPose_wpiRed",
+            "getBotPose_wpiBlue",
+            "getBotPose_TargetSpace",
+            "getCameraPose_TargetSpace",
+            "getTargetPose_CameraSpace",
+            "getTargetPose_RobotSpace",
+            "getTargetColor",
+            "getFiducialID",
+            "getHeartbeat",
+            "getNeuralClassID",
+            "getRawBarcodeData",
+            "getBotPose3d",
+            "getBotPose3d_wpiRed",
+            "getBotPose3d_wpiBlue",
+            "getBotPose3d_TargetSpace",
+            "getCameraPose3d_TargetSpace",
+            "getTargetPose3d_CameraSpace",
+            "getTargetPose3d_RobotSpace",
+            "getCameraPose3d_RobotSpace",
+            "getBotPose2d_wpiBlue",
+            "getBotPoseEstimate_wpiBlue",
+            "getBotPoseEstimate_wpiBlue_MegaTag2",
+            "getBotPose2d_wpiRed",
+            "getBotPoseEstimate_wpiRed",
+            "getBotPoseEstimate_wpiRed_MegaTag2",
+            "getBotPose2d",
+            "getIMUData",
+            "setPipelineIndex",
+            "setPriorityTagID",
+            "setLEDMode_PipelineControl",
+            "setLEDMode_ForceOff",
+            "setLEDMode_ForceBlink",
+            "setLEDMode_ForceOn",
+            "setStreamMode_Standard",
+            "setStreamMode_PiPMain",
+            "setStreamMode_PiPSecondary",
+            "setCropWindow",
+            "setKeystone",
+            "setFiducial3DOffset",
+            "SetRobotOrientation",
+            "SetRobotOrientation_NoFlush",
+            "SetRobotOrientation_INTERNAL",
+            "SetIMUMode",
+            "SetIMUAssistAlpha",
+            "SetThrottle",
+            "SetFiducialIDFiltersOverride",
+            "SetFiducialDownscalingOverride",
+            "setCameraPose_RobotSpace",
+            "setPythonScriptData",
+            "getPythonScriptData",
+            "triggerSnapshot",
+            "setRewindEnabled",
+            "triggerRewindCapture",
+            "getLatestResults",
+            "setupPortForwardingUSB"
+          ],
+          "properties": [
+            "doubleArrayEntries",
+            "mapper",
+            "profileJSON"
+          ],
+          "exported": true,
+          "lineCount": 1916
+        }
+      ],
+      "imports": [
+        {
+          "source": "edu.wpi.first.networktables.DoubleArrayEntry",
+          "specifiers": [
+            "DoubleArrayEntry"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.networktables.NetworkTable",
+          "specifiers": [
+            "NetworkTable"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.networktables.NetworkTableEntry",
+          "specifiers": [
+            "NetworkTableEntry"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.networktables.NetworkTableInstance",
+          "specifiers": [
+            "NetworkTableInstance"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.networktables.TimestampedDoubleArray",
+          "specifiers": [
+            "TimestampedDoubleArray"
+          ]
+        },
+        {
+          "source": "frc.robot.utility.LimelightHelpers.LimelightResults",
+          "specifiers": [
+            "LimelightResults"
+          ]
+        },
+        {
+          "source": "frc.robot.utility.LimelightHelpers.PoseEstimate",
+          "specifiers": [
+            "PoseEstimate"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.geometry.Pose2d",
+          "specifiers": [
+            "Pose2d"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.geometry.Pose3d",
+          "specifiers": [
+            "Pose3d"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.geometry.Rotation2d",
+          "specifiers": [
+            "Rotation2d"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.geometry.Translation3d",
+          "specifiers": [
+            "Translation3d"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.util.Units",
+          "specifiers": [
+            "Units"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.geometry.Rotation3d",
+          "specifiers": [
+            "Rotation3d"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.geometry.Translation2d",
+          "specifiers": [
+            "Translation2d"
+          ]
+        },
+        {
+          "source": "java.net.MalformedURLException",
+          "specifiers": [
+            "MalformedURLException"
+          ]
+        },
+        {
+          "source": "java.net.URL",
+          "specifiers": [
+            "URL"
+          ]
+        },
+        {
+          "source": "java.util.Arrays",
+          "specifiers": [
+            "Arrays"
+          ]
+        },
+        {
+          "source": "java.util.Map",
+          "specifiers": [
+            "Map"
+          ]
+        },
+        {
+          "source": "com.fasterxml.jackson.annotation.JsonFormat",
+          "specifiers": [
+            "JsonFormat"
+          ]
+        },
+        {
+          "source": "com.fasterxml.jackson.annotation.JsonFormat.Shape",
+          "specifiers": [
+            "Shape"
+          ]
+        },
+        {
+          "source": "com.fasterxml.jackson.annotation.JsonProperty",
+          "specifiers": [
+            "JsonProperty"
+          ]
+        },
+        {
+          "source": "com.fasterxml.jackson.core.JsonProcessingException",
+          "specifiers": [
+            "JsonProcessingException"
+          ]
+        },
+        {
+          "source": "com.fasterxml.jackson.databind.DeserializationFeature",
+          "specifiers": [
+            "DeserializationFeature"
+          ]
+        },
+        {
+          "source": "com.fasterxml.jackson.databind.ObjectMapper",
+          "specifiers": [
+            "ObjectMapper"
+          ]
+        },
+        {
+          "source": "java.util.concurrent.ConcurrentHashMap",
+          "specifiers": [
+            "ConcurrentHashMap"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.net.PortForwarder",
+          "specifiers": [
+            "PortForwarder"
+          ]
+        }
+      ],
+      "exports": [
+        "toPose3D",
+        "toPose2D",
+        "pose3dToArray",
+        "pose2dToArray",
+        "getRawFiducials",
+        "getRawDetections",
+        "getRawTargets",
+        "getCornerCoordinates",
+        "printPoseEstimate",
+        "validPoseEstimate",
+        "getLimelightNTTable",
+        "Flush",
+        "getLimelightNTTableEntry",
+        "getLimelightDoubleArrayEntry",
+        "getLimelightNTDouble",
+        "setLimelightNTDouble",
+        "setLimelightNTDoubleArray",
+        "getLimelightNTDoubleArray",
+        "getLimelightNTString",
+        "getLimelightNTStringArray",
+        "getTV",
+        "getTX",
+        "getTY",
+        "getTXNC",
+        "getTYNC",
+        "getTA",
+        "getT2DArray",
+        "getTargetCount",
+        "getClassifierClassIndex",
+        "getDetectorClassIndex",
+        "getClassifierClass",
+        "getDetectorClass",
+        "getLatency_Pipeline",
+        "getLatency_Capture",
+        "getCurrentPipelineIndex",
+        "getCurrentPipelineType",
+        "getJSONDump",
+        "getBotpose",
+        "getBotpose_wpiRed",
+        "getBotpose_wpiBlue",
+        "getBotPose",
+        "getBotPose_wpiRed",
+        "getBotPose_wpiBlue",
+        "getBotPose_TargetSpace",
+        "getCameraPose_TargetSpace",
+        "getTargetPose_CameraSpace",
+        "getTargetPose_RobotSpace",
+        "getTargetColor",
+        "getFiducialID",
+        "getHeartbeat",
+        "getNeuralClassID",
+        "getRawBarcodeData",
+        "getBotPose3d",
+        "getBotPose3d_wpiRed",
+        "getBotPose3d_wpiBlue",
+        "getBotPose3d_TargetSpace",
+        "getCameraPose3d_TargetSpace",
+        "getTargetPose3d_CameraSpace",
+        "getTargetPose3d_RobotSpace",
+        "getCameraPose3d_RobotSpace",
+        "getBotPose2d_wpiBlue",
+        "getBotPoseEstimate_wpiBlue",
+        "getBotPoseEstimate_wpiBlue_MegaTag2",
+        "getBotPose2d_wpiRed",
+        "getBotPoseEstimate_wpiRed",
+        "getBotPoseEstimate_wpiRed_MegaTag2",
+        "getBotPose2d",
+        "getIMUData",
+        "setPipelineIndex",
+        "setPriorityTagID",
+        "setLEDMode_PipelineControl",
+        "setLEDMode_ForceOff",
+        "setLEDMode_ForceBlink",
+        "setLEDMode_ForceOn",
+        "setStreamMode_Standard",
+        "setStreamMode_PiPMain",
+        "setStreamMode_PiPSecondary",
+        "setCropWindow",
+        "setKeystone",
+        "setFiducial3DOffset",
+        "SetRobotOrientation",
+        "SetRobotOrientation_NoFlush",
+        "SetIMUMode",
+        "SetIMUAssistAlpha",
+        "SetThrottle",
+        "SetFiducialIDFiltersOverride",
+        "SetFiducialDownscalingOverride",
+        "setCameraPose_RobotSpace",
+        "setPythonScriptData",
+        "getPythonScriptData",
+        "triggerSnapshot",
+        "setRewindEnabled",
+        "triggerRewindCapture",
+        "getLatestResults",
+        "setupPortForwardingUSB",
+        "LimelightHelpers"
+      ],
+      "totalLines": 1947,
+      "hasStructuralAnalysis": true
+    },
+    "src/main/java/frc/robot/utility/simulation/MapleSimSwerveDrivetrain.java": {
+      "filePath": "src/main/java/frc/robot/utility/simulation/MapleSimSwerveDrivetrain.java",
+      "contentHash": "8bf300fb1a22e7098f3259b8be2733335d92b36d7eef5124e47bc5b732908873",
+      "functions": [
+        {
+          "name": "MapleSimSwerveDrivetrain",
+          "params": [
+            "simPeriod",
+            "robotMassWithBumpers",
+            "bumperLengthX",
+            "bumperWidthY",
+            "driveMotorModel",
+            "steerMotorModel",
+            "wheelCOF",
+            "moduleLocations",
+            "pigeon",
+            "modules"
+          ],
+          "exported": true,
+          "lineCount": 43
+        },
+        {
+          "name": "update",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "regulateModuleConstantsForSimulation",
+          "params": [
+            "moduleConstants"
+          ],
+          "returnType": "SwerveModuleConstants<?, ?, ?>[]",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "regulateModuleConstantForSimulation",
+          "params": [
+            "moduleConstants"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 14
+        }
+      ],
+      "classes": [
+        {
+          "name": "MapleSimSwerveDrivetrain",
+          "methods": [
+            "MapleSimSwerveDrivetrain",
+            "update",
+            "regulateModuleConstantsForSimulation",
+            "regulateModuleConstantForSimulation"
+          ],
+          "properties": [
+            "pigeonSim",
+            "mapleSimDrive"
+          ],
+          "exported": true,
+          "lineCount": 122
+        }
+      ],
+      "imports": [
+        {
+          "source": "edu.wpi.first.units.Units.KilogramSquareMeters",
+          "specifiers": [
+            "KilogramSquareMeters"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.Units.Meters",
+          "specifiers": [
+            "Meters"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.Units.RadiansPerSecond",
+          "specifiers": [
+            "RadiansPerSecond"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.Units.Volts",
+          "specifiers": [
+            "Volts"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.hardware.CANcoder",
+          "specifiers": [
+            "CANcoder"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.hardware.Pigeon2",
+          "specifiers": [
+            "Pigeon2"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.hardware.TalonFX",
+          "specifiers": [
+            "TalonFX"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.sim.CANcoderSimState",
+          "specifiers": [
+            "CANcoderSimState"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.sim.Pigeon2SimState",
+          "specifiers": [
+            "Pigeon2SimState"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.sim.TalonFXSimState",
+          "specifiers": [
+            "TalonFXSimState"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.swerve.SwerveModule",
+          "specifiers": [
+            "SwerveModule"
+          ]
+        },
+        {
+          "source": "com.ctre.phoenix6.swerve.SwerveModuleConstants",
+          "specifiers": [
+            "SwerveModuleConstants"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.geometry.Pose2d",
+          "specifiers": [
+            "Pose2d"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.geometry.Translation2d",
+          "specifiers": [
+            "Translation2d"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.math.system.plant.DCMotor",
+          "specifiers": [
+            "DCMotor"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.measure.Angle",
+          "specifiers": [
+            "Angle"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.measure.AngularVelocity",
+          "specifiers": [
+            "AngularVelocity"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.measure.Distance",
+          "specifiers": [
+            "Distance"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.measure.Mass",
+          "specifiers": [
+            "Mass"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.measure.Time",
+          "specifiers": [
+            "Time"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.units.measure.Voltage",
+          "specifiers": [
+            "Voltage"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.RobotBase",
+          "specifiers": [
+            "RobotBase"
+          ]
+        },
+        {
+          "source": "org.ironmaple.simulation.SimulatedArena",
+          "specifiers": [
+            "SimulatedArena"
+          ]
+        },
+        {
+          "source": "org.ironmaple.simulation.drivesims.COTS",
+          "specifiers": [
+            "COTS"
+          ]
+        },
+        {
+          "source": "org.ironmaple.simulation.drivesims.SwerveDriveSimulation",
+          "specifiers": [
+            "SwerveDriveSimulation"
+          ]
+        },
+        {
+          "source": "org.ironmaple.simulation.drivesims.SwerveModuleSimulation",
+          "specifiers": [
+            "SwerveModuleSimulation"
+          ]
+        },
+        {
+          "source": "org.ironmaple.simulation.drivesims.configs.DriveTrainSimulationConfig",
+          "specifiers": [
+            "DriveTrainSimulationConfig"
+          ]
+        },
+        {
+          "source": "org.ironmaple.simulation.drivesims.configs.SwerveModuleSimulationConfig",
+          "specifiers": [
+            "SwerveModuleSimulationConfig"
+          ]
+        },
+        {
+          "source": "org.ironmaple.simulation.motorsims.SimulatedBattery",
+          "specifiers": [
+            "SimulatedBattery"
+          ]
+        },
+        {
+          "source": "org.ironmaple.simulation.motorsims.SimulatedMotorController",
+          "specifiers": [
+            "SimulatedMotorController"
+          ]
+        }
+      ],
+      "exports": [
+        "mapleSimDrive",
+        "MapleSimSwerveDrivetrain",
+        "update",
+        "regulateModuleConstantsForSimulation",
+        "MapleSimSwerveDrivetrain"
+      ],
+      "totalLines": 168,
+      "hasStructuralAnalysis": true
+    },
+    "src/test/java/frc/robot/RobotLifecycleTest.java": {
+      "filePath": "src/test/java/frc/robot/RobotLifecycleTest.java",
+      "contentHash": "f83073dd07ab4051605f6212ca19089b96d9f9b8baae6bc55b7ca09859765b77",
+      "functions": [
+        {
+          "name": "setup",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 12
+        },
+        {
+          "name": "teardown",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 12
+        },
+        {
+          "name": "autonomousInitSwitchesIMUModeFromSeedToFusion",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 24
+        }
+      ],
+      "classes": [
+        {
+          "name": "RobotLifecycleTest",
+          "methods": [
+            "setup",
+            "teardown",
+            "autonomousInitSwitchesIMUModeFromSeedToFusion"
+          ],
+          "properties": [
+            "robot",
+            "robotThread"
+          ],
+          "exported": false,
+          "lineCount": 55
+        }
+      ],
+      "imports": [
+        {
+          "source": "org.junit.jupiter.api.Assertions.assertEquals",
+          "specifiers": [
+            "assertEquals"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.Assertions.assertFalse",
+          "specifiers": [
+            "assertFalse"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.Assertions.assertTrue",
+          "specifiers": [
+            "assertTrue"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.hal.HAL",
+          "specifiers": [
+            "HAL"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.simulation.DriverStationSim",
+          "specifiers": [
+            "DriverStationSim"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.simulation.SimHooks",
+          "specifiers": [
+            "SimHooks"
+          ]
+        },
+        {
+          "source": "frc.robot.subsystems.vision.Vision",
+          "specifiers": [
+            "Vision"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.AfterEach",
+          "specifiers": [
+            "AfterEach"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.BeforeEach",
+          "specifiers": [
+            "BeforeEach"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.Test",
+          "specifiers": [
+            "Test"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.Timeout",
+          "specifiers": [
+            "Timeout"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 82,
+      "hasStructuralAnalysis": true
+    },
+    "src/test/java/frc/robot/subsystems/intake/IntakeJamRecoveryTest.java": {
+      "filePath": "src/test/java/frc/robot/subsystems/intake/IntakeJamRecoveryTest.java",
+      "contentHash": "b1f120d6b1bdc8227f862abe90ff61448df17783917a24b185caabc8927464a7",
+      "functions": [
+        {
+          "name": "setup",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 12
+        },
+        {
+          "name": "teardown",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 12
+        },
+        {
+          "name": "jamTriggersRecoveryPulseThenResumesAndAbortsOnStop",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 64
+        }
+      ],
+      "classes": [
+        {
+          "name": "IntakeJamRecoveryTest",
+          "methods": [
+            "setup",
+            "teardown",
+            "jamTriggersRecoveryPulseThenResumesAndAbortsOnStop"
+          ],
+          "properties": [
+            "robot",
+            "robotThread"
+          ],
+          "exported": false,
+          "lineCount": 95
+        }
+      ],
+      "imports": [
+        {
+          "source": "org.junit.jupiter.api.Assertions.assertEquals",
+          "specifiers": [
+            "assertEquals"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.Assertions.assertFalse",
+          "specifiers": [
+            "assertFalse"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.Assertions.assertTrue",
+          "specifiers": [
+            "assertTrue"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.hal.HAL",
+          "specifiers": [
+            "HAL"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.simulation.DriverStationSim",
+          "specifiers": [
+            "DriverStationSim"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.simulation.SimHooks",
+          "specifiers": [
+            "SimHooks"
+          ]
+        },
+        {
+          "source": "frc.robot.Robot",
+          "specifiers": [
+            "Robot"
+          ]
+        },
+        {
+          "source": "frc.robot.subsystems.superstructure.Superstructure",
+          "specifiers": [
+            "Superstructure"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.AfterEach",
+          "specifiers": [
+            "AfterEach"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.BeforeEach",
+          "specifiers": [
+            "BeforeEach"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.Test",
+          "specifiers": [
+            "Test"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.Timeout",
+          "specifiers": [
+            "Timeout"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 130,
+      "hasStructuralAnalysis": true
+    },
+    "src/test/java/frc/robot/SuperstructureEjectingTest.java": {
+      "filePath": "src/test/java/frc/robot/SuperstructureEjectingTest.java",
+      "contentHash": "e1d0f18dca7c470de1da4a70fac710984c4977c270e34b0e8b60e943c2f1597b",
+      "functions": [
+        {
+          "name": "setup",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 12
+        },
+        {
+          "name": "teardown",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 12
+        },
+        {
+          "name": "ejectCmdDrivesEjectingThenCancelStopsRoller",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 35
+        }
+      ],
+      "classes": [
+        {
+          "name": "SuperstructureEjectingTest",
+          "methods": [
+            "setup",
+            "teardown",
+            "ejectCmdDrivesEjectingThenCancelStopsRoller"
+          ],
+          "properties": [
+            "robot",
+            "robotThread"
+          ],
+          "exported": false,
+          "lineCount": 66
+        }
+      ],
+      "imports": [
+        {
+          "source": "org.junit.jupiter.api.Assertions.assertEquals",
+          "specifiers": [
+            "assertEquals"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.Assertions.assertFalse",
+          "specifiers": [
+            "assertFalse"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.Assertions.assertTrue",
+          "specifiers": [
+            "assertTrue"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.hal.HAL",
+          "specifiers": [
+            "HAL"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.simulation.DriverStationSim",
+          "specifiers": [
+            "DriverStationSim"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj.simulation.SimHooks",
+          "specifiers": [
+            "SimHooks"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj2.command.Command",
+          "specifiers": [
+            "Command"
+          ]
+        },
+        {
+          "source": "edu.wpi.first.wpilibj2.command.CommandScheduler",
+          "specifiers": [
+            "CommandScheduler"
+          ]
+        },
+        {
+          "source": "frc.robot.subsystems.intake.Intake",
+          "specifiers": [
+            "Intake"
+          ]
+        },
+        {
+          "source": "frc.robot.subsystems.shooter.Shooter",
+          "specifiers": [
+            "Shooter"
+          ]
+        },
+        {
+          "source": "frc.robot.subsystems.superstructure.Superstructure",
+          "specifiers": [
+            "Superstructure"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.AfterEach",
+          "specifiers": [
+            "AfterEach"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.BeforeEach",
+          "specifiers": [
+            "BeforeEach"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.Test",
+          "specifiers": [
+            "Test"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.Timeout",
+          "specifiers": [
+            "Timeout"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 97,
+      "hasStructuralAnalysis": true
+    },
+    "V1 Layout.json": {
+      "filePath": "V1 Layout.json",
+      "contentHash": "65597af7abde0fe14fe8be2c68ae055336059b5afdd81d332ef3aaffefa475fb",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 472,
+      "hasStructuralAnalysis": true
+    },
+    "vendordeps/AdvantageKit.json": {
+      "filePath": "vendordeps/AdvantageKit.json",
+      "contentHash": "23bfed626272dc4b2758dfb0db4852657ea262d7073ad58761fc2d5e061a4e30",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 35,
+      "hasStructuralAnalysis": true
+    },
+    "vendordeps/LumynLabs-2026.2.0.json": {
+      "filePath": "vendordeps/LumynLabs-2026.2.0.json",
+      "contentHash": "7036495a2bbebc6f4756b9aef1df729683af1daf8515262614e646f31123d4a6",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 71,
+      "hasStructuralAnalysis": true
+    },
+    "vendordeps/maple-sim.json": {
+      "filePath": "vendordeps/maple-sim.json",
+      "contentHash": "1a2ce2122c106e4982d7c3069e26754d0ca0ac5835367fe08f0b7eed7fd049a9",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 31,
+      "hasStructuralAnalysis": true
+    },
+    "vendordeps/PathplannerLib-2026.1.2.json": {
+      "filePath": "vendordeps/PathplannerLib-2026.1.2.json",
+      "contentHash": "2f83af978807a035b9b9964ad0036a0ab1b84045c3d79fbafad28fc4e4558f72",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 38,
+      "hasStructuralAnalysis": true
+    },
+    "vendordeps/Phoenix6-26.1.3.json": {
+      "filePath": "vendordeps/Phoenix6-26.1.3.json",
+      "contentHash": "3a6b29562efc37d1f04ff86c1986d371a5b6daab4a7b3700b7422163f40f86d6",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 449,
+      "hasStructuralAnalysis": true
+    },
+    "vendordeps/WPILibNewCommands.json": {
+      "filePath": "vendordeps/WPILibNewCommands.json",
+      "contentHash": "dd836a57b0e6b37230ef97064694b5d4680c78c85a88d4c97a560488b5bf78e2",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 40,
+      "hasStructuralAnalysis": true
+    },
+    "WPILib-License.md": {
+      "filePath": "WPILib-License.md",
+      "contentHash": "fb89d94504564dc7c78694c5f4291e23cda05ecfe45a003ca4911d493009115d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 25,
+      "hasStructuralAnalysis": true
+    }
+  }
+}

@@ -1,0 +1,150 @@
+
+# This is a faster workflow that parallelizes the jobs in a matrix so
+# we can get faster results than waiting for the standard build_all_frc_projects
+# powershell script
+
+name: Build all FRC Projects
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project-name: 'ArcadeDrive'
+            directory: 'cpp/ArcadeDrive'
+          - project-name: 'BasicLatencyCompensation'
+            directory: 'cpp/BasicLatencyCompensation'
+          - project-name: 'CANcoder'
+            directory: 'cpp/CANcoder'
+          - project-name: 'CANdi'
+            directory: 'cpp/CANdi'
+          - project-name: 'CANdle'
+            directory: 'cpp/CANdle'
+          - project-name: 'CANrange'
+            directory: 'cpp/CANrange'
+          - project-name: 'CommandBasedDrive'
+            directory: 'cpp/CommandBasedDrive'
+          - project-name: 'ControlRequestLimits'
+            directory: 'cpp/ControlRequestLimits'
+          - project-name: 'CurrentLimits'
+            directory: 'cpp/CurrentLimits'
+          - project-name: 'FusedCANcoder'
+            directory: 'cpp/FusedCANcoder'
+          - project-name: 'MotionMagic'
+            directory: 'cpp/MotionMagic'
+          - project-name: 'PhoenixSysId'
+            directory: 'cpp/PhoenixSysId'
+          - project-name: 'Pigeon2'
+            directory: 'cpp/Pigeon2'
+          - project-name: 'PositionClosedLoop'
+            directory: 'cpp/PositionClosedLoop'
+          - project-name: 'PWMTalonFXS'
+            directory: 'cpp/PWMTalonFXS'
+          - project-name: 'Simulation'
+            directory: 'cpp/Simulation'
+          - project-name: 'SwerveWithPathPlanner'
+            directory: 'cpp/SwerveWithPathPlanner'
+          - project-name: 'VelocityClosedLoop'
+            directory: 'cpp/VelocityClosedLoop'
+          - project-name: 'WaitForAll'
+            directory: 'cpp/WaitForAll'
+          - project-name: 'ArcadeDrive'
+            directory: 'java/ArcadeDrive'
+          - project-name: 'BasicLatencyCompensation'
+            directory: 'java/BasicLatencyCompensation'
+          - project-name: 'CANcoder'
+            directory: 'java/CANcoder'
+          - project-name: 'CANdi'
+            directory: 'java/CANdi'
+          - project-name: 'CANdle'
+            directory: 'java/CANdle'
+          - project-name: 'CANrange'
+            directory: 'java/CANrange'
+          - project-name: 'CommandBasedDrive'
+            directory: 'java/CommandBasedDrive'
+          - project-name: 'ControlRequestLimits'
+            directory: 'java/ControlRequestLimits'
+          - project-name: 'CurrentLimits'
+            directory: 'java/CurrentLimits'
+          - project-name: 'FusedCANcoder'
+            directory: 'java/FusedCANcoder'
+          - project-name: 'MotionMagic'
+            directory: 'java/MotionMagic'
+          - project-name: 'MotionMagicExpo'
+            directory: 'java/MotionMagicExpo'
+          - project-name: 'PhoenixSysId'
+            directory: 'java/PhoenixSysId'
+          - project-name: 'Pigeon2'
+            directory: 'java/Pigeon2'
+          - project-name: 'PositionClosedLoop'
+            directory: 'java/PositionClosedLoop'
+          - project-name: 'PWMTalonFXS'
+            directory: 'java/PWMTalonFXS'
+          - project-name: 'Simulation'
+            directory: 'java/Simulation'
+          - project-name: 'SwerveWithChoreo'
+            directory: 'java/SwerveWithChoreo'
+          - project-name: 'SwerveWithPathPlanner'
+            directory: 'java/SwerveWithPathPlanner'
+          - project-name: 'TalonFXSGadgeteer'
+            directory: 'java/TalonFXSGadgeteer'
+          - project-name: 'VelocityClosedLoop'
+            directory: 'java/VelocityClosedLoop'
+          - project-name: 'WaitForAll'
+            directory: 'java/WaitForAll'
+
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # This grabs the WPILib docker container
+    container: wpilib/roborio-cross-ubuntu:2025-22.04
+
+    steps:
+    - uses: actions/checkout@v5
+
+    # Grant execute permission for gradlew
+    - name: Grant execute permission for gradlew
+      run: cd "${{ matrix.directory }}" && chmod +x gradlew
+
+    # Runs a single command using the runners shell
+    - name: Compile and run tests on robot code for project ${{ matrix.project-name }}
+      run: cd "${{ matrix.directory }}" && ./gradlew build
+
+  build-python:
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version: ['3.12', '3.13', '3.14']
+        os: ['ubuntu-24.04', 'macos-latest', 'windows-latest']
+        project-name: ['ArcadeDrive', 'CANcoder', 'CANdi', 'CANdle', 'CANrange', 'MotionMagic', 'PhoenixSysId', 'PositionClosedLoop', 'StatusSignals', 'SwerveWithPathPlanner', 'TalonFX', 'VelocityClosedLoop']
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python_version }}
+    - name: Install python dependencies
+      run: |
+        pip install -U pip
+        pip install -r requirements.txt
+    - name: Test ${{ matrix.project-name }}
+      run: |
+        cd "python/${{ matrix.project-name }}" && python3 -Wall -m robotpy test
+    - name: Vet mypy
+      run: |
+        cd "python/${{ matrix.project-name }}" && mypy --check-untyped-defs --ignore-missing-imports --explicit-package-bases .

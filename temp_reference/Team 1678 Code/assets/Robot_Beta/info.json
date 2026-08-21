@@ -1,0 +1,28 @@
+{
+    "Big Chungus" : [
+        {
+            "model.glb" : "Drive Train"
+        },
+        {
+            "model_0.glb" : "Climber"
+        },
+        {
+            "model_1.glb" : "Intake Deploy"
+        },
+        {
+            "model_2.glb" : "Hood"
+        },
+        {
+            "model_3.glb" : "Hopper Extension"
+        },
+        {
+            "model_4.glb" : "Hopper Floor"
+        },
+        {
+            "model_5.glb" : "Left Bridge"
+        },
+        {
+            "model_6.glb" : "Right Bridge"
+        }
+    ]
+}

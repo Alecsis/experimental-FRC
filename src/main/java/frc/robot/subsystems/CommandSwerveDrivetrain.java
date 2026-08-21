@@ -3,12 +3,15 @@ package frc.robot.subsystems;
 import static edu.wpi.first.units.Units.*;
 import frc.robot.RobotContainer;
 import java.util.Optional;
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
+import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
+import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
@@ -17,22 +20,38 @@ import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.util.PathPlannerLogging;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj.Notifier;
-import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.math.system.plant.DCMotor;
+import org.ironmaple.simulation.drivesims.AbstractDriveTrainSimulation;
+
+import frc.robot.Constants;
+import frc.robot.FieldConstants;
+import frc.robot.POI;
+import frc.robot.generated.TunerConstants;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
+import frc.robot.subsystems.vision.Vision;
+import frc.robot.utility.LoggingHolonomicDriveController;
+import frc.robot.utility.TrajectoryErrorTracker;
+import frc.robot.utility.simulation.MapleSimSwerveDrivetrain;
 
 @SuppressWarnings("unused")
 
@@ -44,9 +63,45 @@ import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
  * https://v6.docs.ctr-electronics.com/en/stable/docs/tuner/tuner-swerve/index.html
  */
 public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Subsystem {
-    private static final double kSimLoopPeriod = 0.02; // 20 ms
-    private Notifier m_simNotifier = null;
-    private double m_lastSimTime;
+    // maple-sim's PHYSICS INTEGRATION SUB-STEP, unchanged at 5 ms (200 Hz). It must stay well below
+    // the 20 ms main-loop period: the steer gains regulateModuleConstantsForSimulation() installs
+    // (kP=70) go numerically unstable at 20 ms, diverging at gain ~= -2 and flinging the pose.
+    // Matches Team 254's reference integration; maple-sim's own default is 250 Hz.
+    //
+    // This used to be the period of a background Notifier that called SimulatedArena
+    // .simulationPeriodic() directly. It is no longer a thread period: the arena is now advanced
+    // once per robot loop from Robot.simulationPeriodic(), as maple-sim's own javadoc requires
+    // ("This method should be called ONCE in TimedRobot#simulationPeriodic()"). The library ships no
+    // thread of its own, and stepping it off-thread made every robot-periodic mutation of the dyn4j
+    // world -- IntakeSimulation.startIntake()/stopIntake(), setSimulationWorldPose() -- race the
+    // physics step, throwing ConcurrentModificationException out of either side. See
+    // MapleSimIntakeToggleRaceTest.
+    //
+    // The integration sub-step is preserved by splitting the 20 ms robot period into 4 sub-ticks
+    // below, so physics still advances in 5 ms increments -- only the OWNING THREAD changed.
+    private static final double kSimPhysicsSubStepSeconds = 0.005;
+    /** Robot loop period; the outer window maple-sim divides into {@link #kSimPhysicsSubTicks}. */
+    private static final double kSimArenaPeriodSeconds = 0.020;
+    /** 0.020 / 0.005 -- keeps the integration step at 5 ms while stepping once per robot loop. */
+    private static final int kSimPhysicsSubTicks =
+            (int) Math.round(kSimArenaPeriodSeconds / kSimPhysicsSubStepSeconds);
+    // Sim-only signal-frequency mitigation (see initSimPhysics()): matches this drivetrain's own
+    // configured CAN-FD odometry rate (TunerConstants' default of 250 Hz -- see
+    // createDrivetrain()'s javadoc), not an arbitrary maximum.
+    private static final double kSimOdometrySignalHz = 250.0;
+    // Sim-only: how long resetPose() waits for the teleported heading to reach the Pigeon status
+    // signal. Generous relative to the 250 Hz signal rate (4 ms) and the 5 ms sim notifier period;
+    // waitForUpdate returns as soon as a fresh value arrives, so this is a ceiling, not a sleep.
+    private static final double kSimGyroSettleSeconds = 0.1;
+    private SwerveModuleConstants<?, ?, ?>[] moduleConstantsForSim;
+    private MapleSimSwerveDrivetrain mapleSim;
+    private Alliance m_lastAppliedAlliance;
+
+    // Nullable: RobotContainer constructs this drivetrain before it can construct the tracker
+    // (which needs this drivetrain's pose supplier), so the reference arrives after
+    // configureAutoBuilder() has already registered the PathPlannerLogging callbacks below.
+    // Set once via setTrajectoryErrorTracker(); guarded at each call site until then.
+    private TrajectoryErrorTracker trajectoryErrorTracker;
 
     /* Blue alliance sees forward as 0 degrees (toward red alliance wall) */
     private static final Rotation2d kBlueAlliancePerspectiveRotation = Rotation2d.kZero;
@@ -54,6 +109,12 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private static final Rotation2d kRedAlliancePerspectiveRotation = Rotation2d.k180deg;
     /* Keep track if we've ever applied the operator perspective before or not */
     private boolean m_hasAppliedOperatorPerspective = false;
+    /*
+     * Sim-only practice spawn, tracked separately from m_hasAppliedOperatorPerspective on purpose.
+     * Sharing that flag previously coupled two unrelated responsibilities and let the spawn reset
+     * fire while enabled -- see maybeApplySimPracticeSpawn().
+     */
+    private boolean m_hasAppliedSimPracticeSpawn = false;
     private final SwerveRequest.ApplyRobotSpeeds m_pathApplyRobotSpeeds = new SwerveRequest.ApplyRobotSpeeds();
 
     /* Swerve requests to apply during SysId characterization */
@@ -153,9 +214,11 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     public CommandSwerveDrivetrain(
             SwerveDrivetrainConstants drivetrainConstants,
             SwerveModuleConstants<?, ?, ?>... modules) {
-        super(drivetrainConstants, modules);
+        super(drivetrainConstants, MapleSimSwerveDrivetrain.regulateModuleConstantsForSimulation(modules));
+        moduleConstantsForSim = modules;
+        logCancoderBootReadings();
         if (Utils.isSimulation()) {
-            startSimThread();
+            initSimPhysics();
         }
         configureAutoBuilder();
     }
@@ -179,9 +242,12 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             SwerveDrivetrainConstants drivetrainConstants,
             double odometryUpdateFrequency,
             SwerveModuleConstants<?, ?, ?>... modules) {
-        super(drivetrainConstants, odometryUpdateFrequency, modules);
+        super(drivetrainConstants, odometryUpdateFrequency,
+                MapleSimSwerveDrivetrain.regulateModuleConstantsForSimulation(modules));
+        moduleConstantsForSim = modules;
+        logCancoderBootReadings();
         if (Utils.isSimulation()) {
-            startSimThread();
+            initSimPhysics();
         }
         configureAutoBuilder();
     }
@@ -220,11 +286,99 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             Matrix<N3, N1> visionStandardDeviation,
             SwerveModuleConstants<?, ?, ?>... modules) {
         super(drivetrainConstants, odometryUpdateFrequency, odometryStandardDeviation, visionStandardDeviation,
-                modules);
+                MapleSimSwerveDrivetrain.regulateModuleConstantsForSimulation(modules));
+        moduleConstantsForSim = modules;
+        logCancoderBootReadings();
         if (Utils.isSimulation()) {
-            startSimThread();
+            initSimPhysics();
         }
         configureAutoBuilder();
+    }
+
+    /**
+     * CANcoder boot barrier: blocks construction (real hardware only) until every module's
+     * CANcoder has published a fresh absolute reading over the CAN bus, then logs each
+     * module's first reading so startup state is auditable against the TunerConstants
+     * offsets. The magnet offsets themselves are applied inside super() by the generated
+     * SwerveDrivetrain -- this cannot run earlier without leaving the generated flow, but
+     * it guarantees no code after construction ever sees a stale/cached absolute position.
+     */
+    private void logCancoderBootReadings() {
+        // Sim CANcoders are driven by the maple-sim thread, which hasn't started yet at
+        // construction time -- a blocking wait here would stall desktop startup on signals
+        // that never arrive. Real readings only.
+        if (Utils.isSimulation()) {
+            return;
+        }
+
+        final String[] moduleLabels = { "FL", "FR", "BL", "BR" };
+        BaseStatusSignal[] absoluteSignals = new BaseStatusSignal[moduleLabels.length];
+        for (int i = 0; i < moduleLabels.length; i++) {
+            absoluteSignals[i] = getModule(i).getEncoder().getAbsolutePosition();
+        }
+
+        var status = BaseStatusSignal.waitForAll(1.5, absoluteSignals);
+        if (!status.isOK()) {
+            DriverStation.reportWarning(
+                    "CANcoder boot barrier: no fresh data within 1.5 s (" + status
+                            + "); readings below may be stale.",
+                    false);
+        }
+
+        for (int i = 0; i < moduleLabels.length; i++) {
+            double rotations = absoluteSignals[i].getValueAsDouble();
+            int deviceId = getModule(i).getEncoder().getDeviceID();
+            System.out.printf(
+                    "CANcoder boot read %s (id %d): %.12f rot [%s]%n",
+                    moduleLabels[i], deviceId, rotations, absoluteSignals[i].getStatus());
+            Logger.recordOutput("Drive/CancoderBootReadRotations/" + moduleLabels[i], rotations);
+        }
+    }
+
+    /**
+     * Bounds a raw PathPlanner chassis-speed command to what the drivetrain can actually achieve
+     * before it reaches CTRE's {@code ApplyRobotSpeeds} request. {@code LoggingHolonomicDriveController}
+     * (a {@code PPHolonomicDriveController} subclass) sums feedforward and feedback with no clamp
+     * anywhere -- translation feedback alone (kP=5) can command tens of m/s after a large position
+     * error. CTRE's {@code m_pathApplyRobotSpeeds} already desaturates wheel speeds downstream
+     * ({@code DesaturateWheelSpeeds=true} by default), so this is not a hardware-safety fix; it
+     * exists so the controller's own commanded signal -- and its telemetry -- stays physically
+     * sane. Reuses this drivetrain's own kinematics rather than clamping vx/vy/omega independently,
+     * since independent per-axis clamps don't bound combined translation+rotation demand at a
+     * corner module.
+     */
+    ChassisSpeeds sanitizeAutoSpeeds(ChassisSpeeds speeds) {
+        double rawSpeed = Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
+
+        SwerveModuleState[] states = getKinematics().toSwerveModuleStates(speeds);
+        SwerveDriveKinematics.desaturateWheelSpeeds(
+                states, TunerConstants.kSpeedAt12Volts.in(MetersPerSecond));
+        ChassisSpeeds bounded = getKinematics().toChassisSpeeds(states);
+
+        double boundedSpeed = Math.hypot(bounded.vxMetersPerSecond, bounded.vyMetersPerSecond);
+        Logger.recordOutput("Trajectory/RawCommandedSpeed", rawSpeed);
+        Logger.recordOutput("Trajectory/BoundedCommandedSpeed", boundedSpeed);
+        Logger.recordOutput("Trajectory/CommandedSpeedSaturated", boundedSpeed < rawSpeed - 1e-6);
+        Logger.recordOutput(
+                "Trajectory/BoundedCommandedSpeeds",
+                new double[] {
+                    bounded.vxMetersPerSecond, bounded.vyMetersPerSecond, bounded.omegaRadiansPerSecond
+                });
+
+        return bounded;
+    }
+
+    /**
+     * Discretizes, then bounds, a raw PathPlanner chassis-speed command before it reaches CTRE's
+     * {@code ApplyRobotSpeeds} request. Discretization must run first -- it couples a small vx/vy
+     * term in from omega that {@link #sanitizeAutoSpeeds} would otherwise saturate independently
+     * of, per docs/Path_Following_Tuning_Readiness_Audit.md's sequencing note. CTRE's own official
+     * Phoenix6-Examples reference (temp_reference/Phenoix 6 API Examples/java/SwerveWithPathPlanner)
+     * and Team 6328's independent Drive.java both discretize at this same point in their own
+     * pipelines -- this repo was the outlier in omitting it.
+     */
+    ChassisSpeeds prepareAutoSpeeds(ChassisSpeeds speeds) {
+        return sanitizeAutoSpeeds(ChassisSpeeds.discretize(speeds, TimedRobot.kDefaultPeriod));
     }
 
     private void configureAutoBuilder() {
@@ -237,10 +391,10 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                     // Consumer of ChassisSpeeds and feedforwards to drive the robot
                     (speeds, feedforwards) -> setControl(
                             m_pathApplyRobotSpeeds
-                                    .withSpeeds(speeds)
+                                    .withSpeeds(prepareAutoSpeeds(speeds))
                                     .withWheelForceFeedforwardsX(feedforwards.robotRelativeForcesXNewtons())
                                     .withWheelForceFeedforwardsY(feedforwards.robotRelativeForcesYNewtons())),
-                    new PPHolonomicDriveController(
+                    new LoggingHolonomicDriveController(
                             // PID constants for translation
                             new PIDConstants(5, 0, 0),
                             // PID constants for rotation
@@ -261,11 +415,27 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 (activePath) -> {
                     Logger.recordOutput(
                             "Odometry/Trajectory", activePath.toArray(new Pose2d[activePath.size()]));
+                    if (trajectoryErrorTracker != null) {
+                        trajectoryErrorTracker.onActivePath(activePath);
+                    }
                 });
         PathPlannerLogging.setLogTargetPoseCallback(
                 (targetPose) -> {
                     Logger.recordOutput("Odometry/TrajectorySetpoint", targetPose);
+                    if (trajectoryErrorTracker != null) {
+                        trajectoryErrorTracker.onTargetPose(targetPose);
+                    }
                 });
+    }
+
+    /**
+     * Wires this drivetrain's PathPlannerLogging callbacks to also feed the tracker. Called once
+     * by RobotContainer after both this drivetrain and the tracker exist -- the tracker cannot be
+     * constructed until it has this drivetrain's pose supplier, so it necessarily postdates
+     * configureAutoBuilder()'s callback registration above.
+     */
+    public void setTrajectoryErrorTracker(TrajectoryErrorTracker trajectoryErrorTracker) {
+        this.trajectoryErrorTracker = trajectoryErrorTracker;
     }
 
     /**
@@ -301,6 +471,133 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         return m_sysIdRoutineToApply.dynamic(direction);
     }
 
+    private static final double kAlignTolerance = 0.20;
+    private static final double kAlignRotationTolerance = Math.toRadians(1);
+    private static final double kAlignMaxSpeed = 0.5 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
+    private static final double kAlignMaxRotationalSpeed = RotationsPerSecond.of(0.75).in(RadiansPerSecond);
+
+    /** Drives to and holds a field point-of-interest, ported from the old AutoAlignPOI command. */
+    public Command driveToPOI(POI targetPOI) {
+        SwerveRequest.FieldCentric request = new SwerveRequest.FieldCentric()
+                .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
+        PIDController x = new PIDController(1, 0, 0);
+        PIDController y = new PIDController(1, 0, 0);
+        PIDController rot = new PIDController(3, 0, 0);
+        x.setTolerance(kAlignTolerance);
+        y.setTolerance(kAlignTolerance);
+        rot.setTolerance(kAlignRotationTolerance);
+        rot.enableContinuousInput(-Math.PI, Math.PI);
+
+        return new FunctionalCommand(
+                () -> {},
+                () -> {
+                    Translation2d target = targetPOI.get();
+                    Translation2d current = getState().Pose.getTranslation();
+                    Translation2d vectorToHub = target.minus(current);
+                    Translation2d opVector = new Translation2d(
+                            vectorToHub.getX() * getOperatorForwardDirection().getCos()
+                                    + vectorToHub.getY() * getOperatorForwardDirection().getSin(),
+                            -vectorToHub.getX() * getOperatorForwardDirection().getSin()
+                                    + vectorToHub.getY() * getOperatorForwardDirection().getCos());
+
+                    double vx = MathUtil.clamp(x.calculate(0, opVector.getX()), -kAlignMaxSpeed, kAlignMaxSpeed);
+                    double vy = MathUtil.clamp(y.calculate(0, opVector.getY()), -kAlignMaxSpeed, kAlignMaxSpeed);
+
+                    double currentRotation = getState().Pose.getRotation().getRadians();
+                    double targetRotation = targetPOI.getTargetRotation().getRadians();
+                    double rotError = MathUtil.angleModulus(targetRotation - currentRotation);
+                    double dxRotRadiansPerSecond = rot.calculate(currentRotation, currentRotation + rotError);
+                    double dxRot = MathUtil.clamp(
+                            dxRotRadiansPerSecond / (2 * Math.PI), -kAlignMaxRotationalSpeed, kAlignMaxRotationalSpeed);
+
+                    setControl(
+                            request
+                                    .withVelocityX(MetersPerSecond.of(vx))
+                                    .withVelocityY(MetersPerSecond.of(vy))
+                                    .withRotationalRate(dxRot));
+                },
+                interrupted -> idle(),
+                () -> {
+                    boolean atPos = getState().Pose.getTranslation().getDistance(targetPOI.get()) < kAlignTolerance;
+                    boolean atRot = Math.abs(MathUtil.angleModulus(
+                            getState().Pose.getRotation().getRadians()
+                                    - targetPOI.getTargetRotation().getRadians())) < kAlignRotationTolerance;
+                    return atPos && atRot;
+                },
+                this);
+    }
+
+    private static final double kTrackHeadingToleranceRad = Math.toRadians(2.0);
+
+    /** Rotates to face the hub (from Vision's AprilTag-layout-averaged position) while driving. Ported from Target. */
+    public Command trackHub(Vision vision, double maxSpeed, DoubleSupplier xSupplier, DoubleSupplier ySupplier,
+            boolean finishOnAlign) {
+        return trackTarget(vision::getHubPosition, maxSpeed, xSupplier, ySupplier, finishOnAlign);
+    }
+
+    /** Rotates to face the pass target while driving. Ported from Target. */
+    public Command trackPassTarget(Vision vision, double maxSpeed, DoubleSupplier xSupplier, DoubleSupplier ySupplier,
+            boolean finishOnAlign) {
+        return trackTarget(vision::getPassTargetPosition, maxSpeed, xSupplier, ySupplier, finishOnAlign);
+    }
+
+    private Command trackTarget(Supplier<Optional<Translation2d>> targetSupplier, double maxSpeed,
+            DoubleSupplier xSupplier, DoubleSupplier ySupplier, boolean finishOnAlign) {
+        PIDController headingPID = new PIDController(5.0, 0.0, 0.15);
+        headingPID.enableContinuousInput(-Math.PI, Math.PI);
+        SwerveRequest.FieldCentric driveReq = new SwerveRequest.FieldCentric()
+                .withDriveRequestType(DriveRequestType.Velocity);
+
+        return new FunctionalCommand(
+                () -> {
+                    headingPID.reset();
+                    double currentHeading = getState().Pose.getRotation().getRadians();
+                    headingPID.calculate(currentHeading, currentHeading);
+                },
+                () -> {
+                    Optional<Translation2d> targetOpt = targetSupplier.get();
+                    if (targetOpt.isEmpty()) {
+                        setControl(new SwerveRequest.Idle());
+                        return;
+                    }
+
+                    Pose2d robotPose = getState().Pose;
+                    double target = trackingAngle(targetOpt.get(), robotPose);
+                    double rotationOutput = headingPID.calculate(robotPose.getRotation().getRadians(), target);
+
+                    double vx = -ySupplier.getAsDouble() * maxSpeed;
+                    double vy = -xSupplier.getAsDouble() * maxSpeed;
+
+                    setControl(
+                            driveReq
+                                    .withDriveRequestType(DriveRequestType.Velocity)
+                                    .withVelocityX(vx)
+                                    .withVelocityY(vy)
+                                    .withRotationalRate(rotationOutput));
+                },
+                interrupted -> setControl(new SwerveRequest.Idle()),
+                () -> {
+                    if (!finishOnAlign) {
+                        return false;
+                    }
+                    Optional<Translation2d> targetOpt = targetSupplier.get();
+                    if (targetOpt.isEmpty()) {
+                        return false;
+                    }
+                    Pose2d robotPose = getState().Pose;
+                    double target = trackingAngle(targetOpt.get(), robotPose);
+                    double error = Math.abs(MathUtil.angleModulus(robotPose.getRotation().getRadians() - target));
+                    return error < kTrackHeadingToleranceRad;
+                },
+                this);
+    }
+
+    private static double trackingAngle(Translation2d targetPos, Pose2d robotPose) {
+        double offsetDeg = SmartDashboard.getNumber("offset", 0);
+        Translation2d toTarget = targetPos.minus(robotPose.getTranslation());
+        return toTarget.getAngle().getRadians() + Math.toRadians(offsetDeg);
+    }
+
     @Override
     public void periodic() {
 
@@ -315,34 +612,239 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
          * This ensures driving behavior doesn't change until an explicit disable event
          * occurs during testing.
          */
+        // Guarded so setOperatorPerspectiveForward only fires on an actual alliance change, not every
+        // periodic() tick while disabled -- DriverStation.getAlliance() can flip/settle over several
+        // ticks after a DS reconnect, and re-applying on every tick caused a spurious mid-match pi
+        // reference flip. This entire block runs on the main robot thread only (Subsystem.periodic());
+        // do not move any of this logic onto any background thread.
         if (!m_hasAppliedOperatorPerspective || DriverStation.isDisabled()) {
             DriverStation.getAlliance().ifPresent(allianceColor -> {
-                setOperatorPerspectiveForward(
-                        allianceColor == Alliance.Red
-                                ? kRedAlliancePerspectiveRotation
-                                : kBlueAlliancePerspectiveRotation);
+                if (allianceColor != m_lastAppliedAlliance) {
+                    setOperatorPerspectiveForward(
+                            allianceColor == Alliance.Red
+                                    ? kRedAlliancePerspectiveRotation
+                                    : kBlueAlliancePerspectiveRotation);
+                    m_lastAppliedAlliance = allianceColor;
+                }
                 m_hasAppliedOperatorPerspective = true;
             });
         }
+        maybeApplySimPracticeSpawn();
+        // Logged every cycle (not just on a flip) so the topic exists in the log browser from tick 1 --
+        // "None" until the alliance first resolves, then steps to "Red"/"Blue" exactly at a flip.
+        Logger.recordOutput("Vision/PerspectiveFlip",
+                m_lastAppliedAlliance == null ? "None" : m_lastAppliedAlliance.toString());
         if (DriverStation.isDisabled()) {
             Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
         }
+        logDriveMotorVoltages();
 
     }
 
-    private void startSimThread() {
-        m_lastSimTime = Utils.getCurrentTimeSeconds();
+    /**
+     * Per-module applied (output) drive motor voltage, FL/FR/BL/BR -- distinguishes "the controller
+     * isn't commanding enough voltage" from "the motors are voltage-saturated and still can't reach
+     * the requested velocity" during tracking-error investigations. Logged on the main 20ms loop
+     * (not the CTRE odometry thread's ~250Hz cadence that Telemetry.java's SwerveStates/Measured and
+     * SwerveStates/Setpoints run on), so compare by timestamp rather than assuming sample alignment.
+     */
+    private void logDriveMotorVoltages() {
+        double[] appliedVolts = new double[4];
+        double[] statorCurrent = new double[4];
+        for (int i = 0; i < 4; i++) {
+            appliedVolts[i] = getModule(i).getDriveMotor().getMotorVoltage().getValueAsDouble();
+            statorCurrent[i] = getModule(i).getDriveMotor().getStatorCurrent().getValueAsDouble();
+        }
+        Logger.recordOutput("Drive/AppliedVoltsPerModule", appliedVolts);
+        Logger.recordOutput("Drive/StatorCurrentAmpsPerModule", statorCurrent);
+    }
 
-        /* Run simulation at a faster rate so PID gains behave more reasonably */
-        m_simNotifier = new Notifier(() -> {
-            final double currentTime = Utils.getCurrentTimeSeconds();
-            double deltaTime = currentTime - m_lastSimTime;
-            m_lastSimTime = currentTime;
-
-            /* use the measured time delta, get battery voltage from WPILib */
-            updateSimState(deltaTime, RobotController.getBatteryVoltage());
+    /**
+     * Sim-only convenience spawn that drops the robot in an open patch of field so manual practice
+     * driving doesn't start wedged in the center structure. Never a match-legal start pose.
+     *
+     * <p>Deliberately NOT folded into the operator-perspective block above. That block's guard is
+     * {@code !m_hasAppliedOperatorPerspective || isDisabled()}, and the left half stays true until
+     * the alliance first resolves -- which, when the DS attaches at the same instant it enables into
+     * autonomous, is the first enabled tick. The spawn reset then landed one loop after
+     * {@code AutoBuilder}'s path-start seed and stomped it, teleporting both the odometry and the
+     * maple-sim world mid-path (evidence: logs/akit_26-07-19_00-52-32.wpilog, pose steps
+     * (12.887, 0.570) -> (8.259, 4.022) across t=3.88s -> 3.90s, while Enabled and Autonomous are
+     * both true). Three independent conditions now have to hold, so no future edit to the
+     * perspective guard can resurrect this:
+     *
+     * <ul>
+     *   <li>simulation only ({@code mapleSim != null}),
+     *   <li>strictly while disabled -- pose ownership belongs to whatever is driving once enabled,
+     *   <li>exactly once per robot-code lifetime.
+     * </ul>
+     *
+     * <p><b>Pose ownership.</b> Exactly one authority may write the pose in any given robot state:
+     *
+     * <ul>
+     *   <li>This method (MapleSim practice spawn) owns the initial <i>disabled</i> simulation pose.
+     *   <li>{@code AutoBuilder}/PathPlanner owns autonomous pose initialization.
+     *   <li>{@link Vision} owns vision-based pose corrections.
+     * </ul>
+     *
+     * <p>The simulation spawn must never overwrite an enabled robot's pose. That is the invariant
+     * this method exists to enforce, and it is pinned by
+     * {@code SimSpawnPoseOwnershipTest}.
+     *
+     * <p>Note the one-shot latch is set <i>inside</i> {@code getAlliance().ifPresent(...)} on
+     * purpose: it is deferred, not consumed. If the alliance first resolves while enabled the spawn
+     * is skipped, but the latch stays unset so the practice spawn still applies on the next disabled
+     * tick. Hoisting the assignment out of the lambda would silently cost a cold-DS session its
+     * practice spawn for the rest of the robot-code lifetime.
+     */
+    private void maybeApplySimPracticeSpawn() {
+        if (mapleSim == null || m_hasAppliedSimPracticeSpawn || !DriverStation.isDisabled()) {
+            return;
+        }
+        // Needs the alliance, which is empty until the DS connects -- so this cannot move to
+        // initSimPhysics()/simulationInit(), it has to poll until the alliance resolves.
+        DriverStation.getAlliance().ifPresent(allianceColor -> {
+            Pose2d spawnPose = FieldConstants.simPracticeSpawn(allianceColor);
+            resetPose(spawnPose);
+            m_hasAppliedSimPracticeSpawn = true;
+            Logger.recordOutput("Drivetrain/SimSpawnPose", spawnPose);
         });
-        m_simNotifier.startPeriodic(kSimLoopPeriod);
+    }
+
+    /**
+     * Builds the maple-sim physics drivetrain. Deliberately does NOT start a stepping thread --
+     * {@link #updateSimulation()} is driven from {@code Robot.simulationPeriodic()} instead, so the
+     * dyn4j world has exactly one owning thread. See {@link #kSimPhysicsSubStepSeconds}.
+     */
+    private void initSimPhysics() {
+        // TODO: confirm actual drive/steer motors -- assumed Kraken X60
+        mapleSim = new MapleSimSwerveDrivetrain(
+                Seconds.of(kSimArenaPeriodSeconds),
+                kSimPhysicsSubTicks,
+                Kilograms.of(Constants.kRobotMassWithBumpersKg),
+                Meters.of(Constants.kBumperLengthXMeters),
+                Meters.of(Constants.kBumperWidthYMeters),
+                DCMotor.getKrakenX60(1),
+                DCMotor.getKrakenX60(1),
+                Constants.kWheelCOF,
+                getModuleLocations(),
+                getPigeon2(),
+                getModules(),
+                moduleConstantsForSim);
+
+        // Sim-only, CTRE-recommended mitigation (Phoenix 6 docs, "High Fidelity CAN Bus
+        // Simulation"): the simulated CAN bus models real signal latency, which can leave stale
+        // data sitting between a maple-sim physics update and the next time the odometry/control
+        // signals below are polled. Raising their update rate narrows that window. This does NOT
+        // touch CTRE's native SwerveDrivetrain.OdometryThread itself (no public API exposes that),
+        // so it reduces -- it does not eliminate -- run-to-run timing variance. Explicitly
+        // re-guarded here (not just relying on this method only being called in sim) so this
+        // block's safety doesn't depend on tracing call sites.
+        if (Utils.isSimulation()) {
+            BaseStatusSignal[] odometrySignals = new BaseStatusSignal[22];
+            int i = 0;
+            for (int m = 0; m < 4; m++) {
+                odometrySignals[i++] = getModule(m).getDriveMotor().getPosition();
+                odometrySignals[i++] = getModule(m).getDriveMotor().getVelocity();
+                odometrySignals[i++] = getModule(m).getSteerMotor().getPosition();
+                odometrySignals[i++] = getModule(m).getSteerMotor().getVelocity();
+                odometrySignals[i++] = getModule(m).getEncoder().getAbsolutePosition();
+            }
+            odometrySignals[i++] = getPigeon2().getYaw();
+            odometrySignals[i++] = getPigeon2().getAngularVelocityZWorld();
+            BaseStatusSignal.setUpdateFrequencyForAll(kSimOdometrySignalHz, odometrySignals);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>In simulation the physics body must be teleported, and the sim Pigeon must have caught up
+     * to the new heading, BEFORE the estimator is seeded.
+     *
+     * <p>MapleSimSwerveDrivetrain drives the sim Pigeon's raw yaw off the physics body, and CTRE's
+     * odometry integrates gyro DELTAS. With the old ordering (seed first, teleport second) the
+     * Pigeon still reported the pre-teleport heading for a tick or two, then jumped to the new one;
+     * odometry folded that catch-up step in as real rotation, leaving
+     * {@code reported = 2*target - heading_before}. Measured 2026-07-29: seeding to 78.296 deg from
+     * a body at -22.05 deg settled the estimator at 177.28 deg, and on the "Left Trench Neutral"
+     * control run (body at 0 deg) it settled at 156.6 deg against a 78.296 deg target -- handing
+     * PathPlanner a 78 deg heading error on the very first sample of every simulated auto while
+     * translation error was still 0.000 m.
+     *
+     * <p>Real hardware never enters this branch ({@code mapleSim} is null there), so the
+     * physical-robot path is byte-for-byte unchanged. Guarded by ResetPoseHeadingSimTest.
+     */
+    @Override
+    public void resetPose(Pose2d pose) {
+        if (mapleSim != null) {
+            mapleSim.mapleSimDrive.setSimulationWorldPose(pose);
+            mapleSim.syncGyroToSimulationPose();
+            // Force the status signal to observe the post-teleport value before the odometry
+            // estimator is seeded. waitForUpdate() alone can return from a signal update that
+            // was already queued while the notifier was under load.
+            BaseStatusSignal.refreshAll(getPigeon2().getYaw());
+            // Block until the odometry thread can actually observe the post-teleport yaw. Without
+            // this the stale value still lands after super.resetPose() and the delta reappears.
+            getPigeon2().getYaw().waitForUpdate(kSimGyroSettleSeconds);
+            // Re-assert after the first observation: under load, a queued pre-teleport sample can
+            // still be delivered between the explicit refresh and the odometry thread's read.
+            mapleSim.syncGyroToSimulationPose();
+            getPigeon2().getYaw().waitForUpdate(kSimGyroSettleSeconds);
+        }
+        super.resetPose(pose);
+    }
+
+    /** Stops the MapleSim notifier before the Phoenix drivetrain's own odometry thread closes. */
+    @Override
+    public void close() {
+        // No sim notifier to stop any more -- the maple-sim arena is advanced from
+        // Robot.simulationPeriodic() on the robot loop, which has already ended by the time a test
+        // or sim session calls close(). super.close() releases Phoenix's native odometry thread,
+        // which is the remaining non-daemon thread that would otherwise keep a forked JVM alive.
+        super.close();
+    }
+
+    /**
+     * Advances the maple-sim physics world by exactly one robot period.
+     *
+     * <p>Called from {@code Robot.simulationPeriodic()} -- the location maple-sim's own
+     * {@code SimulatedArena.simulationPeriodic()} javadoc requires ("This method should be called
+     * ONCE in {@code TimedRobot#simulationPeriodic()}"). Running it here rather than on a Notifier
+     * is what gives the dyn4j world a single owning thread: {@code Intake.periodic()} and this both
+     * execute on the robot loop, so a mechanism can add or remove a physics fixture without racing
+     * the step that walks it.
+     *
+     * <p>No-op on real hardware, where {@code mapleSim} is never constructed.
+     */
+    public void updateSimulation() {
+        if (mapleSim != null) {
+            mapleSim.update();
+        }
+    }
+
+    /** Returns the maple-sim drivetrain simulation, or null on real hardware / before the sim thread starts. */
+    public AbstractDriveTrainSimulation getMapleSimDrive() {
+        return mapleSim == null ? null : mapleSim.mapleSimDrive;
+    }
+
+    /**
+     * Returns the physics simulation's ground-truth pose, or null on real hardware / before the sim
+     * thread starts. Unlike getState().Pose (the Kalman-filtered estimate vision measurements are
+     * fused into), this is independent of vision entirely -- safe to use as a vision-sim ground truth
+     * source without creating a self-referential feedback loop.
+     */
+    public Pose2d getSimulatedGroundTruthPose() {
+        return mapleSim == null ? null : mapleSim.mapleSimDrive.getSimulatedDriveTrainPose();
+    }
+
+    /**
+     * Raw Pigeon 2 yaw in degrees, independent of the vision-fused pose estimate. Safe to feed into
+     * MegaTag2's SetRobotOrientation -- unlike getState().Pose.getRotation(), this value is never
+     * itself corrected by a vision measurement, so it can't create a self-referential feedback loop.
+     */
+    public double getRawGyroYawDegrees() {
+        return getPigeon2().getYaw().getValueAsDouble();
     }
 
     /**

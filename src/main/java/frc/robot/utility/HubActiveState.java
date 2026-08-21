@@ -1,6 +1,4 @@
 package frc.robot.utility;
-import com.ctre.phoenix6.HootAutoReplay;
-import com.ctre.phoenix6.Utils;
 import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.NetworkTable;
@@ -45,10 +43,10 @@ public class HubActiveState {
     private final BooleanPublisher isHubActivePublisher = inst.getBooleanTopic("Active").publish();
     private final DoublePublisher timeUntilSwapPublisher = inst.getDoubleTopic("Time Until Swap").publish();
 
-    /* Hoot auto-log and auto-replay support */
-    private final HootAutoReplay autoReplay = new HootAutoReplay()
-        .withBoolean("Hub/Active", () -> isHubActive, val -> isHubActive = val.value)
-        .withDouble("Hub/Time Until Swap", () -> timeUntilTransition, val -> timeUntilTransition = val.value);
+    /* Hoot auto-log and auto-replay support -- vendor (Phoenix 6) hookup isolated in HootReplayBridge */
+    private final HootReplayBridge replay = new HootReplayBridge(
+        () -> isHubActive, val -> isHubActive = val,
+        () -> timeUntilTransition, val -> timeUntilTransition = val);
 
     private void updateStatesForTeleop() {
         if (!DriverStation.isTeleopEnabled()) return;
@@ -124,10 +122,10 @@ public class HubActiveState {
 
     public void periodic() {
         /* If we're not replaying, then fetch data, otherwise let the autoreplay handle filling in data */
-        if (!Utils.isReplay()) {
+        if (!replay.isReplay()) {
             fetchInputs();
         }
-        autoReplay.update();
+        replay.update();
 
         isHubActivePublisher.accept(isHubActive);
         timeUntilSwapPublisher.accept(timeUntilTransition);

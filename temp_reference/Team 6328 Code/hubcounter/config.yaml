@@ -1,0 +1,34 @@
+colors:
+  blue:
+  - 0
+  - 100
+  - 255
+  red:
+  - 255
+  - 0
+  - 0
+  yellow:
+  - 255
+  - 200
+  - 0
+gpio:
+  active_low: false
+  channel_pins:
+  - 23
+  - 24
+  - 25
+  - 16
+  debounce_ms: 10
+led:
+  brightness: 200
+  data_pin: 21
+  led_count: 6
+network:
+  robot_address: 10.63.28.2
+  team_number: 6328
+thresholds:
+  blue: 360
+  yellow: 100
+web:
+  host: 0.0.0.0
+  port: 80

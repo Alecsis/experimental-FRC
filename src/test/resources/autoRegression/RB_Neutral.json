@@ -1,0 +1,18 @@
+{
+  "autoName" : "RB Neutral",
+  "recordedAtGitSha" : "c351c8e2c211c438f285c79799d77bfde7be0403",
+  "completed" : true,
+  "runtimeSeconds" : 12.9902423,
+  "maxLateralErrorMeters" : 0.1128537009048377,
+  "maxLongitudinalErrorMeters" : 0.23802800680881442,
+  "diagnosticStartPose" : {
+    "xMeters" : 3.694235955056179,
+    "yMeters" : 2.3511862396204037,
+    "thetaRadians" : 0.0
+  },
+  "diagnosticFinalPose" : {
+    "xMeters" : 2.705563649304416,
+    "yMeters" : 1.7456030986813187,
+    "thetaRadians" : 0.2215164128112861
+  }
+}

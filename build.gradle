@@ -89,17 +89,40 @@ dependencies {
 test {
     useJUnitPlatform()
     systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
+    // Forks a fresh JVM per test CLASS (Gradle semantics, not per method): Vision/Intake/
+    // Shooter/Superstructure are Singletons with no reset hook, so reusing a JVM across test
+    // classes would cross-wire a later class's Robot with an earlier class's cached singleton
+    // instances. Within a class, methods still share one JVM -- see RobotLifecycleTest and
+    // SuperstructureEjectingTest, each deliberately kept to a single @Test method for exactly
+    // this reason.
+    //
+    // Any test that boots Robot must drive the real startCompetition() loop on a background
+    // thread via DriverStationSim/SimHooks, never call disabledInit()/autonomousInit()/etc.
+    // directly: AdvantageKit's Logger.periodicBeforeUser()/periodicAfterUser() -- which flush
+    // recordOutput() calls to the data receivers and back every getter these tests assert on --
+    // only run inside that loop. A direct-call test would pass while proving nothing. See
+    // docs/superpowers/plans/2026-07-17-phase3-imu-mode-junit-test.md for how this was found.
+    forkEvery = 1
+
+    // Forwarded so the auto-regression golden-update gate (-DupdateAutoGolden=true
+    // -DconfirmGoldenUpdate=true) reaches the forked test JVM -- Gradle does not do this for -D
+    // flags by default, only for OS environment variables (verified empirically, not assumed).
+    systemProperty 'updateAutoGolden', System.getProperty('updateAutoGolden', 'false')
+    systemProperty 'confirmGoldenUpdate', System.getProperty('confirmGoldenUpdate', 'false')
 }
 
 // Simulation configuration (e.g. environment variables).
-wpi.sim.addGui().defaultEnabled = true
+// GUI on for interactive use; SKILLS/run_headless_sim.py passes -Pheadless=true.
+wpi.sim.addGui().defaultEnabled = !project.hasProperty('headless')
 wpi.sim.addDriverstation()
 
 // Setting up my Jar File. In this case, adding all libraries into the main jar ('fat jar')
 // in order to make them all available at runtime. Also adding the manifest so WPILib
 // knows where to look for our Robot Class.
 jar {
-    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
     from('src') { into 'backup/src' }
     from('vendordeps') { into 'backup/vendordeps' }
     from('build.gradle') { into 'backup' }

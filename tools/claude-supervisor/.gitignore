@@ -1,0 +1,7 @@
+# Secrets and runtime artifacts -- never commit these.
+config.yaml
+supervisor.log
+mouse_debug.log
+__pycache__/
+*.pyc
+.venv/

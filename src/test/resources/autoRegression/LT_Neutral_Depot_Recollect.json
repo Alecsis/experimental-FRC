@@ -1,0 +1,18 @@
+{
+  "autoName" : "LT Neutral Recollect - Depot",
+  "recordedAtGitSha" : "c351c8e2c211c438f285c79799d77bfde7be0403",
+  "completed" : false,
+  "runtimeSeconds" : 15.010789,
+  "maxLateralErrorMeters" : 0.17589028858334907,
+  "maxLongitudinalErrorMeters" : 0.29559000854679135,
+  "diagnosticStartPose" : {
+    "xMeters" : 3.6534719101123594,
+    "yMeters" : 7.3,
+    "thetaRadians" : -1.5707963267948966
+  },
+  "diagnosticFinalPose" : {
+    "xMeters" : 1.1877445170260785,
+    "yMeters" : 6.527320905469052,
+    "thetaRadians" : -0.010453676268414706
+  }
+}
