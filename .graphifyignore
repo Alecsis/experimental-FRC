@@ -1,0 +1,30 @@
+# Audit the committed robot application, not nested/reference repositories or generated tooling.
+.git/**
+.codex/**
+.claude/**
+.ua/**
+.gradle/**
+.worktrees/**
+.idea/**
+.vscode/**
+build/**
+bin/**
+logs/**
+ctre_sim/**
+ppl/**
+graphify-out/**
+temp_reference/**
+controls-academy/**
+tools/**
+SKILLS/**
+Simulation-CSV-Analysis/**
+docs/**
+
+# Generated/cache/binary noise.
+**/__pycache__/**
+**/*.class
+**/*.jar
+**/*.log
+**/*.png
+**/*.glb
+**/*.vpr
