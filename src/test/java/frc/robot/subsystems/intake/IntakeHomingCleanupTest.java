@@ -109,7 +109,21 @@ class IntakeHomingCleanupTest {
     assertTrue(robotThread.isAlive(), "startCompetition() loop should still be running");
     CommandScheduler.getInstance().cancelAll();
     intake.clearPivotCurrentOverrideForTest();
+    intake.clearPivotVelocityOverrideForTest();
     SimRobotLoop.step(kTick);
+
+    // Intake's failed-home position guard refuses every closed-loop pivot request until a home
+    // reference exists, so the goTo(DOWN) below cannot move the arm on a JVM where nothing has
+    // homed yet. Establish the reference once, with a real homing command, before relying on it.
+    // (IntakeHomingQualificationTest is where the never-homed guard itself is exercised.)
+    if (!intake.homedForTest()) {
+      Command warmup = intake.homing();
+      CommandScheduler.getInstance().schedule(warmup);
+      SimRobotLoop.stepUntil(() -> !CommandScheduler.getInstance().isScheduled(warmup), 4.0,
+          "the warm-up home to establish a reference");
+      assertTrue(intake.homedForTest(),
+          "the warm-up home must succeed, or nothing in this class can position the pivot");
+    }
 
     intake.goTo(Intake.PivotState.DOWN);
     SimRobotLoop.stepUntil(() -> !intake.hardstop(), 2.0, "the pivot to come off the hardstop");
