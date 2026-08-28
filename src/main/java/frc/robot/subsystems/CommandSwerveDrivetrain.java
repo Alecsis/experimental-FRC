@@ -49,6 +49,7 @@ import frc.robot.POI;
 import frc.robot.generated.TunerConstants;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
 import frc.robot.subsystems.vision.Vision;
+import frc.robot.utility.ShooterGeometry;
 import frc.robot.utility.LoggingHolonomicDriveController;
 import frc.robot.utility.TrajectoryErrorTracker;
 import frc.robot.utility.simulation.MapleSimSwerveDrivetrain;
@@ -592,10 +593,26 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 this);
     }
 
+    /**
+     * The heading that points the SHOOTER at a field target.
+     *
+     * <p>Routed through {@link ShooterGeometry} so aiming and the RPM lookup consume the SAME
+     * shooter-to-target vector; {@code Vision.calculateRPM()} sizes the shot from
+     * {@code shooterHubDistanceMeters}, and this points the robot along the identical vector.
+     * Applies to both {@link #trackHub} and {@link #trackPassTarget} because there is one physical
+     * launcher, and to autonomous "Orbit" and teleop tracking alike because both call this.
+     *
+     * <p>The {@code "offset"} SmartDashboard number is a PRE-EXISTING, live manual aim trim in
+     * DEGREES, seeded to 0 by RobotContainer. It is deliberately kept and deliberately NOT folded
+     * into ShooterGeometry: it is an angular bias applied to the final bearing, whereas
+     * ShooterGeometry is a translational change of origin. They are different quantities, so
+     * consolidating them would be a guess about semantics nobody has verified on hardware. Trim
+     * it from the dashboard as before.
+     */
     private static double trackingAngle(Translation2d targetPos, Pose2d robotPose) {
         double offsetDeg = SmartDashboard.getNumber("offset", 0);
-        Translation2d toTarget = targetPos.minus(robotPose.getTranslation());
-        return toTarget.getAngle().getRadians() + Math.toRadians(offsetDeg);
+        return ShooterGeometry.aimHeading(robotPose, targetPos).getRadians()
+                + Math.toRadians(offsetDeg);
     }
 
     @Override

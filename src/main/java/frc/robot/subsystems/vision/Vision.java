@@ -19,10 +19,12 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.utility.ShooterGeometry;
 
 /**
  * Singleton Vision subsystem. Applies the MegaTag2 trust filter to raw camera inputs and pushes
@@ -72,6 +74,14 @@ public class Vision extends SubsystemBase {
   // docs/Autonomous_Recovery_Audit.md's F5 flagged ("nothing consumes this at runtime"). Purely
   // additive: does not change fuseMeasurements()'s accept/reject decision or trust logic at all.
   private double lastRejectedJumpMeters;
+  /**
+   * FPGA timestamp of the last vision measurement this class actually FUSED (not merely received),
+   * or NaN if none has been accepted this power cycle. Same additive, read-only mirror pattern as
+   * {@link #lastRejectedJumpMeters}: it changes no accept/reject decision, it only lets a live
+   * consumer -- the shooter tuning board -- say whether the pose a shot was judged against was
+   * actually vision-corrected or is pure dead-reckoned odometry.
+   */
+  private double lastAcceptedVisionTimestamp = Double.NaN;
 
   /** Creates a new Vision. Use {@link #getInstance(CommandSwerveDrivetrain)} instead of constructing directly. */
   private Vision(VisionIO io, CommandSwerveDrivetrain drivetrain) {
@@ -102,13 +112,17 @@ public class Vision extends SubsystemBase {
     return Optional.of(new Translation2d(totalX / count, totalY / count));
   }
 
+  /**
+   * Heading that points the SHOOTER at the hub, not the robot centre. Routed through
+   * {@link ShooterGeometry} so it cannot drift from the distance {@link #calculateRPM()} uses --
+   * both come from the same shooter-to-hub vector.
+   */
   public Optional<Rotation2d> getHubHeading() {
     Optional<Translation2d> hubPosOpt = getHubPosition();
     if (hubPosOpt.isEmpty()) {
       return Optional.empty();
     }
-    Translation2d delta = hubPosOpt.get().minus(drivetrain.getState().Pose.getTranslation());
-    return Optional.of(delta.getAngle());
+    return Optional.of(ShooterGeometry.aimHeading(drivetrain.getState().Pose, hubPosOpt.get()));
   }
 
   public Optional<Translation2d> getPassTargetPosition() {
@@ -131,13 +145,13 @@ public class Vision extends SubsystemBase {
     return Optional.of(sum.div(count));
   }
 
+  /** Shooter-origin heading to the pass target -- one physical launcher, one transform. */
   public Optional<Rotation2d> getPassHeading() {
     Optional<Translation2d> targetOpt = getPassTargetPosition();
     if (targetOpt.isEmpty()) {
       return Optional.empty();
     }
-    Translation2d delta = targetOpt.get().minus(drivetrain.getState().Pose.getTranslation());
-    return Optional.of(delta.getAngle());
+    return Optional.of(ShooterGeometry.aimHeading(drivetrain.getState().Pose, targetOpt.get()));
   }
 
   /** MegaTag1-based pose estimate suitable for seeding odometry on reset. See {@link VisionIO#getPoseResetEstimate}. */
@@ -166,6 +180,11 @@ public class Vision extends SubsystemBase {
     return Optional.of(currentRobotPose);
   }
 
+  /**
+   * ROBOT-CENTRE to hub distance. Retained with exactly its original meaning because it is what the
+   * existing {@code Vision/Distance_To_Hub} driver readout has always shown. It is deliberately NOT
+   * what sizes a shot -- see {@link #shooterHubDistanceMeters}.
+   */
   public OptionalDouble hubDistanceMeters(Pose2d currentRobotPose) {
     var poseOpt = getVisionPose(currentRobotPose);
     var hubOpt = getHubPosition();
@@ -175,8 +194,22 @@ public class Vision extends SubsystemBase {
     return OptionalDouble.of(poseOpt.get().getTranslation().getDistance(hubOpt.get()));
   }
 
+  /**
+   * SHOOTER-ORIGIN to hub distance -- the distance a shot actually travels, and the only distance
+   * the RPM lookup table may be fed. Identical to {@link #hubDistanceMeters} while
+   * {@link ShooterGeometry}'s offsets are still 0.0.
+   */
+  public OptionalDouble shooterHubDistanceMeters(Pose2d currentRobotPose) {
+    var poseOpt = getVisionPose(currentRobotPose);
+    var hubOpt = getHubPosition();
+    if (poseOpt.isEmpty() || hubOpt.isEmpty()) {
+      return OptionalDouble.empty();
+    }
+    return OptionalDouble.of(ShooterGeometry.shooterDistanceMeters(poseOpt.get(), hubOpt.get()));
+  }
+
   public OptionalDouble calculateRPM() {
-    OptionalDouble distanceMetersOpt = hubDistanceMeters(drivetrain.getState().Pose);
+    OptionalDouble distanceMetersOpt = shooterHubDistanceMeters(drivetrain.getState().Pose);
     if (distanceMetersOpt.isEmpty()) {
       return OptionalDouble.empty();
     }
@@ -238,6 +271,7 @@ public class Vision extends SubsystemBase {
 
         drivetrain.addVisionMeasurement(
             measuredPose, inputs.timestampSeconds[i], VecBuilder.fill(dev, dev, 999999));
+        lastAcceptedVisionTimestamp = Timer.getFPGATimestamp();
       }
     }
 
@@ -251,6 +285,17 @@ public class Vision extends SubsystemBase {
    * {@code Vision/RejectedJumpMeters} value this mirrors. */
   public double getLastRejectedJumpMeters() {
     return lastRejectedJumpMeters;
+  }
+
+  /**
+   * Seconds since the last vision measurement was fused into the pose estimator, or
+   * {@link Double#POSITIVE_INFINITY} if none ever has been. Read-only observability.
+   */
+  public double getSecondsSinceLastAcceptedVisionMeasurement() {
+    if (Double.isNaN(lastAcceptedVisionTimestamp)) {
+      return Double.POSITIVE_INFINITY;
+    }
+    return Timer.getFPGATimestamp() - lastAcceptedVisionTimestamp;
   }
 
   @Override
@@ -276,10 +321,18 @@ public class Vision extends SubsystemBase {
       SmartDashboard.putNumber("Vision/Distance_To_Hub", distanceFeet);
       SmartDashboard.putString("Vision/convert", String.format("Distance = %.2f ft", distanceFeet));
       Logger.recordOutput("Hub Distance", String.format("Distance = %.2f ft", distanceFeet));
+      // Published on BOTH branches, like the readouts above it: a topic that simply stops updating
+      // when the hub is unresolvable is indistinguishable in the log browser from one that is
+      // holding a real, stale value. 0.0 is the same "nothing to report" convention
+      // Vision/Distance_To_Hub already uses in the else branch. Purely a telemetry symmetry fix --
+      // it reads shooterHubDistanceMeters(), it does not feed targeting.
+      Logger.recordOutput("Vision/ShooterDistanceToHubFt",
+          Units.metersToFeet(shooterHubDistanceMeters(currentPose).orElse(0.0)));
     }, () -> {
       SmartDashboard.putNumber("Vision/Distance_To_Hub", 0.0);
       SmartDashboard.putString("Vision/convert", "vision disconnected");
       Logger.recordOutput("Hub Distance", "vision disconnected");
+      Logger.recordOutput("Vision/ShooterDistanceToHubFt", 0.0);
     });
   }
 }
