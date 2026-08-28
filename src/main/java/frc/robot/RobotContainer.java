@@ -36,6 +36,7 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.shooter.ShooterTuning;
 import frc.robot.subsystems.superstructure.Superstructure;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.utility.TrajectoryErrorTracker;
@@ -92,6 +93,17 @@ public class RobotContainer {
                         trajectoryErrorTracker::getSecondsSinceLastFreshTargetPose,
                         vision::getLastRejectedJumpMeters);
         private SendableChooser<Command> autoChooser;
+
+        /**
+         * Bring-up-only operator surface and shot-characterization log for shooter tuning. Owned
+         * here rather than by {@link Shooter} because it needs the drivetrain pose and the hub
+         * position; it writes no actuator, so it never competes for a subsystem.
+         */
+        private final ShooterTuning shooterTuning = new ShooterTuning(
+                        shooter,
+                        () -> drivetrain.getState().Pose,
+                        vision::getHubPosition,
+                        vision::getSecondsSinceLastAcceptedVisionMeasurement);
 
         /**
          * Autos that exist on disk and stay fully runnable, but are hidden from the driver-station
@@ -182,6 +194,14 @@ public class RobotContainer {
                 SmartDashboard.putData("State: Stow", superstructure.stowCmd());
                 SmartDashboard.putData("State: Shoot", superstructure.shootCmd());
                 SmartDashboard.putData("Auto Chooser", autoChooser);
+
+                // Shooter tuning: RPM adjustment and sample recording only. Both are safe on the
+                // dashboard because neither touches the indexer or the agitator -- feeding is
+                // exclusively the physical hold bound in configureBindings(), never a dashboard
+                // button, which by construction latches until something un-presses it.
+                SmartDashboard.putData("Shooter Tuning: +StepRPM", shooterTuning.stepUpCmd());
+                SmartDashboard.putData("Shooter Tuning: -StepRPM", shooterTuning.stepDownCmd());
+                SmartDashboard.putData("Record Tuning Sample", shooterTuning.recordSampleCmd());
         }
 
         /**
@@ -190,6 +210,42 @@ public class RobotContainer {
          */
         public void periodic() {
                 operatorControls.periodic(MaxSpeed, MaxAngularRate);
+                shooterTuning.periodic();
+        }
+
+        /**
+         * Called from {@link Robot#disabledInit()}. Disarms shooter tuning so a mode left on before
+         * a disable cannot silently resurrect on the next enable -- arming tuning must always be a
+         * fresh, deliberate act, because the operator re-enabling may be expecting normal match
+         * behaviour (vision LUT, fallback, automatic shooting sequence) rather than a flywheel
+         * held at whatever number was last dialled in.
+         */
+        public void disabledInit() {
+                shooter.exitTuningMode();
+        }
+
+        /**
+         * Called from {@link Robot#autonomousInit()}, and the AUTHORITATIVE protection against
+         * shooter tuning leaking into a match.
+         *
+         * <p>{@link #disabledInit()} alone is not enough, and the gap is not theoretical: it runs at
+         * the DISABLE TRANSITION, so an operator who ticks "Shooter Tuning Mode" on the dashboard
+         * while the robot sits disabled -- i.e. after that hook has already fired -- carries the
+         * armed mode straight into the next enable. If that enable is autonomous, every
+         * {@code Superstructure.requestShot()} is refused and stowed, so "Shooting Sequence" and
+         * "Quick Shooting" satisfy their {@code waitUntil(!mShotInProgress)} immediately and
+         * complete WITHOUT FIRING. The auto drives its whole path and scores nothing, silently.
+         *
+         * <p>Clearing at autonomous ENTRY closes that regardless of how, or when, tuning was armed
+         * -- dashboard while disabled, dashboard mid-teleop, or a future code path that does not
+         * exist yet. Guarding the arming side instead would have to enumerate every route in, and
+         * would still miss the arm-while-disabled case entirely.
+         *
+         * <p>Costs nothing when tuning was never armed: {@code setTuningMode} returns immediately
+         * when the requested state already matches, so this cannot perturb a normal autonomous.
+         */
+        public void autonomousInit() {
+                shooter.exitTuningMode();
         }
 
         /**
@@ -242,6 +298,23 @@ public class RobotContainer {
                 // run quasistatic sysid routine on button hold, with forward and reverse
                 // directions then do dynamic
                 // drivetrain
+                /*
+                 * Shooter tuning bindings live on the bench/tuning controller (port 2), alongside
+                 * the SysId characterization controls, because that is what they are: bring-up
+                 * tooling, not gameplay. They are deliberately NOT on the driver or operator
+                 * surfaces, where a stray press during a match could feed fuel through an untuned
+                 * flywheel.
+                 *
+                 * The feed is a HOLD (whileTrue), so releasing it stops the indexer and agitator on
+                 * the next scheduler tick; Shooter.tuningFeedCmd() is additionally inert unless
+                 * tuning mode is armed. The chord with the right bumper makes an accidental single
+                 * press insufficient to feed.
+                 */
+                sysid.rightBumper().and(sysid.a()).whileTrue(shooter.tuningFeedCmd());
+                sysid.povUp().onTrue(shooterTuning.stepUpCmd());
+                sysid.povDown().onTrue(shooterTuning.stepDownCmd());
+                sysid.start().onTrue(shooterTuning.recordSampleCmd());
+
                 sysid.leftBumper().onTrue(Commands.runOnce(drivetrain::useTranslationSysId));
                 sysid.leftTrigger().onTrue(Commands.runOnce(drivetrain::useSteerSysId));
                 sysid.rightTrigger().onTrue(Commands.runOnce(drivetrain::useRotationSysId));

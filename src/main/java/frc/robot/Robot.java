@@ -140,6 +140,7 @@ public class Robot extends LoggedRobot {
   @Override
   public void disabledInit() {
     m_vision.setIMUMode(1);
+    m_robotContainer.disabledInit();
   }
 
   @Override
@@ -156,6 +157,9 @@ public void robotInit() {
 
   @Override
 public void autonomousInit() {
+    // BEFORE anything else in this method, and before the autonomous command is scheduled below:
+    // shooter tuning must never be armed during a match. See RobotContainer.autonomousInit().
+    m_robotContainer.autonomousInit();
     // Was previously left in disabledPeriodic's IMUMode(1) (EXTERNAL_SEED) for the whole match --
     // auto never switched to fusion mode, so MegaTag2 solves rotated field coordinates against a
     // stale IMU seed and produces odometry snaps the first time a tag comes into view.

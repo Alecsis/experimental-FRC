@@ -12,6 +12,7 @@ import static edu.wpi.first.units.Units.Volts;
 
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.util.sendable.SendableBuilder;
@@ -41,9 +42,43 @@ public class Shooter extends SubsystemBase {
   private final ShooterIOInputsAutoLogged inputs = new ShooterIOInputsAutoLogged();
 
   public double targetRPM = 0.0;
-  public boolean shooterTuningModeEnable = false;
   private Agitate currentAgitate = Agitate.STOP;
   private indexing currentIndexing = indexing.STOP;
+
+  /*
+   * ---------------------------------------------------------------------------------------------
+   * Shooter tuning mode.
+   *
+   * The whole mode is TWO ownership rules enforced right here, at the mechanism, rather than a
+   * parallel set of commands fighting Superstructure's wanted-state arbitration:
+   *
+   *   FLYWHEEL -- while tuningMode is on, the operator's manual target owns it. Every AUTOMATIC
+   *               writer (vision LUT, fixed fallback, STOWED's idle RPM, OFF's zero) goes through
+   *               targetRPMShooter(), which becomes a no-op. No Superstructure state, present or
+   *               future, can take the flywheel back by accident.
+   *
+   *   FEED PATH -- while a deliberate hold-to-feed action is running, it owns the indexer and
+   *               agitator, and the automatic writers indexControl()/setAgitator() become no-ops
+   *               for its duration.
+   *
+   * This is the same "one writer per mechanism, decided up front" rule Superstructure already
+   * documents for the intake pivot and roller, applied to the two shooter mechanisms.
+   *
+   * Superstructure additionally refuses to START a shot while tuning is on (see its requestShot()),
+   * so the automatic sequence never runs and nothing ever commands INDEX on its own.
+   * ---------------------------------------------------------------------------------------------
+   */
+
+  /** Ceiling for a manually-dialled tuning target. Matches the production LUT clamp's upper bound. */
+  private static final double kMaxTuningRPM = 6000.0;
+
+  /** Default increment for the +/- tuning controls. */
+  private static final double kDefaultTuningStepRPM = 50.0;
+
+  private boolean tuningMode = false;
+  private double tuningTargetRPM = 0.0;
+  private double tuningStepRPM = kDefaultTuningStepRPM;
+  private boolean tuningFeedActive = false;
 
   private boolean testJamOverrideActive = false;
   private double testJamStatorCurrentAmps;
@@ -86,7 +121,19 @@ public class Shooter extends SubsystemBase {
     this.io = io;
   }
 
+  /**
+   * AUTOMATIC agitator writer -- what {@code Superstructure.periodic()} and the agitate commands
+   * call. Ignored while a deliberate tuning feed owns the feed path; see the ownership note above.
+   */
   public void setAgitator(Agitate state) {
+    if (tuningFeedActive) {
+      return;
+    }
+    applyAgitator(state);
+  }
+
+  /** Unconditional agitator write. Only the feed-path owner may call this. */
+  private void applyAgitator(Agitate state) {
     io.setAgitatorVoltage(state.voltage().in(Volts));
     currentAgitate = state;
     Logger.recordOutput("Agitator State", state);
@@ -149,12 +196,126 @@ public class Shooter extends SubsystemBase {
     io.setShootVelocity(RPM.of(rpm).in(RadiansPerSecond));
   }
 
+  /**
+   * AUTOMATIC flywheel target -- vision LUT, fixed fallback, STOWED idle, OFF zero. Ignored while
+   * tuning mode owns the flywheel, which is the single rule that stops the LUT or the fallback
+   * overwriting a manually-dialled target without any caller needing to know tuning exists.
+   */
   public void targetRPMShooter(double rpm) {
+    if (tuningMode) {
+      return;
+    }
     targetRPM = rpm;
   }
 
   public double getTargetRPM() {
     return targetRPM;
+  }
+
+  /** Measured flywheel speed, RPM. */
+  public double getActualRPM() {
+    return RadiansPerSecond.of(inputs.shootVelocityRadsPerSec).in(RPM);
+  }
+
+  /* ------------------------------------------------------------------ tuning-mode surface ---- */
+
+  /** Whether manual tuning currently owns the flywheel. */
+  public boolean isTuningMode() {
+    return tuningMode;
+  }
+
+  /**
+   * Arms or disarms tuning mode.
+   *
+   * <p>Entering seeds the manual target from a STOP rather than from whatever the flywheel happened
+   * to be doing, so arming the mode can never itself spin anything up. Exiting drops the ownership
+   * rule, and the next {@code Superstructure.periodic()} tick -- which writes a flywheel target in
+   * every state -- immediately reinstates normal policy, so no explicit hand-back is needed. Also
+   * releases any feed the tuning action was holding, since nothing else would.
+   */
+  public void setTuningMode(boolean enabled) {
+    if (enabled == tuningMode) {
+      return;
+    }
+    tuningMode = enabled;
+    releaseTuningFeed();
+    if (enabled) {
+      tuningTargetRPM = 0.0;
+      targetRPM = 0.0;
+    }
+  }
+
+  /**
+   * Clears tuning mode outright. Called from the disabled transition so that arming tuning is
+   * always a fresh, deliberate act: a mode left on before a disable must not silently resurrect on
+   * the next enable, when the operator may be expecting normal match behaviour.
+   */
+  public void exitTuningMode() {
+    setTuningMode(false);
+  }
+
+  /** The manually-dialled tuning target, RPM. Meaningful only while tuning mode is on. */
+  public double getTuningTargetRPM() {
+    return tuningTargetRPM;
+  }
+
+  /** Sets the manual tuning target. Clamped to [0, {@value #kMaxTuningRPM}]; inert outside tuning. */
+  public void setTuningTargetRPM(double rpm) {
+    tuningTargetRPM = MathUtil.clamp(rpm, 0.0, kMaxTuningRPM);
+  }
+
+  /** Increment/decrement size for the +/- tuning controls, RPM. */
+  public double getTuningStepRPM() {
+    return tuningStepRPM;
+  }
+
+  public void setTuningStepRPM(double stepRPM) {
+    tuningStepRPM = MathUtil.clamp(stepRPM, 1.0, 1000.0);
+  }
+
+  /** Nudges the manual target by {@code multiplier} steps. Adjusts RPM only -- never feeds. */
+  public void stepTuningTargetRPM(double multiplier) {
+    setTuningTargetRPM(tuningTargetRPM + multiplier * tuningStepRPM);
+  }
+
+  /** Whether the deliberate hold-to-feed tuning action currently owns the feed path. */
+  public boolean isTuningFeedActive() {
+    return tuningFeedActive;
+  }
+
+  /**
+   * HOLD-TO-FEED for shooter tuning: the only way a game piece is fed while tuning owns the shooter.
+   *
+   * <p>Deliberately a hold, and deliberately bound to a physical control rather than published as a
+   * SmartDashboard command button -- a dashboard button is a latch by construction (it stays
+   * pressed until something un-presses it), and a latched feed empties the hopper through an
+   * untuned flywheel. Releasing runs {@code end()} on the next scheduler tick, which both drops
+   * feed-path ownership and drives the indexer and agitator to STOP.
+   *
+   * <p>Inert unless tuning mode is armed, so the binding cannot feed during a match.
+   */
+  public Command tuningFeedCmd() {
+    return Commands.startEnd(
+        () -> {
+          if (!tuningMode) {
+            return;
+          }
+          tuningFeedActive = true;
+          applyIndex(indexing.INDEX);
+          applyAgitator(Agitate.IN);
+        },
+        this::releaseTuningFeed,
+        this)
+        .withName("ShooterTuningFeed");
+  }
+
+  private void releaseTuningFeed() {
+    if (!tuningFeedActive) {
+      return;
+    }
+    tuningFeedActive = false;
+    applyIndex(indexing.STOP);
+    applyAgitator(Agitate.STOP);
   }
 
   public void setOutputShooter(double percent) {
@@ -180,7 +341,19 @@ public class Shooter extends SubsystemBase {
     return current.isNear(RPM.of(targetRPM), tolerance);
   }
 
+  /**
+   * AUTOMATIC indexer writer -- what {@code Superstructure.periodic()} and the index commands call.
+   * Ignored while a deliberate tuning feed owns the feed path; see the ownership note above.
+   */
   public void indexControl(indexing state) {
+    if (tuningFeedActive) {
+      return;
+    }
+    applyIndex(state);
+  }
+
+  /** Unconditional indexer write. Only the feed-path owner may call this. */
+  private void applyIndex(indexing state) {
     io.setIndexVoltage(state.voltage().in(Volts));
     currentIndexing = state;
     Logger.recordOutput("Indexer State", state);
@@ -221,10 +394,13 @@ public class Shooter extends SubsystemBase {
         () -> targetRPM,
         null);
 
+    // Writes the TUNING target, not the applied target: outside tuning mode this is inert (nothing
+    // reads tuningTargetRPM), and inside it, it is the manual target that owns the flywheel. Typing
+    // a number here can therefore never fight the state machine for the flywheel.
     builder.addDoubleProperty(
         "Dashboard RPM",
-        () -> targetRPM,
-        value -> targetRPM = value);
+        () -> tuningTargetRPM,
+        this::setTuningTargetRPM);
 
     builder.addDoubleProperty(
         "Error",
@@ -232,8 +408,10 @@ public class Shooter extends SubsystemBase {
         null);
 
     builder.addBooleanProperty("Shooter Tuning Mode",
-        () -> shooterTuningModeEnable,
-        value -> shooterTuningModeEnable = value);
+        this::isTuningMode,
+        this::setTuningMode);
+
+    builder.addDoubleProperty("Tuning Step RPM", this::getTuningStepRPM, this::setTuningStepRPM);
   }
 
   @Override
@@ -248,6 +426,12 @@ public class Shooter extends SubsystemBase {
     SmartDashboard.putBoolean(
         "Shooter/Index Stall", inputs.indexStatorCurrentAmps > kJamStatorCurrentAmps);
     Logger.recordOutput("Shooter/Jammed", isJammed());
+
+    // Tuning mode owns the applied flywheel target outright. targetRPMShooter() has already been
+    // neutralised for every automatic writer, so this is simply where the manual value lands.
+    if (tuningMode) {
+      targetRPM = tuningTargetRPM;
+    }
 
     if (targetRPM > 0) {
       setRPMShooter(targetRPM);

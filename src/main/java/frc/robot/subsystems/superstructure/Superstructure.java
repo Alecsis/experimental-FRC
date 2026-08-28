@@ -103,6 +103,17 @@ public class Superstructure extends SubsystemBase {
 
   private void requestShot(ShotMode mode, double alignTimeoutSeconds, double settleDelaySeconds,
       double feedTimeoutSeconds) {
+    if (shooter.isTuningMode()) {
+      // Shooter tuning owns the flywheel and the feed path. Refusing the request here -- rather
+      // than letting ALIGNING/SHOOTING run and be partially neutered downstream -- is what makes
+      // "no automatic Shooting Sequence, no automatic feeding" a structural property instead of a
+      // set of scattered guards. Refusing AS A STOW rather than by returning silently matters for
+      // two reasons: mWantedState must not be left holding a stale earlier request, and
+      // shootingSequence()'s waitUntil(!mShotInProgress) must still finish immediately, so an
+      // autonomous or NamedCommand shot cannot hang if tuning was left armed.
+      requestStow();
+      return;
+    }
     mOperatorRequestActive = false;
     mAlignTimeoutSeconds = alignTimeoutSeconds;
     mSettleDelaySeconds = settleDelaySeconds;
@@ -358,11 +369,17 @@ public class Superstructure extends SubsystemBase {
     shooter.setAgitator(Shooter.Agitate.STOP);
   }
 
+  /**
+   * The two automatic flywheel targets: the fixed operator fallback and the vision/LUT solution.
+   *
+   * <p>No tuning-mode branch is needed here any more. {@code Shooter.targetRPMShooter()} itself
+   * ignores automatic writers while tuning owns the flywheel, so both branches below are already
+   * inert in tuning mode -- and so is every OTHER automatic write in this class (STOWED's idle RPM,
+   * OFF's zero), which a branch here could never have covered.
+   */
   private void updateShooterRPM() {
     if (mShotMode == ShotMode.FIXED_FALLBACK) {
       shooter.targetRPMShooter(1600);
-    } else if (shooter.shooterTuningModeEnable) {
-      shooter.targetRPMShooter(shooter.getTargetRPM());
     } else {
       vision.calculateRPM().ifPresent(rpm -> {
         shooter.targetRPMShooter(rpm);
